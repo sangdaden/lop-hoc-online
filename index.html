@@ -124,9 +124,13 @@ a:focus-visible,button:focus-visible,select:focus-visible{outline:2px solid var(
 .overlay{position:absolute;inset:0;background:color-mix(in srgb,var(--floor) 88%,transparent);display:grid;place-items:center;padding:16px;z-index:20}
 .namerow{display:flex;gap:8px}
 .namerow input{flex:1;min-width:0;font:inherit;font-size:16px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--paper);color:inherit}
-.sexpick{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.sexpick button{display:grid;justify-items:center;gap:6px;padding:14px 8px;font-size:18px}
-.sexpick svg{width:64px;height:64px}
+.lookpick{display:grid;gap:10px}
+.lookpick .seg{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.lookpick .seg .btn{font-size:16px;padding:8px}
+.looks{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.looks .btn{display:grid;justify-items:center;gap:2px;padding:4px 4px 6px;font-size:12px;line-height:1.25}
+.looks img,.looks .ph{width:100%;aspect-ratio:1;border-radius:8px;background:var(--floor);display:block}
+.lookpick .lrand{justify-self:start}
 .card{background:var(--paper-2);border:1px solid var(--line);border-radius:12px;padding:20px;max-width:440px;width:100%;display:grid;gap:14px;box-shadow:0 10px 30px rgba(0,0,0,.12)}
 .beads{display:flex;flex-wrap:wrap;gap:5px;justify-content:center}
 .bead{width:13px;height:13px;border-radius:50%;border:1.5px solid var(--wood-d);background:transparent}
@@ -263,7 +267,8 @@ body{overflow:hidden}
         <p class="eyebrow">Tên của bạn trong phòng</p>
         <div class="name" id="myName">…</div>
         <button class="btn" id="bRename" style="justify-self:start">Đổi tên khác</button>
-        <div class="sizes" role="group" aria-label="Kiểu nhân vật"><span class="muted">Nhân vật:</span><button class="btn sex" data-s="nam">Nam</button><button class="btn sex" data-s="nu">Nữ</button></div>
+        <p class="eyebrow" style="margin-top:6px">Ngoại hình</p>
+        <div id="lookPanel"></div>
         <p class="note">Bạn cùng lớp chỉ thấy tên này. Giảng viên thấy tên thật để điểm danh.</p>
       </div>
       <div class="panel">
@@ -326,7 +331,8 @@ body{overflow:hidden}
 
   let N=50, TYPE="island", TAS=1, HOT=3, GEN=0;
   let seats=[], tables=[], queue=[];
-  let mySex=(()=>{try{return localStorage.getItem("lhl-sex")||"";}catch(e){return "";}})();
+  let myLook=(()=>{ try{ const v=(localStorage.getItem("lhl-look")||"").split(":"); if((v[0]==="nam"||v[0]==="nu")&&v[1]>=0&&v[1]<6) return [v[0],+v[1]]; }catch(e){} return null; })();
+  const lookSaved=!!myLook; if(!myLook) myLook=[Math.random()<.5?"nam":"nu",0];
   let myName=(()=>{try{return localStorage.getItem("lhl-name")||"";}catch(e){return "";}})()||rname(), myStep=0, myHand=false, mySeat=-1;
   const st={card:0,sess:0,greet:0,hand:0};
   $("myName").textContent=myName;
@@ -415,8 +421,24 @@ body{overflow:hidden}
   const G={
     head:new T.SphereGeometry(0.3,22,16),
     hair:new T.SphereGeometry(0.312,22,10,0,Math.PI*2,0,Math.PI*0.45),
+    capLow:new T.SphereGeometry(0.315,22,12,0,Math.PI*2,0,Math.PI*0.52),
+    buzz:new T.SphereGeometry(0.304,22,10,0,Math.PI*2,0,Math.PI*0.4),
     hairLong:new T.CylinderGeometry(0.318,0.35,0.5,22,1,true,Math.PI*0.5,Math.PI),
+    bob:new T.CylinderGeometry(0.33,0.35,0.24,22,1,true,Math.PI*0.3,Math.PI*1.4),
     bun:new T.SphereGeometry(0.11,12,10),
+    bunBig:new T.SphereGeometry(0.13,14,10),
+    curl:new T.SphereGeometry(0.085,10,8),
+    curlL:new T.SphereGeometry(0.1,10,8),
+    spike:new T.ConeGeometry(0.075,0.17,6),
+    fringe:new T.BoxGeometry(0.28,0.07,0.1),
+    tail:new T.CylinderGeometry(0.075,0.035,0.38,10),
+    braid:new T.CylinderGeometry(0.05,0.04,0.36,8),
+    tie:new T.SphereGeometry(0.06,10,8),
+    brow:new T.BoxGeometry(0.085,0.022,0.02),
+    lash:new T.BoxGeometry(0.04,0.013,0.013),
+    blush:new T.SphereGeometry(0.045,10,8),
+    lens:new T.TorusGeometry(0.064,0.011,6,18),
+    bridge:new T.BoxGeometry(0.07,0.012,0.012),
     body:new T.CylinderGeometry(0.17,0.25,0.46,14),
     vest:new T.CylinderGeometry(0.175,0.255,0.24,14),
     arm:new T.CylinderGeometry(0.055,0.05,0.32,8),
@@ -425,9 +447,48 @@ body{overflow:hidden}
     shadow:new T.CircleGeometry(0.3,18)
   };
 
+  // ---------- ngoại hình: 6 kiểu cho mỗi giới, cùng đồng phục ----------
+  const HC={den:0x1f1a17,nau:0x4a3020,hatde:0x6b4428,vang:0x9a6a3a};
+  const SKIN=[0xf0cba6,0xe8b88f,0xd29e74,0xb07f58];
+  const LOOKS={
+    nam:[{n:"Tóc ngắn",s:"short",h:HC.den,k:1},{n:"Tóc dựng",s:"spiky",h:HC.nau,k:0},{n:"Rẽ ngôi, kính",s:"sidepart",h:HC.den,k:2,gl:1},
+         {n:"Đầu đinh",s:"buzz",h:HC.den,k:3},{n:"Tóc xoăn",s:"curly",h:HC.hatde,k:1},{n:"Búi sau",s:"manbun",h:HC.nau,k:2}],
+    nu:[{n:"Tóc dài",s:"long",h:HC.den,k:0},{n:"Búi cao",s:"highbun",h:HC.nau,k:1},{n:"Đuôi ngựa",s:"ponytail",h:HC.hatde,k:2},
+        {n:"Tóc bob, kính",s:"bob",h:HC.den,k:1,gl:1},{n:"Hai bím",s:"braids",h:HC.nau,k:3},{n:"Xoăn dài",s:"curlylong",h:HC.vang,k:0}]
+  };
+  const matCache={};
+  function lam(c,ds){ const key=c+(ds?"d":""); return matCache[key]||(matCache[key]=new T.MeshLambertMaterial({color:c,side:ds?T.DoubleSide:T.FrontSide})); }
+  const BLUSH=new T.MeshBasicMaterial({color:0xf2a3a0});
+  const UP=new T.Vector3(0,1,0);
+  function buildLook(gr,sex,idx){
+    const L=LOOKS[sex][idx], hm=lam(L.h,true);
+    const add=(geo,mat,x,y,z,rx,ry,rz)=>{ const m=new T.Mesh(geo,mat); m.position.set(x,y,z); m.rotation.set(rx||0,ry||0,rz||0); gr.add(m); return m; };
+    const along=(geo,dir,dist)=>{ const d=dir.clone().normalize(); const m=new T.Mesh(geo,hm); m.position.copy(d).multiplyScalar(dist); m.quaternion.setFromUnitVectors(UP,d); gr.add(m); return m; };
+    const cap=()=>add(G.hair,hm,0,0.02,0,-0.35), capLow=()=>add(G.capLow,hm,0,0.02,0,-0.3);
+    switch(L.s){
+      case "short": cap(); break;
+      case "spiky": cap(); [[0,1,.15],[.35,.9,0],[-.35,.9,0],[0,.85,-.4],[.3,.75,-.35],[-.3,.75,-.35],[0,.95,.45]].forEach(v=>along(G.spike,new T.Vector3(...v),0.3)); break;
+      case "sidepart": cap(); add(G.fringe,hm,-0.06,0.2,0.24,-0.55,0,0.35); break;
+      case "buzz": add(G.buzz,hm,0,0.01,0,-0.3); break;
+      case "curly": cap(); [[0,1,0],[.4,.85,.2],[-.4,.85,.2],[0,.8,.5],[.45,.8,-.3],[-.45,.8,-.3],[0,.75,-.6],[.6,.6,0],[-.6,.6,0],[.25,.95,-.15],[-.25,.95,-.15]].forEach(v=>along(G.curl,new T.Vector3(...v),0.3)); break;
+      case "manbun": cap(); add(G.bun,hm,0,0.17,-0.3); break;
+      case "long": capLow(); add(G.hairLong,hm,0,-0.14,-0.01); break;
+      case "highbun": capLow(); add(G.bunBig,hm,0,0.34,-0.07); break;
+      case "ponytail": capLow(); add(G.tie,hm,0,0.12,-0.31); add(G.tail,hm,0,-0.1,-0.37,0.28); break;
+      case "bob": capLow(); add(G.bob,hm,0,-0.07,0); break;
+      case "braids": capLow(); [-1,1].forEach(sd=>{ add(G.braid,hm,sd*0.25,-0.2,-0.07,0,0,sd*-0.12); add(G.tie,hm,sd*0.27,-0.39,-0.07); }); break;
+      case "curlylong": capLow(); for(let r=0;r<3;r++) for(let a=0;a<6;a++){ const th=Math.PI*(0.55+a*0.18), y=0.08-r*0.17, rad=0.31+r*0.02; add(G.curlL,hm,Math.sin(th)*rad,y,Math.cos(th)*rad); } break;
+    }
+    if(sex==="nam"){ [-1,1].forEach(sd=>add(G.brow,lam(L.h),sd*0.1,0.085,0.276,0,0,sd*-0.12)); }
+    else { [-1,1].forEach(sd=>{ add(G.lash,M.eye,sd*0.137,0.025,0.268,0,0,sd*0.55); const b=add(G.blush,BLUSH,sd*0.16,-0.075,0.24); b.scale.set(1,0.6,0.35); }); }
+    if(L.gl){ [-1,1].forEach(sd=>add(G.lens,M.eye,sd*0.1,0,0.3)); add(G.bridge,M.eye,0,0.01,0.3); }
+    return L;
+  }
+  function randLook(){ const sx=Math.random()<.5?"nam":"nu"; return [sx,Math.floor(Math.random()*LOOKS[sx].length)]; }
+
   // ---------- characters ----------
   const kids=[];
-  function makeKid(kind,sex){
+  function makeKid(kind,sex,look){
     const g=new T.Group();
     const shirt=kind==="me"?M.me:kind==="ta"?M.ta:M.shirt;
     const shadow=new T.Mesh(G.shadow,M.shadow); shadow.rotation.x=-Math.PI/2; shadow.position.y=0.012; g.add(shadow);
@@ -436,21 +497,19 @@ body{overflow:hidden}
     const body=new T.Mesh(G.body,shirt); body.position.y=0.23; hip.add(body);
     if(kind!=="ta"){ const vest=new T.Mesh(G.vest,kind==="me"?M.me:M.vest); vest.position.y=0.17; hip.add(vest); }
     const headG=new T.Group(); headG.position.y=0.72; hip.add(headG);
-    headG.add(new T.Mesh(G.head,M.skin));
-    const hair=new T.Mesh(G.hair,M.hair); hair.rotation.x=-0.35; hair.position.y=0.02; headG.add(hair);
-    // kiểu nữ: tóc dài sau gáy + búi nhỏ; kiểu nam: tóc ngắn như cũ
-    const hairLong=new T.Mesh(G.hairLong,M.hairD); hairLong.position.set(0,-0.14,-0.01); headG.add(hairLong);
-    const bun=new T.Mesh(G.bun,M.hair); bun.position.set(0,0.2,-0.27); headG.add(bun);
+    const headM=new T.Mesh(G.head,M.skin); headG.add(headM);
+    const lookG=new T.Group(); headG.add(lookG);
     const e1=new T.Mesh(G.eye,M.eye); e1.position.set(-0.1,0,0.285); const e2=new T.Mesh(G.eye,M.eye); e2.position.set(0.1,0,0.285); headG.add(e1,e2);
     const armR=new T.Group(); armR.position.set(0.22,0.42,0); hip.add(armR); const ar=new T.Mesh(G.arm,shirt); ar.position.y=-0.15; armR.add(ar);
     const armL=new T.Group(); armL.position.set(-0.22,0.42,0); hip.add(armL); const al=new T.Mesh(G.arm,shirt); al.position.y=-0.15; armL.add(al);
     const alert=new T.Sprite(M.alert); alert.scale.set(0.34,0.34,1); alert.position.y=1.55; alert.visible=false; g.add(alert);
     scene.add(g);
-    const k={g,hip,headG,armR,armL,legL,legR,shadow,alert,kind,hairLong,bun,sex:"nam",bow:0,bowDur:1,nod:0,hand:false,handA:0,walk:null,sitting:false,ph:Math.random()*6,name:"",seat:-1};
-    setSex(k,sex||(Math.random()<.5?"nam":"nu"));
+    const k={g,hip,headG,armR,armL,legL,legR,shadow,alert,kind,headM,lookG,sex:"nam",look:0,bow:0,bowDur:1,nod:0,hand:false,handA:0,walk:null,sitting:false,ph:Math.random()*6,name:"",seat:-1};
+    if(sex) setLook(k,sex,look||0); else setLook(k,...randLook());
     kids.push(k); return k;
   }
-  function setSex(k,sex){ k.sex=sex; const f=sex==="nu"; k.hairLong.visible=f; k.bun.visible=f; }
+  function setLook(k,sex,idx){
+    k.sex=sex; k.look=idx; k.lookG.clear(); const L=buildLook(k.lookG,sex,idx); k.headM.material=lam(SKIN[L.k]); }
   function removeKid(k){ scene.remove(k.g); const i=kids.indexOf(k); if(i>=0) kids.splice(i,1); bubbles.filter(b=>b.k===k).forEach(b=>killBubble(b)); }
   const SIT_Y=0.24;
   function setSit(k,on){
@@ -578,11 +637,40 @@ body{overflow:hidden}
     }
   }
 
-  const me=makeKid("me",mySex||"nam"); me.name=myName;
-  function chooseSex(sx){ mySex=sx; setSex(me,sx); try{localStorage.setItem("lhl-sex",sx);}catch(e){}
-    document.querySelectorAll(".sex").forEach(b=>{const on=b.dataset.s===sx; b.classList.toggle("on",on); b.setAttribute("aria-pressed",on);}); }
-  document.querySelectorAll(".sex").forEach(b=>b.addEventListener("click",()=>{ chooseSex(b.dataset.s); render(); }));
-  chooseSex(mySex||"nam");
+  const me=makeKid("me",myLook[0],myLook[1]); me.name=myName;
+  function chooseLook(sx,i){ myLook=[sx,i]; setLook(me,sx,i); try{localStorage.setItem("lhl-look",sx+":"+i);}catch(e){} if(panelPick) panelPick.set(sx,i); }
+  // ảnh nhỏ cho từng kiểu, vẽ một lần bằng renderer riêng
+  const thumbs={};
+  function thumb(sx,i){
+    const key=sx+i; if(thumbs[key]!==undefined) return thumbs[key];
+    try{
+      if(!thumb.r){ thumb.r=new T.WebGLRenderer({antialias:true,alpha:true,preserveDrawingBuffer:true}); thumb.r.setSize(128,128); thumb.r.outputEncoding=T.sRGBEncoding;
+        thumb.s=new T.Scene(); thumb.s.add(new T.HemisphereLight(0xffffff,0x8a8177,1.0)); const d=new T.DirectionalLight(0xffffff,0.5); d.position.set(3,5,4); thumb.s.add(d);
+        thumb.c=new T.PerspectiveCamera(30,1,0.1,20); thumb.c.position.set(0.95,1.2,1.75); thumb.c.lookAt(0,0.86,0); }
+      const k=makeKid("me",sx,i); scene.remove(k.g); kids.splice(kids.indexOf(k),1); k.shadow.visible=false;
+      thumb.s.add(k.g); thumb.r.render(thumb.s,thumb.c); thumbs[key]=thumb.r.domElement.toDataURL(); thumb.s.remove(k.g);
+    }catch(e){ thumbs[key]=""; }
+    return thumbs[key];
+  }
+  function lookPicker(el,sx,i,onChange){
+    let cur=[sx,i];
+    el.classList.add("lookpick");
+    const draw=()=>{
+      const [s0,i0]=cur;
+      el.innerHTML='<div class="seg" role="group" aria-label="Giới tính"><button type="button" class="btn" data-s="nam">Nam</button><button type="button" class="btn" data-s="nu">Nữ</button></div>'+
+        '<div class="looks" role="group" aria-label="Kiểu ngoại hình">'+LOOKS[s0].map((L,j)=>{ const u=thumb(s0,j); return '<button type="button" class="btn'+(j===i0?' on':'')+'" aria-pressed="'+(j===i0)+'" data-i="'+j+'">'+(u?'<img alt="" src="'+u+'">':'<span class="ph"></span>')+L.n+'</button>'; }).join("")+'</div>'+
+        '<button type="button" class="btn lrand">Ngoại hình ngẫu nhiên</button>';
+      el.querySelectorAll(".seg .btn").forEach(b=>{ const on=b.dataset.s===s0; b.classList.toggle("on",on); b.setAttribute("aria-pressed",on);
+        b.onclick=()=>{ if(cur[0]===b.dataset.s) return; cur=[b.dataset.s,0]; draw(); onChange(cur); }; });
+      el.querySelectorAll(".looks .btn").forEach(b=>b.onclick=()=>{ cur=[cur[0],+b.dataset.i]; draw(); onChange(cur); });
+      el.querySelector(".lrand").onclick=()=>{ const n=LOOKS[cur[0]].length; let j; do{ j=Math.floor(Math.random()*n); }while(n>1&&j===cur[1]); cur=[cur[0],j]; draw(); onChange(cur); };
+    };
+    draw();
+    return {set(s1,i1){ if(cur[0]===s1&&cur[1]===i1) return; cur=[s1,i1]; draw(); }};
+  }
+  let panelPick=null;
+  panelPick=lookPicker($("lookPanel"),myLook[0],myLook[1],([sx,i])=>{ chooseLook(sx,i); render(); });
+  chooseLook(myLook[0],myLook[1]);
   let meLabel=null;
   function relabel(){ killBubble(meLabel); meLabel=bubble(me,"<b>Bạn</b>"+esc(myName),0,"me"); }
 
@@ -871,28 +959,25 @@ body{overflow:hidden}
   }
 
   buildRoom(50,"island"); relabel(); drawT(); render();
-  (function sexDialog(){
-    const fig=(f)=>'<svg viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="22" r="13" fill="#f2d3b3"/><path d="M19 21a13 13 0 0 1 26 0c-4-4-9-5-13-5s-9 1-13 5z" fill="#2a211c"/>'+(f?'<path d="M19 21c-2 8-1 15 1 19h6c-3-5-4-12-3-18zM45 21c2 8 1 15-1 19h-6c3-5 4-12 3-18z" fill="#2a211c"/><circle cx="32" cy="8" r="4" fill="#2a211c"/>':'')+'<path d="M18 62c0-12 6-18 14-18s14 6 14 18z" fill="#7a5bd4"/></svg>';
-    let pick=mySex||"nam";
+  (function enterDialog(){
+    let pick=myLook.slice();
     const ov=document.createElement("div"); ov.className="overlay";
-    ov.innerHTML='<form class="card" role="dialog" aria-label="Vào phòng lab"><h3>Vào phòng lab</h3>'+
+    ov.innerHTML='<form class="card" role="dialog" aria-label="Vào phòng lab" style="max-width:460px;max-height:100%;overflow:auto"><h3>Vào phòng lab</h3>'+
       '<label class="note" for="eName">Tên hiện cho bạn cùng lớp</label><div class="namerow"><input id="eName" maxlength="24" autocomplete="off" placeholder="Nhập tên hoặc bấm Ngẫu nhiên"><button type="button" class="btn" id="eRand">Ngẫu nhiên</button></div>'+
-      '<p class="note">Kiểu nhân vật. Ai cũng mặc đồng phục giống nhau, chỉ khác kiểu tóc.</p>'+
-      '<div class="sexpick"><button type="button" class="btn" data-s="nam">'+fig(false)+'Nam</button><button type="button" class="btn" data-s="nu">'+fig(true)+'Nữ</button></div>'+
-      '<button class="btn primary" id="eGo">Vào phòng</button><p class="note">Đổi lại được ở bảng bên phải.</p></form>';
+      '<p class="note" style="margin:0">Chọn nhân vật. Ai cũng mặc đồng phục của lớp.</p><div id="ePick"></div>'+
+      '<button class="btn primary" id="eGo">Vào phòng</button><p class="note" style="margin:0">Đổi lại được ở bảng bên phải.</p></form>';
     sceneEl.appendChild(ov);
     const inp=ov.querySelector("#eName"); inp.value=myName;
-    const sexBtns=ov.querySelectorAll(".sexpick button");
-    const mark=()=>sexBtns.forEach(b=>{const on=b.dataset.s===pick; b.classList.toggle("on",on); b.setAttribute("aria-pressed",on);});
-    sexBtns.forEach(b=>b.onclick=()=>{ pick=b.dataset.s; mark(); }); mark();
+    lookPicker(ov.querySelector("#ePick"),pick[0],pick[1],v=>{ pick=v; });
     ov.querySelector("#eRand").onclick=()=>{ inp.value=rname(); inp.focus(); };
     ov.querySelector("form").onsubmit=e=>{ e.preventDefault();
       const nm=inp.value.replace(/\s+/g," ").trim().slice(0,24);
-      setMyName(nm||rname()); chooseSex(pick); ov.remove(); render(); };
+      setMyName(nm||rname()); chooseLook(pick[0],pick[1]); ov.remove(); render(); };
     inp.focus(); inp.select();
   })();
   requestAnimationFrame(frame);
 })();
 </script>
+
 </body>
 </html>
