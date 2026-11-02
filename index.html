@@ -1051,7 +1051,30 @@ body{overflow:hidden}
     const p=h.point.clone(), half=W/2-0.6; p.x=Math.max(-half,Math.min(half,p.x)); p.z=Math.max(zFront+1,Math.min(zBack-0.6,p.z)); p.y=0;
     walkTo(me,p,2.6,null);
   }
-  document.querySelectorAll(".role").forEach(b=>b.addEventListener("click",()=>{ if(b.dataset.r===ROLE) return; ROLE=b.dataset.r; buildRoom(N,TYPE); }));
+  // ---------- mật mã vai Lab Coach / Key Coach ----------
+  // Trang tĩnh, chưa có backend: đây chỉ là lớp chặn phía trình duyệt (ai đọc mã nguồn vẫn vượt được).
+  // Đổi mật mã: thay bằng SHA-256 của mật mã mới viết thường, ví dụ  printf %s "mat-ma-moi" | sha256sum
+  const CODE_HASH={lab:"8933a68607086aeffc78177de569432554b108f62f6ca457788e1e51e905ebac",key:"a8ffef033a62ea94a37bc0dbe5439a9c6997646aacd3f6a8e829879bcb7d7ef7"};
+  const unlocked={hv:true,lab:false,key:false};
+  try{ const u=JSON.parse(sessionStorage.getItem("lhl-unlock")||"{}"); unlocked.lab=!!u.lab; unlocked.key=!!u.key; }catch(e){}
+  async function checkCode(role,code){
+    try{ const b=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(String(code).trim().toLowerCase()));
+      const ok=[...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,"0")).join("")===CODE_HASH[role];
+      if(ok){ unlocked[role]=true; try{sessionStorage.setItem("lhl-unlock",JSON.stringify({lab:unlocked.lab,key:unlocked.key}));}catch(e){} }
+      return ok; }catch(e){ return false; }
+  }
+  function setRole(r){ if(r===ROLE) return; ROLE=r; buildRoom(N,TYPE); }
+  function askCode(role,done){
+    const ov=document.createElement("div"); ov.className="overlay";
+    ov.innerHTML='<form class="card" role="dialog" aria-label="Mật mã '+ROLE_NAME[role]+'"><h3>Vào với vai '+ROLE_NAME[role]+'</h3>'+
+      '<label class="note" for="cCode">Mật mã do Key Coach của khóa cấp</label><input id="cCode" type="password" autocomplete="off" style="font:inherit;font-size:16px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--paper);color:inherit">'+
+      '<p class="note" id="cErr" style="margin:0;color:var(--warn)"></p><div class="row"><button type="button" class="btn" id="cCancel">Huỷ</button><button class="btn primary">Vào</button></div></form>';
+    sceneEl.appendChild(ov); const inp=ov.querySelector("#cCode"); inp.focus();
+    ov.querySelector("#cCancel").onclick=()=>ov.remove();
+    ov.querySelector("form").onsubmit=async e=>{ e.preventDefault();
+      if(await checkCode(role,inp.value)){ ov.remove(); done(); } else { ov.querySelector("#cErr").textContent="Sai mật mã."; inp.select(); } };
+  }
+  document.querySelectorAll(".role").forEach(b=>b.addEventListener("click",()=>{ const r=b.dataset.r; if(r===ROLE) return; if(unlocked[r]) setRole(r); else askCode(r,()=>setRole(r)); }));
 
   // ---------- simulated classmates ----------
   setInterval(()=>{
@@ -1137,14 +1160,20 @@ body{overflow:hidden}
     ov.innerHTML='<form class="card" role="dialog" aria-label="Vào phòng lab" style="max-width:460px;max-height:100%;overflow:auto"><h3>Vào phòng lab</h3>'+
       '<label class="note" for="eName">Tên hiện cho bạn cùng lớp</label><div class="namerow"><input id="eName" maxlength="24" autocomplete="off" placeholder="Nhập tên hoặc bấm Ngẫu nhiên"><button type="button" class="btn" id="eRand">Ngẫu nhiên</button></div>'+
       '<p class="note" style="margin:0">Chọn nhân vật. Ai cũng mặc đồng phục của lớp.</p><div id="ePick"></div>'+
+      '<p class="note" style="margin:0">Vào với vai</p><div class="sizes" role="group" aria-label="Vai"><button type="button" class="btn erole" data-r="hv">Học viên</button><button type="button" class="btn erole" data-r="lab">Lab Coach</button><button type="button" class="btn erole" data-r="key">Key Coach</button></div>'+
+      '<div id="eCodeRow" hidden><input id="eCode" type="password" autocomplete="off" placeholder="Mật mã cho vai này" style="width:100%;font:inherit;font-size:16px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--paper);color:inherit"><p class="note" id="eErr" style="margin:4px 0 0;color:var(--warn)"></p></div>'+
       '<button class="btn primary" id="eGo">Vào phòng</button><p class="note" style="margin:0">Đổi lại được ở bảng bên phải.</p></form>';
     sceneEl.appendChild(ov);
     const inp=ov.querySelector("#eName"); inp.value=myName;
     lookPicker(ov.querySelector("#ePick"),pick[0],pick[1],v=>{ pick=v; });
     ov.querySelector("#eRand").onclick=()=>{ inp.value=rname(); inp.focus(); };
-    ov.querySelector("form").onsubmit=e=>{ e.preventDefault();
+    let role="hv"; const roleBtns=ov.querySelectorAll(".erole"), codeRow=ov.querySelector("#eCodeRow"), codeInp=ov.querySelector("#eCode");
+    const markRole=()=>{ roleBtns.forEach(b=>{const on=b.dataset.r===role; b.classList.toggle("on",on); b.setAttribute("aria-pressed",on);}); codeRow.hidden=role==="hv"||unlocked[role]; ov.querySelector("#eErr").textContent=""; };
+    roleBtns.forEach(b=>b.onclick=()=>{ role=b.dataset.r; markRole(); if(!codeRow.hidden) codeInp.focus(); }); markRole();
+    ov.querySelector("form").onsubmit=async e=>{ e.preventDefault();
+      if(!unlocked[role]&&!(await checkCode(role,codeInp.value))){ ov.querySelector("#eErr").textContent="Sai mật mã. Học viên thì chọn “Học viên”, không cần mật mã."; codeInp.select(); return; }
       const nm=inp.value.replace(/\s+/g," ").trim().slice(0,24);
-      setMyName(nm||rname()); chooseLook(pick[0],pick[1]); ov.remove(); render(); };
+      setMyName(nm||rname()); chooseLook(pick[0],pick[1]); ov.remove(); setRole(role); render(); };
     inp.focus(); inp.select();
   })();
   requestAnimationFrame(frame);
