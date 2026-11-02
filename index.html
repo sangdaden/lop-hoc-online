@@ -1,0 +1,1029 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+</head>
+<body>
+<title>Lớp Học Lặng</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Patrick+Hand&display=swap">
+<style>
+/* Layout: trang vở ô li — một tờ giấy dài; phần chơi thử là một phòng lab nhìn từ trên xuống với bảng đen, bàn gỗ, mực tím làm điểm nhấn. */
+:root{
+  --paper:#F4F6F1; --paper-2:#FBFCF9; --ink:#1E2621; --muted:#5B675F; --line:#D6DED8; --grid:rgba(90,62,155,.07);
+  --board:#2D4A3C; --chalk:#EEF1E6; --wood:#C79F74; --wood-d:#9C754C; --floor:#E5E9E0;
+  --violet:#57399A; --violet-soft:#ECE6F7; --skin:#EBC9A8; --hair:#2B2420; --shirt:#FFFFFF;
+  --ok:#2F7A4E; --warn:#B4592E; --warn-soft:#F7E4D9;
+  --stage-bg:#1B1612; --bub-bg:rgba(24,20,17,.78); --bub-fg:#FFFFFF; --bub-me:#6A4BC4; --bub-ok:#2F7A4E; --bub-ta:#23695F;
+  --f-display:"Patrick Hand","Comic Sans MS",cursive;
+  --f-body:"Be Vietnam Pro",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-num:ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --paper:#111613; --paper-2:#171E1A; --ink:#E4EAE5; --muted:#9AA79F; --line:#29332D; --grid:rgba(183,160,238,.06);
+  --board:#1C3127; --chalk:#E9EDE1; --wood:#7A5E43; --wood-d:#5A4430; --floor:#1A221D;
+  --violet:#B9A2F0; --violet-soft:#2A2340; --skin:#D9B694; --hair:#1A1513; --shirt:#E9ECE8;
+  --ok:#6CC08F; --warn:#E39568; --warn-soft:#3A2519; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --paper:#111613; --paper-2:#171E1A; --ink:#E4EAE5; --muted:#9AA79F; --line:#29332D; --grid:rgba(183,160,238,.06);
+  --board:#1C3127; --chalk:#E9EDE1; --wood:#7A5E43; --wood-d:#5A4430; --floor:#1A221D;
+  --violet:#B9A2F0; --violet-soft:#2A2340; --skin:#D9B694; --hair:#1A1513; --shirt:#E9ECE8;
+  --ok:#6CC08F; --warn:#E39568; --warn-soft:#3A2519; color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--paper);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.6;
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:32px 32px;}
+.wrap{max-width:1080px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:40px 64px;display:grid;gap:56px}
+h1,h2,h3{text-wrap:balance;margin:0;line-height:1.2}
+h1{font-family:var(--f-display);font-weight:400;font-size:clamp(44px,8vw,76px);letter-spacing:.01em}
+h2{font-size:clamp(22px,3vw,28px);font-weight:700}
+h3{font-size:17px;font-weight:600}
+p{margin:0}
+.eyebrow{font-size:12px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);font-weight:600}
+.lede{font-size:clamp(17px,2vw,19px);max-width:62ch}
+.muted{color:var(--muted)}
+a{color:var(--violet)}
+a:focus-visible,button:focus-visible,select:focus-visible{outline:2px solid var(--violet);outline-offset:2px}
+.sec{display:grid;gap:20px}
+.sec-head{display:grid;gap:6px;max-width:68ch}
+
+.hero{display:grid;gap:18px}
+.figs{display:flex;flex-wrap:wrap;gap:12px 40px;margin-top:8px;padding-top:18px;border-top:1px solid var(--line)}
+.fig{display:grid;gap:2px;min-width:0}
+.fig b{font-family:var(--f-num);font-size:clamp(24px,3.4vw,32px);font-weight:600;font-variant-numeric:tabular-nums;color:var(--violet)}
+.fig span{font-size:13px;color:var(--muted);max-width:24ch}
+
+.three{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr));gap:16px}
+.take{background:var(--paper-2);border:1px solid var(--line);border-radius:10px;padding:18px;display:grid;gap:8px;align-content:start}
+.take .tag{font-family:var(--f-display);font-size:22px;color:var(--violet);line-height:1}
+
+/* Prototype */
+.proto{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:20px;align-items:start}
+@media (max-width:860px){.proto{grid-template-columns:minmax(0,1fr)}}
+.scene{position:relative;background:var(--floor);border:1px solid var(--line);border-radius:14px;padding:14px;display:grid;gap:12px;overflow:hidden}
+.roombar{display:flex;flex-wrap:wrap;justify-content:space-between;gap:6px 12px;font-size:13px;color:var(--muted)}
+.roombar b{color:var(--ink);font-family:var(--f-num);font-variant-numeric:tabular-nums;font-weight:600}
+.board{background:var(--board);color:var(--chalk);border-radius:6px;border:6px solid var(--wood-d);padding:10px 14px;font-family:var(--f-display);display:grid;gap:4px;text-align:center}
+.board .l1{font-size:clamp(20px,3vw,26px);line-height:1.1}
+.board .l2{font-size:16px;opacity:.85}
+.chalkbar{height:4px;background:rgba(238,241,230,.18);border-radius:2px;overflow:hidden;margin-top:4px}
+.chalkbar i{display:block;height:100%;width:0;background:var(--chalk);transition:width .4s linear}
+.gridwrap{max-height:560px;overflow:auto;padding:2px;overscroll-behavior:contain}
+.grid{display:grid;grid-template-columns:repeat(10,minmax(30px,1fr));gap:6px 8px}
+.grid.dense{gap:4px 5px}
+@container (max-width:34px){.stepb{display:none}}
+.sizes{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:13px}
+.sizes .btn{padding:5px 10px}
+.sizes .size{font-family:var(--f-num);font-variant-numeric:tabular-nums}
+.pickers{display:flex;flex-wrap:wrap;gap:8px 20px}
+.seat{all:unset;position:relative;aspect-ratio:1/1.05;container-type:inline-size;cursor:default;border-radius:8px}
+.seat.free{cursor:pointer}
+.seat.free:hover .desk,.seat.free:focus-visible .desk{outline:2px dashed var(--violet);outline-offset:2px}
+.seat:focus-visible{outline:2px solid var(--violet);outline-offset:2px}
+.desk{position:absolute;left:6%;right:6%;bottom:4%;height:30%;background:var(--wood);border-bottom:4px solid var(--wood-d);border-radius:4px;z-index:2}
+.desk::after{content:"";position:absolute;left:28%;width:44%;top:18%;height:48%;background:#2A3340;border-radius:2px;opacity:.85}
+.stepb{position:absolute;right:3%;bottom:6%;z-index:3;font-family:var(--f-num);font-size:max(9px,15cqw);font-weight:700;line-height:1;padding:2px 4px;border-radius:4px;background:var(--paper-2);color:var(--muted);border:1px solid var(--line)}
+.stepb.done{background:var(--ok);color:var(--paper-2);border-color:var(--ok)}
+.seat.stuck .stepb{background:var(--warn);color:var(--paper-2);border-color:var(--warn)}
+.seat.stuck .desk{box-shadow:0 0 0 2px var(--warn)}
+.kid{position:absolute;left:50%;bottom:26%;width:62cqw;height:66cqw;transform:translateX(-50%);z-index:1}
+.kid .head{position:absolute;left:50%;top:0;width:44cqw;height:44cqw;margin-left:-22cqw;background:var(--skin);border-radius:50%;transition:transform .35s ease;z-index:2}
+.kid .head::before{content:"";position:absolute;inset:-2cqw -2cqw 52% -2cqw;background:var(--hair);border-radius:50% 50% 40% 40%}
+.kid .body{position:absolute;left:50%;bottom:0;width:58cqw;height:34cqw;margin-left:-29cqw;background:var(--shirt);border:1.5px solid var(--line);border-radius:20cqw 20cqw 6cqw 6cqw;transition:transform .35s ease;transform-origin:bottom}
+.kid .arm{position:absolute;right:4cqw;bottom:20cqw;width:9cqw;height:0;background:var(--shirt);border:1.5px solid var(--line);border-radius:6cqw;transition:height .25s ease;z-index:3}
+.kid.bow .head{transform:translateY(18cqw)}
+.kid.bow .body{transform:scaleY(.82)}
+.kid.nod .head{transform:translateY(6cqw)}
+.kid.hand .arm{height:36cqw;background:var(--warn-soft);border-color:var(--warn)}
+.kid.me .body{background:var(--violet-soft);border-color:var(--violet)}
+.kid.me::after{content:"Bạn";position:absolute;left:50%;top:-20cqw;transform:translateX(-50%);font-size:max(10px,18cqw);font-weight:700;color:var(--violet);white-space:nowrap}
+.kid.focus .head{box-shadow:0 0 0 3cqw var(--violet-soft),0 0 0 5cqw var(--violet)}
+.doorrow{display:flex;align-items:center;gap:12px;font-size:13px;color:var(--muted);min-height:64px}
+.door{width:58px;height:62px;position:relative;container-type:inline-size;flex:none}
+.door .kid{bottom:0}
+.float{position:absolute;pointer-events:none;font-weight:700;font-size:14px;color:var(--violet);white-space:nowrap;animation:up 1.4s ease-out forwards;z-index:9;transform:translateX(-50%)}
+@keyframes up{from{opacity:1;translate:0 0}to{opacity:0;translate:0 -46px}}
+
+.actions{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}
+@media (max-width:560px){.actions{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.act{all:unset;cursor:pointer;display:grid;justify-items:center;align-content:start;gap:4px;padding:10px 4px;border-radius:10px;background:var(--paper-2);border:1px solid var(--line);text-align:center;font-size:13px;font-weight:600;line-height:1.2}
+.act:hover{border-color:var(--violet)}
+.act:focus-visible{outline:2px solid var(--violet);outline-offset:2px}
+.act.on{border-color:var(--warn);background:var(--warn-soft)}
+.act svg{width:26px;height:26px;stroke:var(--violet);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.act.on svg{stroke:var(--warn)}
+.act small{font-weight:400;color:var(--muted);font-size:11px}
+.toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:13px}
+.btn{all:unset;cursor:pointer;padding:7px 12px;border-radius:8px;border:1px solid var(--line);background:var(--paper-2);font-size:13px;font-weight:600}
+.btn:hover{border-color:var(--violet)}
+.btn:focus-visible{outline:2px solid var(--violet);outline-offset:2px}
+.btn.primary{background:var(--violet);color:var(--paper-2);border-color:var(--violet)}
+.btn.on{background:var(--violet-soft);border-color:var(--violet);color:var(--violet)}
+
+.overlay{position:absolute;inset:0;background:color-mix(in srgb,var(--floor) 88%,transparent);display:grid;place-items:center;padding:16px;z-index:20}
+.namerow{display:flex;gap:8px}
+.namerow input{flex:1;min-width:0;font:inherit;font-size:16px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--paper);color:inherit}
+.sexpick{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.sexpick button{display:grid;justify-items:center;gap:6px;padding:14px 8px;font-size:18px}
+.sexpick svg{width:64px;height:64px}
+.card{background:var(--paper-2);border:1px solid var(--line);border-radius:12px;padding:20px;max-width:440px;width:100%;display:grid;gap:14px;box-shadow:0 10px 30px rgba(0,0,0,.12)}
+.beads{display:flex;flex-wrap:wrap;gap:5px;justify-content:center}
+.bead{width:13px;height:13px;border-radius:50%;border:1.5px solid var(--wood-d);background:transparent}
+.bead.done{background:var(--violet);border-color:var(--violet)}
+.bead.now{background:var(--wood);transform:scale(1.25)}
+.flash{border:1px dashed var(--line);border-radius:10px;min-height:120px;display:grid;place-items:center;text-align:center;padding:16px;font-size:24px;font-weight:600}
+.flash.back{font-size:16px;font-weight:500;line-height:1.5}
+.flash small{display:block;font-size:13px;color:var(--muted);font-weight:400;margin-top:6px}
+.row{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+
+.side{display:grid;gap:14px}
+.panel{background:var(--paper-2);border:1px solid var(--line);border-radius:12px;padding:16px;display:grid;gap:10px}
+.panel h3{font-size:15px}
+.name{font-family:var(--f-display);font-size:24px;color:var(--violet);line-height:1.1}
+.kv{display:grid;grid-template-columns:1fr auto;gap:4px 12px;font-size:14px}
+.kv b{font-family:var(--f-num);font-variant-numeric:tabular-nums;font-weight:600;text-align:right}
+.steplist{display:grid;gap:7px;font-size:13px}
+.srow{display:grid;grid-template-columns:minmax(0,1fr) 44px;gap:4px 8px;align-items:center}
+.srow .lbl{min-width:0}
+.srow .lbl.mine{color:var(--violet);font-weight:700}
+.srow b{font-family:var(--f-num);font-variant-numeric:tabular-nums;font-weight:600;text-align:right;font-size:12px}
+.srow .bar{grid-column:1/-1;height:6px;border-radius:3px;background:var(--line);overflow:hidden}
+.srow .bar i{display:block;height:100%;background:var(--ok);transition:width .5s ease}
+.srow.hot .bar i{background:var(--warn)}
+.helpq{display:grid;gap:4px;font-size:13px;margin:0;padding-left:20px}
+.helpq li.me{color:var(--violet);font-weight:700}
+.quest{display:grid;grid-template-columns:18px 1fr auto;gap:8px;align-items:center;font-size:14px}
+.quest .box{width:16px;height:16px;border:1.5px solid var(--muted);border-radius:4px}
+.quest.done .box{background:var(--ok);border-color:var(--ok)}
+.quest.done span{text-decoration:line-through;color:var(--muted)}
+.quest b{font-family:var(--f-num);font-size:12px;color:var(--muted);font-weight:500}
+.timer{font-family:var(--f-num);font-size:30px;font-weight:600;font-variant-numeric:tabular-nums}
+.note{font-size:12px;color:var(--muted)}
+.toast{position:absolute;left:50%;bottom:14px;transform:translateX(-50%);background:var(--ink);color:var(--paper);padding:8px 14px;border-radius:8px;font-size:13px;max-width:92%;z-index:30;text-align:center}
+
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--paper-2)}
+table{border-collapse:collapse;width:100%;min-width:720px;font-size:14px}
+th,td{text-align:left;vertical-align:top;padding:12px 14px;border-bottom:1px solid var(--line)}
+th{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600;background:var(--paper)}
+tr:last-child td{border-bottom:0}
+td:first-child{font-weight:600}
+.arrow{color:var(--violet);font-weight:700}
+.was{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--line)}
+.groups{display:grid;gap:28px}
+.group{display:grid;grid-template-columns:180px minmax(0,1fr);gap:16px}
+@media (max-width:700px){.group{grid-template-columns:minmax(0,1fr)}}
+.group>h3{font-family:var(--f-display);font-weight:400;font-size:26px;color:var(--violet);line-height:1.1}
+.ins{display:grid;gap:14px}
+.in{display:grid;gap:4px;padding-bottom:14px;border-bottom:1px solid var(--line)}
+.in:last-child{border-bottom:0;padding-bottom:0}
+.in p{max-width:68ch}
+.in .so{font-size:14px;color:var(--violet);font-weight:600}
+.steps{display:grid;gap:12px;padding:0;margin:0;list-style:none}
+.steps li{display:grid;grid-template-columns:140px minmax(0,1fr);gap:14px;padding:14px 0;border-top:1px solid var(--line)}
+@media (max-width:600px){.steps li{grid-template-columns:minmax(0,1fr);gap:4px}}
+.steps .when{font-family:var(--f-display);font-size:22px;color:var(--violet);line-height:1.1}
+.metrics{display:flex;flex-wrap:wrap;gap:8px}
+.chip{font-size:13px;padding:5px 10px;border-radius:999px;border:1px solid var(--line);background:var(--paper-2)}
+.src{columns:2 320px;gap:24px;font-size:14px;padding-left:18px;margin:0}
+.src li{break-inside:avoid;margin-bottom:6px}
+.warnbox{border-left:3px solid var(--warn);padding:4px 0 4px 16px;display:grid;gap:8px;max-width:72ch}
+.warnbox ul{margin:0;padding-left:18px;display:grid;gap:6px}
+.stage{position:relative;height:clamp(360px,58vw,520px);border-radius:10px;overflow:hidden;background:var(--stage-bg);touch-action:none;user-select:none;-webkit-user-select:none}
+.stage canvas{display:block;width:100%;height:100%;cursor:grab}
+.stage canvas.drag{cursor:grabbing}
+.hud{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.bub{position:absolute;left:0;top:0;padding:4px 11px;border-radius:999px;font-size:12px;font-weight:500;white-space:nowrap;background:var(--bub-bg);color:var(--bub-fg);box-shadow:0 2px 8px rgba(0,0,0,.25);will-change:transform}
+.bub.me{background:var(--bub-me);font-weight:600}
+.bub.me b{opacity:.75;font-weight:500;margin-right:4px}
+.bub.ok{background:var(--bub-ok)}
+.bub.ta{background:var(--bub-ta)}
+.hint{position:absolute;left:10px;bottom:8px;margin:0;font-size:11px;color:var(--bub-fg);background:var(--bub-bg);padding:3px 8px;border-radius:6px;max-width:calc(100% - 140px);pointer-events:none}
+.camb{position:absolute;right:max(10px,env(safe-area-inset-right,0px));top:10px;background:var(--bub-bg);color:var(--bub-fg);border-color:transparent}
+.camb.on{background:var(--bub-me);color:var(--bub-fg)}
+.status{margin:0;font-size:13px;color:var(--muted);min-height:20px}
+.nogl{position:absolute;inset:0;display:grid;place-items:center;padding:24px;text-align:center;color:var(--bub-fg)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation-duration:.01s!important}}
+</style>
+
+<div class="wrap">
+
+<header class="hero">
+  <p class="eyebrow">Khóa AI Thực chiến · VinUni · cập nhật 03/11/2026</p>
+  <h1>Lớp Học Lặng</h1>
+  <p class="lede">Cơn sốt “đi chùa online” cuối tháng 10 cho thấy người trẻ muốn ngồi cạnh người khác mà không phải nói chuyện. Trang này rút insight từ trend đó và đổi chúng thành phòng lab online cho khóa AI Thực chiến: ngồi cùng nhau, làm theo từng bước, kẹt thì giơ tay, không cần chat.</p>
+  <div class="figs">
+    <div class="fig"><b>600.000</b><span>lượt vào chùa ảo Sansa trong 3 ngày đầu</span></div>
+    <div class="fig"><b>~4.700</b><span>người cùng ngồi trong chính điện sáng 30/10</span></div>
+    <div class="fig"><b>20 → 10.000</b><span>số bồ đoàn phải nới ra vì hàng chờ</span></div>
+    <div class="fig"><b>152.000</b><span>lượt xem một bài Threads tiếng Việt sau 7 giờ</span></div>
+  </div>
+</header>
+
+<section class="sec">
+  <div class="sec-head">
+    <p class="eyebrow">Điều chỉnh cho khóa học</p>
+    <h2>Từ “chùa online” sang phòng lab AI ở VinUni</h2>
+    <p class="muted">Học viên là người lớn, đến để làm ra agent chạy được, và giảng viên cần biết ai đang kẹt ở bước nào. Vì vậy phần game giữ không khí lặng của Sansa, bỏ những gì chỉ hợp với học sinh phổ thông hoặc livestream bán quà.</p>
+  </div>
+  <div class="tablewrap"><table>
+    <thead><tr><th>Phần</th><th>Bản trước</th><th>Bản cho AI Thực chiến</th><th>Lý do</th></tr></thead>
+    <tbody>
+      <tr><td>Sĩ số</td><td class="was">Cố định 30 bàn</td><td>Chọn 50, 100, 150, 200 hoặc 250 học viên. Từ 150 trở lên phòng thành giảng đường cuộn được, số trợ giảng tăng theo</td><td>Khớp các quy mô lớp thường mở của khóa</td></tr>
+      <tr><td>Bối cảnh phòng</td><td class="was">Phòng 07 · giờ tự học chung</td><td>Phòng thực hành 3D nhìn từ sau lưng nhân vật như Sansa: đi lại, ngồi ghế, chào, giơ tay. Chọn được cụm bàn dài, bàn tròn 5 người hoặc dãy hàng. Màn hình đầu phòng ghi buổi học, trợ giảng đi tới bàn đang kẹt</td><td>Khóa học có giáo trình theo buổi, không phải phòng tự học vô định</td></tr>
+      <tr><td>Nút chính</td><td class="was">Gõ bút “Tập trung +1”</td><td>Xong bước: bấm khi làm xong một bước lab, số bước hiện trên bàn</td><td>Con số tăng dần vẫn có, nhưng giờ đo đúng thứ khóa học cần</td></tr>
+      <tr><td>Nút mới</td><td>—</td><td>Giơ tay “Mình bị kẹt”: vào hàng chờ trợ giảng, không cần gõ chữ</td><td>Học viên ngại hỏi trước cả lớp. Giơ tay lặng lẽ giảm ngại</td></tr>
+      <tr><td>Bảng tiến độ</td><td>—</td><td>Đếm ẩn danh bao nhiêu người đã qua từng bước, bước nào nhiều người kẹt thì đổi màu</td><td>Giảng viên thấy cả lớp đang ở đâu, biết dừng lại giảng thêm chỗ nào</td></tr>
+      <tr><td>Chuỗi thẻ</td><td class="was">Từ vựng tiếng Anh</td><td>20 thuật ngữ AI: prompt, token, agent, RAG, MCP…</td><td>Ôn đúng nội dung khóa giữa các buổi</td></tr>
+      <tr><td>Tên ngẫu nhiên</td><td class="was">Cục tẩy, thước kẻ</td><td>Token thong thả, Prompt lơ đãng, Agent chăm chỉ</td><td>Hài hước theo đúng chủ đề khóa</td></tr>
+      <tr><td>Tiết học</td><td class="was">45 phút, trống trường</td><td>Phiên tập trung 25 hoặc 50 phút, chuông nhẹ báo hết</td><td>Trống trường gắn với phổ thông. Người đi học, đi làm quen nhịp 25 phút hơn</td></tr>
+      <tr><td>Livestream, hàng chờ phòng đầy</td><td class="was">Bình luận TikTok LIVE, xếp hàng vào phòng</td><td>Bỏ khỏi phòng lab. Hàng chờ chỉ còn ở phòng tự học mở giữa các buổi</td><td>Lớp có danh sách cố định, không cần khan hiếm giả</td></tr>
+      <tr><td>Danh tính</td><td>Ẩn danh hoàn toàn</td><td>Bạn cùng lớp thấy tên ngẫu nhiên. Giảng viên thấy tên thật để điểm danh</td><td>Giữ cảm giác thoải mái nhưng vẫn quản lý được lớp</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section class="sec" id="choi-thu">
+  <div class="sec-head">
+    <p class="eyebrow">Bản phác thảo · chơi thử được</p>
+    <h2>Phòng lab · Buổi 2: Dựng agent đầu tiên</h2>
+    <p class="muted">Các học viên khác là mô phỏng, nội dung 5 bước là ví dụ. Chọn sĩ số (50 đến 250) và kiểu bàn ở đầu phòng. Màn hình laptop trên mỗi bàn cho biết tiến độ: tối là chưa làm, xanh dương sáng dần theo bước, xanh lá là xong lab, cam kèm dấu chấm than là đang giơ tay. Trợ giảng áo xanh sẽ đi tới bàn đang kẹt.</p>
+  </div>
+
+  <div class="proto">
+    <div class="scene" id="scene">
+      <div class="pickers"><div class="sizes" role="group" aria-label="Sĩ số lớp"><span class="muted">Sĩ số:</span><button class="btn size" data-n="50">50</button><button class="btn size" data-n="100">100</button><button class="btn size" data-n="150">150</button><button class="btn size" data-n="200">200</button><button class="btn size" data-n="250">250</button></div>
+      <div class="sizes" role="group" aria-label="Kiểu bàn"><span class="muted">Kiểu bàn:</span><button class="btn tbl" data-t="island">Cụm bàn dài</button><button class="btn tbl" data-t="round">Bàn tròn 5 người</button><button class="btn tbl" data-t="rows">Dãy hàng ngang</button></div></div>
+      <div class="roombar">
+        <span>AI Thực chiến · <b id="occ">0</b>/<b id="cap">50</b> học viên trong phòng</span>
+        <span>Đang kẹt: <b id="stuckN">0</b> · Đã xong lab: <b id="doneN">0</b></span>
+      </div>
+      <div class="stage" id="stage">
+        <canvas id="cv" aria-label="Giảng đường 3D: kéo để xoay, bấm sàn để đi, bấm bàn trống để ngồi"></canvas>
+        <div class="hud" id="hud"></div>
+        <p class="hint">Kéo để xoay · cuộn để phóng to · bấm sàn để đi · bấm ghế tím (còn trống) để ngồi</p>
+        <button class="btn camb" id="bCam">Nhìn toàn phòng</button>
+      </div>
+      <p class="status" id="doorText">Bạn đang đứng ở cửa sau phòng thực hành. Bấm một ghế tím để đi tới và ngồi.</p>
+      <div class="actions">
+        <button class="act" id="aGreet"><svg viewBox="0 0 24 24"><path d="M12 3v5M8.5 9.5 12 13l3.5-3.5M6 21c0-4 2.7-6 6-6s6 2 6 6"/></svg>Chào<small>bạn gần nhất chào lại</small></button>
+        <button class="act" id="aSit"><svg viewBox="0 0 24 24"><path d="M4 14h16M6 14v6M18 14v6M7 10h10v4H7z"/></svg><span id="sitLabel">Vào chỗ</span><small>đi tới ghế trống gần nhất</small></button>
+        <button class="act" id="aStep"><svg viewBox="0 0 24 24"><path d="M5 12.5 10 17l9-10"/></svg>Xong bước<small id="stepLabel">bước 1/5</small></button>
+        <button class="act" id="aHand"><svg viewBox="0 0 24 24"><path d="M8 13V5.5a1.5 1.5 0 0 1 3 0V11M11 10V4.5a1.5 1.5 0 0 1 3 0V11M14 10.5V6a1.5 1.5 0 0 1 3 0v8a6 6 0 0 1-6 6h-.5a5.5 5.5 0 0 1-4.6-2.5L4 14.5a1.5 1.5 0 0 1 2.5-1.7L8 15"/></svg><span id="handLabel">Giơ tay</span><small>mình bị kẹt</small></button>
+        <button class="act" id="aBeads"><svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="2"/><circle cx="10" cy="7" r="2"/><circle cx="16" cy="6" r="2"/><circle cx="20" cy="11" r="2"/><circle cx="17" cy="17" r="2"/><circle cx="11" cy="18" r="2"/></svg>Lần thẻ<small>20 thuật ngữ AI</small></button>
+      </div>
+    </div>
+    <aside class="side">
+      <div class="panel">
+        <h3>Tiến độ cả lớp</h3>
+        <div class="steplist" id="steplist"></div>
+        <p class="note" id="hotNote">Chỉ đếm số người, không hiện tên.</p>
+      </div>
+      <div class="panel">
+        <h3>Hàng chờ trợ giảng</h3>
+        <ol class="helpq" id="helpq"></ol>
+        <p class="note" id="helpNote"></p>
+      </div>
+      <div class="panel">
+        <p class="eyebrow">Tên của bạn trong phòng</p>
+        <div class="name" id="myName">…</div>
+        <button class="btn" id="bRename" style="justify-self:start">Đổi tên khác</button>
+        <div class="sizes" role="group" aria-label="Kiểu nhân vật"><span class="muted">Nhân vật:</span><button class="btn sex" data-s="nam">Nam</button><button class="btn sex" data-s="nu">Nữ</button></div>
+        <p class="note">Bạn cùng lớp chỉ thấy tên này. Giảng viên thấy tên thật để điểm danh.</p>
+      </div>
+      <div class="panel">
+        <h3>Phiên tập trung</h3>
+        <div class="timer" id="timer">25:00</div>
+        <div class="toolbar">
+          <button class="btn on" id="t25">25 phút</button>
+          <button class="btn" id="t50">50 phút</button>
+          <button class="btn" id="tFast">Tua ×60</button>
+        </div>
+        <button class="btn primary" id="tStart" style="justify-self:start">Bắt đầu phiên</button>
+        <p class="note">Bản tương đương “108 lạy”: một vòng có đầu có cuối, hết giờ có chuông.</p>
+      </div>
+      <div class="panel">
+        <h3>Nhiệm vụ buổi này</h3>
+        <div class="quest" id="q1"><span class="box"></span><span>Làm xong 5 bước lab</span><b id="q1n">0/5</b></div>
+        <div class="quest" id="q2"><span class="box"></span><span>Lần hết chuỗi thuật ngữ</span><b id="q2n">0/20</b></div>
+        <div class="quest" id="q3"><span class="box"></span><span>Ngồi trọn một phiên</span><b id="q3n">0/1</b></div>
+        <div class="kv" style="margin-top:4px">
+          <span>Lời chào nhận lại</span><b id="sGreet">0</b>
+          <span>Lần giơ tay</span><b id="sHand">0</b>
+        </div>
+      </div>
+    </aside>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="sec-head"><p class="eyebrow">Đọc trong 30 giây</p><h2>Ba điều từ chùa online đáng mang vào khóa học</h2></div>
+  <div class="three">
+    <div class="take"><span class="tag">Có bạn, không cần nói</span><p>Sansa bỏ hẳn ô chat. Người ta vào để thấy hàng trăm người khác cũng đang ngồi yên. Nhiều người Việt mở trang làm nền khi chạy deadline. Trong khóa học, đó là cảm giác “cả lớp đang cùng làm lab” mà không bị ồn.</p></div>
+    <div class="take"><span class="tag">Nghi thức nhỏ, có đếm</span><p>Chắp tay, lạy, gõ mõ, lần 108 hạt. Mỗi thao tác một chạm, có con số tăng dần. Trong lab, “Xong bước” và chuỗi thẻ thuật ngữ đóng vai đó.</p></div>
+    <div class="take"><span class="tag">Đông người nhìn thấy được</span><p>Ảnh chính điện kín chú tiểu được chụp lại để chia sẻ. Ảnh phòng lab kín học viên kèm bảng tiến độ là nội dung truyền thông sẵn có cho khóa sau.</p></div>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="sec-head"><p class="eyebrow">Bức tranh hiện tại</p><h2>Năm dạng “đi chùa online” đang chạy</h2><p class="muted">Cột cuối là điều khóa học nên lấy hoặc tránh.</p></div>
+  <div class="tablewrap"><table>
+    <thead><tr><th>Dạng</th><th>Ví dụ</th><th>Cơ chế chính</th><th>Vì sao người dùng thích</th><th>Bài học cho khóa học</th></tr></thead>
+    <tbody>
+      <tr><td>Web tĩnh lặng</td><td>Sansa (Hàn Quốc), các bản nhà thờ Chanmi, Goyottul theo sau</td><td>Vào bằng link, tự cấp chú tiểu và tên ngẫu nhiên, 4 nút: chắp tay, lạy, mõ, tràng hạt. Không chat. Phòng 100 bồ đoàn, đầy thì xếp hàng</td><td>Yên, không bị ai hỏi han, dễ thương, đông người</td><td>Lấy khung: không chat, vài nút đếm được, vào bằng một link</td></tr>
+      <tr><td>Game nhập vai Việt</td><td>Niệm Phật Online, Đi Chùa Online FOX9</td><td>Tạo nhân vật, dâng hương, thả đèn, nhiệm vụ ngày/tuần, cấp độ, sưu tập hoa sen, bảng xếp hạng</td><td>Vui, nhiều trò đùa, có cái để cày</td><td>Lấy nhiệm vụ theo buổi. Bỏ bảng xếp hạng cá nhân để người chậm không ngại</td></tr>
+      <tr><td>Livestream TikTok tương tác</td><td>Chùa Linh Ứng Online, Chánh Điện Tịnh Tâm, Diệu Liên Đài</td><td>Tim gõ mõ, bình luận cho nhân vật lên lạy, quà theo xu kích hoạt hiệu ứng, bảng vàng công đức</td><td>Được thấy tên mình trên màn hình</td><td>Không dùng trong lớp. Có thể dùng cho buổi giới thiệu khóa miễn phí</td></tr>
+      <tr><td>Đồ chơi một nút</td><td>Mõ điện tử 电子木鱼 (Trung Quốc)</td><td>Chạm là kêu “cốc”, hiện “Công đức +1”, chữ tùy chỉnh được</td><td>Xả stress khi làm bài</td><td>Âm thanh giòn, phản hồi tức thì khi bấm “Xong bước”</td></tr>
+      <tr><td>Map trong game lớn</td><td>Map viếng chùa trong Roblox</td><td>Rủ bạn thân đi cùng, khám phá, dùng vật phẩm</td><td>Đi theo nhóm bạn</td><td>Phòng nhóm cho bài tập multi-agent làm theo đội</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section class="sec">
+  <div class="sec-head"><p class="eyebrow">Insight chi tiết</p><h2>Người ta vào vì gì, ở lại vì gì, chia sẻ vì gì</h2></div>
+  <div class="groups">
+    <div class="group"><h3>Cảm xúc</h3><div class="ins">
+      <div class="in"><h3>Muốn có người bên cạnh nhưng không muốn giao tiếp</h3><p>Người làm Sansa là một bạn 26 tuổi đang tìm việc, quá mệt để tự lên chùa. Anh cho rằng người hiện đại vừa căng thẳng vừa sợ cô đơn, nên một chỗ đông người mà không ai bắt chuyện lại vừa vặn.</p><p class="so">→ Phòng lab không chat chung. Hỏi bài đi qua nút Giơ tay, trợ giảng trả lời riêng.</p></div>
+      <div class="in"><h3>Nghỉ ngắn, ra vào nhiều lần trong ngày</h3><p>Phản hồi trên Threads xoay quanh chuyện nằm trên giường vẫn làm đủ 108 lạy, ghé vào trước giờ đi làm, ra vào vài lần mỗi ngày.</p><p class="so">→ Giữa các buổi, mở phòng tự học để học viên vào làm nốt lab và lần thẻ, mỗi lần 25 phút.</p></div>
+      <div class="in"><h3>Không cần là Phật tử</h3><p>Người làm Sansa không theo đạo Phật. Trong một tuần đã có bản nhà thờ Công giáo và Tin Lành dùng cùng khuôn: một phòng chung, vài nghi thức nhỏ, không áp lực nói chuyện.</p><p class="so">→ Khuôn này không phụ thuộc tôn giáo, dùng cho phòng lab được.</p></div>
+    </div></div>
+
+    <div class="group"><h3>Cơ chế</h3><div class="ins">
+      <div class="in"><h3>Không có rào cản nào ở cửa</h3><p>Không cài app, không đăng nhập. Mở link là thành một chú tiểu với tên ghép vừa thơ vừa buồn cười.</p><p class="so">→ Một link cho mỗi buổi. Đăng nhập bằng email chỉ để giảng viên điểm danh.</p></div>
+      <div class="in"><h3>Ít nút, mỗi nút một con số</h3><p>Sansa chỉ có bốn biểu tượng, dùng được dù không đọc tiếng Hàn. Tràng hạt có bộ đếm đến 108.</p><p class="so">→ Năm nút. Chuỗi thẻ là một vòng tràng hạt. Số bước hiện ngay trên bàn.</p></div>
+      <div class="in"><h3>Ai cũng giống nhau</h3><p>Mọi người cùng một hình chú tiểu, cùng áo. Không ai nổi hơn ai.</p><p class="so">→ Học viên cùng một hình. Bảng tiến độ đếm số người, không xếp hạng.</p></div>
+      <div class="in"><h3>Sửa theo người dùng trong vài ngày</h3><p>Tiếng mõ chung bị chê ồn nên bị bỏ, thay bằng mõ riêng. Người dùng ngồi chồng lên nhau nên có luật mỗi bồ đoàn một người.</p><p class="so">→ Âm thanh của mình chỉ mình nghe. Cuối mỗi buổi hỏi học viên một câu để sửa buổi sau.</p></div>
+    </div></div>
+
+    <div class="group"><h3>Lan truyền</h3><div class="ins">
+      <div class="in"><h3>Chật chội là thứ để khoe</h3><p>Cảnh xếp hàng vào chính điện, server sập vì quá tải, thành meme ở cả Hàn và Việt Nam.</p><p class="so">→ Ảnh phòng lab kín học viên, kèm câu đùa theo tên ngẫu nhiên, là bài đăng tuyển sinh khóa sau.</p></div>
+      <div class="in"><h3>Bản Việt thì vui và ồn hơn</h3><p>Niệm Phật Online thêm nhiệm vụ, cấp độ, hoa sen để nhặt, kéo theo nhiều trò đùa của người chơi. Vui, dễ lan, nhưng xa dần cảm giác tĩnh.</p><p class="so">→ Giữ nhiệm vụ theo buổi. Bỏ cạnh tranh cá nhân.</p></div>
+    </div></div>
+
+    <div class="group"><h3>Rủi ro</h3><div class="ins">
+      <div class="in"><h3>Tiền và điểm gắn với nhau bị soi kỹ</h3><p>Các bộ livestream chùa trên TikTok quy đổi quà xu thành “điểm công đức” và bảng vàng. Báo Hànộimới ngày 2/11 cảnh báo nguy cơ thương mại hóa niềm tin.</p><p class="so">→ Điểm trong lab chỉ ghi lại việc đã làm, không quy đổi, không bán.</p></div>
+      <div class="in"><h3>Làm nhanh thì sập nhanh</h3><p>Sansa được dựng bằng vibe coding trong khoảng nửa giờ, bản đầu chỉ có 20 bồ đoàn rồi sập vì quá tải.</p><p class="so">→ Thử với một nhóm nhỏ trước buổi thật. Đây cũng là một ví dụ “AI thực chiến” để kể trong buổi 1.</p></div>
+    </div></div>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="sec-head"><p class="eyebrow">Ranh giới</p><h2>Những điều cần thống nhất trước khi chạy ở VinUni</h2></div>
+  <div class="warnbox">
+    <ul>
+      <li>Dữ liệu học viên: chỉ lưu tên, email, bước đã xong, số lần giơ tay. Không lưu nội dung prompt học viên viết, trừ khi họ tự nộp.</li>
+      <li>Tài liệu dùng trong lab nên là tài liệu mẫu hoặc công khai, để học viên không dán dữ liệu nội bộ vào ChatGPT, Claude, Gemini.</li>
+      <li>Không có quà, xu hay điểm đổi thưởng. Nhiệm vụ chỉ để học viên tự theo dõi.</li>
+      <li>Ngôn ngữ giao diện: thống nhất tiếng Việt, tiếng Anh hay song ngữ, vì VinUni dạy chủ yếu bằng tiếng Anh.</li>
+    </ul>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="sec-head"><p class="eyebrow">Lộ trình gợi ý</p><h2>Gắn vào lịch khóa học</h2></div>
+  <ol class="steps">
+    <li><span class="when">Trước buổi 1</span><div><h3>Phòng lab một phòng, năm nút</h3><p class="muted">Đúng như bản phác thảo này. Nạp 5 bước của từng buổi và bộ thẻ thuật ngữ. Chạy thử với 3–5 người.</p></div></li>
+    <li><span class="when">Trong buổi</span><div><h3>Giảng viên nhìn bảng tiến độ</h3><p class="muted">Đồng bộ theo thời gian thực qua WebSocket. Trợ giảng xử lý hàng chờ giơ tay. Khi một bước chuyển cam, giảng viên dừng lại giảng chung.</p></div></li>
+    <li><span class="when">Giữa các buổi</span><div><h3>Phòng tự học mở cả ngày</h3><p class="muted">Học viên vào làm nốt lab, lần thẻ, ngồi phiên 25 phút cùng bạn cùng khóa. Chỗ này mới cần hàng chờ nếu đông.</p></div></li>
+    <li><span class="when">Cuối khóa</span><div><h3>Báo cáo tham gia</h3><p class="muted">Mỗi học viên nhận tóm tắt: bước đã xong, phiên đã ngồi, thuật ngữ đã ôn. Giảng viên nhận danh sách bước hay kẹt nhất để sửa giáo trình.</p></div></li>
+  </ol>
+  <div class="sec-head" style="margin-top:8px"><h3>Nên đo những gì</h3></div>
+  <div class="metrics">
+    <span class="chip">Tỉ lệ làm xong từng bước</span><span class="chip">Bước có nhiều người giơ tay nhất</span><span class="chip">Thời gian chờ trợ giảng</span><span class="chip">Số lần vào phòng tự học giữa các buổi</span><span class="chip">Tỉ lệ ngồi trọn một phiên</span><span class="chip">Số thuật ngữ đã ôn</span>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="sec-head"><p class="eyebrow">Nguồn</p><h2>Đã đọc để viết trang này</h2></div>
+  <ul class="src">
+    <li><a href="https://beautipin.com/blogs/magazine/sansa-online-temple-korea" target="_blank" rel="noopener">BeautiPin Seoul — Sansa hoạt động thế nào</a></li>
+    <li><a href="https://asianews.network/finding-peace-one-click-at-a-time-ai-made-virtual-sanctuaries-draw-young-south-koreans/" target="_blank" rel="noopener">Asia News Network / Korea Herald — chùa và nhà thờ ảo</a></li>
+    <li><a href="https://en.koreadaily.com/ai-web-service-virtual-buddhist-temple/" target="_blank" rel="noopener">Korea Daily — 1 triệu người dùng trong một tuần</a></li>
+    <li><a href="https://www.segye.com/newsView/20261031505444?OutUrl=google" target="_blank" rel="noopener">Segye Ilbo — phỏng vấn người làm Sansa</a></li>
+    <li><a href="https://news.bbsi.co.kr/news/articleView.html?idxno=4115928" target="_blank" rel="noopener">BBS — bỏ mõ chung, thêm mõ riêng</a></li>
+    <li><a href="https://www.daejonilbo.com/news/articleView.html?idxno=2310493" target="_blank" rel="noopener">Daejon Ilbo — cúng gạo, hàng chờ chính điện</a></li>
+    <li><a href="https://news.tuoitre.vn/virtual-temples-go-viral-in-south-korea-vietnam-what-sets-the-games-apart-103261102090614184.htm" target="_blank" rel="noopener">Tuoi Tre News — Sansa và Niệm Phật Online</a></li>
+    <li><a href="https://cafef.vn/con-sot-dang-hot-nhat-tren-mxh-chua-online-khong-cho-noi-chuyen-100000-nguoi-tre-han-quoc-van-chen-nhau-vao-ngoi-188261031115339784.chn" target="_blank" rel="noopener">CafeF — bài Threads 152.000 lượt xem</a></li>
+    <li><a href="https://baomoi.com/con-sot-di-chua-online-thu-hut-hang-tram-nghin-nguoi-tham-gia-le-phat-c56413014.epi" target="_blank" rel="noopener">VTC News — 4.700 người cùng lúc</a></li>
+    <li><a href="https://gocnhinphaply.nguoiduatin.vn/con-sot-chua-truc-tuyen-khong-o-chat-hang-tram-nghin-nguoi-tre-chen-chan-tim-su-tinh-lang-55245.html" target="_blank" rel="noopener">Người Đưa Tin — mở làm nền khi chạy deadline</a></li>
+    <li><a href="https://dientuungdung.vn/chua-online-la-gi-ma-nguoi-dung-phai-xep-hang-cho-vao-chua-19333.html" target="_blank" rel="noopener">Điện tử Ứng dụng — FOX9, hàng chờ 800 người</a></li>
+    <li><a href="https://hanoimoi.vn/ky-la-gioi-tre-ru-nhau-di-chua-online-va-ranh-gioi-giua-tam-linh-voi-giai-tri-1763851.html" target="_blank" rel="noopener">Hànộimới — cảnh báo thương mại hóa niềm tin</a></li>
+    <li><a href="https://znews.vn/thanh-nien-that-nghiep-tao-trend-di-chua-online-hut-600000-nguoi-post1693215.html" target="_blank" rel="noopener">Znews — nhà thờ ảo Chanmi, Goyottul</a></li>
+    <li><a href="https://dotrungquan.info/setup-chua-online-tiktok-live-temple-rpc/" target="_blank" rel="noopener">Đỗ Trung Quân — cơ chế chùa online trên TikTok LIVE</a></li>
+    <li><a href="https://www.tiktok.com/discover/game-%C4%91i-ch%C3%B9a-trong-roblox" target="_blank" rel="noopener">TikTok — game đi chùa trong Roblox</a></li>
+    <li><a href="https://www.sixthtone.com/news/1011740" target="_blank" rel="noopener">Sixth Tone — mõ điện tử ở Trung Quốc</a></li>
+    <li><a href="https://daoinsights.com/news/muyu-becomes-chinese-gen-zs-new-obsession-for-relieving-stress/" target="_blank" rel="noopener">Dao Insights — chữ “+1” tùy chỉnh</a></li>
+  </ul>
+</section>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(function(){
+  const NOUNS=["Token","Prompt","Agent","Con trỏ","Bàn phím","Ly cà phê","Dấu nháy","Tab trình duyệt","Notebook","Câu lệnh","Workflow","Vector","Checklist","Bản nháp"];
+  const ADJ=["thong thả","chăm chỉ","lơ đãng","tỉnh táo","lặng lẽ","mơ màng","buồn ngủ","kiên nhẫn","bình tĩnh","hay quên","tò mò","cần mẫn"];
+  const pick=a=>a[Math.floor(Math.random()*a.length)];
+  const rname=()=>pick(NOUNS)+" "+pick(ADJ);
+  const STEPS=["Chọn công cụ: ChatGPT, Claude hoặc Gemini","Viết hướng dẫn vai trò cho agent","Gắn tài liệu nguồn mẫu","Bật công cụ tìm kiếm web","Chạy thử và tự kiểm tra kết quả"];
+  const DECK=[
+    ["Prompt","Câu lệnh, yêu cầu bạn gửi cho mô hình AI."],
+    ["System prompt","Hướng dẫn nền đặt vai trò và luật cho AI trong cả cuộc trò chuyện."],
+    ["Token","Mẩu chữ nhỏ mà mô hình đọc và viết; giới hạn và chi phí tính theo token."],
+    ["Context window","Lượng chữ tối đa mô hình nhìn thấy cùng lúc."],
+    ["Hallucination","Khi AI bịa ra thông tin nghe có vẻ đúng nhưng sai."],
+    ["Agent","AI tự lên kế hoạch và dùng công cụ để hoàn thành một việc nhiều bước."],
+    ["Tool use","AI gọi công cụ bên ngoài: tìm web, chạy code, đọc file."],
+    ["Workflow","Chuỗi bước cố định nối các lần gọi AI với nhau."],
+    ["Multi-agent","Nhiều agent chia vai, phối hợp làm một việc lớn."],
+    ["Orchestrator","Agent điều phối, giao việc cho các agent khác."],
+    ["RAG","Tìm tài liệu liên quan rồi đưa vào prompt để AI trả lời dựa trên đó."],
+    ["Embedding","Biểu diễn đoạn văn thành dãy số để so độ giống nhau về nghĩa."],
+    ["MCP","Chuẩn kết nối giúp AI dùng công cụ và dữ liệu từ ứng dụng khác."],
+    ["Memory","Thông tin AI giữ lại qua nhiều lần trò chuyện."],
+    ["Few-shot","Đưa vài ví dụ mẫu trong prompt để AI làm theo."],
+    ["Temperature","Mức ngẫu nhiên khi AI chọn chữ; thấp thì ổn định, cao thì sáng tạo."],
+    ["Eval","Bộ bài kiểm tra để chấm agent làm đúng hay sai."],
+    ["Guardrail","Luật chặn để AI không làm điều ngoài phạm vi cho phép."],
+    ["Human-in-the-loop","Con người duyệt trước khi agent làm bước quan trọng."],
+    ["Structured output","Bắt AI trả kết quả theo khuôn cố định như bảng hoặc JSON."]
+  ];
+  const TYPE_NAME={island:"cụm bàn",round:"bàn tròn",rows:"dãy"};
+  const $=id=>document.getElementById(id);
+  const sceneEl=$("scene"), stage=$("stage"), cv=$("cv"), hud=$("hud");
+
+  let N=50, TYPE="island", TAS=1, HOT=3, GEN=0;
+  let seats=[], tables=[], queue=[];
+  let mySex=(()=>{try{return localStorage.getItem("lhl-sex")||"";}catch(e){return "";}})();
+  let myName=(()=>{try{return localStorage.getItem("lhl-name")||"";}catch(e){return "";}})()||rname(), myStep=0, myHand=false, mySeat=-1;
+  const st={card:0,sess:0,greet:0,hand:0};
+  $("myName").textContent=myName;
+  function toast(msg){const t=document.createElement("div");t.className="toast";t.textContent=msg;sceneEl.appendChild(t);setTimeout(()=>t.remove(),2600);}
+  const esc=s=>String(s).replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
+
+  let ac=null;
+  function actx(){try{ if(!ac) ac=new (window.AudioContext||window.webkitAudioContext)(); if(ac.state==="suspended") ac.resume(); return ac;}catch(e){return null;}}
+  function knock(v){const a=actx(); if(!a) return; const o=a.createOscillator(), g=a.createGain(); o.type="triangle"; o.frequency.setValueAtTime(900,a.currentTime); o.frequency.exponentialRampToValueAtTime(380,a.currentTime+.08); g.gain.setValueAtTime((v||1)*.35,a.currentTime); g.gain.exponentialRampToValueAtTime(.001,a.currentTime+.14); o.connect(g).connect(a.destination); o.start(); o.stop(a.currentTime+.16);}
+  function bell(){const a=actx(); if(!a) return; [660,990,1320].forEach((f,n)=>{const o=a.createOscillator(), g=a.createGain(); const t=a.currentTime; o.type="sine"; o.frequency.value=f; g.gain.setValueAtTime(.25/(n+1),t); g.gain.exponentialRampToValueAtTime(.001,t+2.2); o.connect(g).connect(a.destination); o.start(t); o.stop(t+2.3);});}
+
+  if(!window.THREE){ stage.insertAdjacentHTML("beforeend",'<div class="nogl">Không tải được thư viện 3D. Tải lại trang để thử lại.</div>'); return; }
+  const T=THREE;
+  let renderer;
+  try{ renderer=new T.WebGLRenderer({canvas:cv,antialias:true}); }
+  catch(e){ stage.insertAdjacentHTML("beforeend",'<div class="nogl">Trình duyệt này không chạy được đồ họa 3D (WebGL).</div>'); return; }
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
+  renderer.outputEncoding=T.sRGBEncoding;
+  const scene=new T.Scene();
+  scene.background=new T.Color(0x23262b);
+  scene.fog=new T.Fog(0x23262b,24,80);
+  const camera=new T.PerspectiveCamera(48,1,0.1,200);
+  scene.add(new T.HemisphereLight(0xffffff,0x8a8177,0.95));
+  const sun=new T.DirectionalLight(0xffffff,0.55); sun.position.set(5,14,6); scene.add(sun);
+  const cool=new T.DirectionalLight(0xdfe8ff,0.25); cool.position.set(-8,6,-6); scene.add(cool);
+
+  function canvasTex(w,h,draw){const c=document.createElement("canvas");c.width=w;c.height=h;draw(c.getContext("2d"),w,h);const t=new T.CanvasTexture(c);t.encoding=T.sRGBEncoding;return {tex:t,canvas:c};}
+  const floorTex=canvasTex(256,256,(x,w,h)=>{x.fillStyle="#b9bbb8";x.fillRect(0,0,w,h);for(let i=0;i<5000;i++){const v=170+Math.random()*30|0;x.fillStyle="rgb("+v+","+(v+2)+","+v+")";x.fillRect(Math.random()*w,Math.random()*h,1.5,1.5);}x.fillStyle="rgba(0,0,0,.08)";x.fillRect(0,0,w,1);x.fillRect(0,0,1,h);}).tex;
+  floorTex.wrapS=floorTex.wrapT=T.RepeatWrapping;
+  const slatTex=canvasTex(256,64,(x,w,h)=>{for(let i=0;i<16;i++){x.fillStyle=i%2?"#c79b6c":"#bb8d5e";x.fillRect(i*16,0,14,h);x.fillStyle="#5e4430";x.fillRect(i*16+14,0,2,h);}}).tex;
+  slatTex.wrapS=T.RepeatWrapping;
+  const alertTex=canvasTex(64,64,(x)=>{x.fillStyle="#F08A3E";x.beginPath();x.arc(32,32,28,0,7);x.fill();x.fillStyle="#fff";x.font="bold 40px sans-serif";x.textAlign="center";x.textBaseline="middle";x.fillText("!",32,34);}).tex;
+  const tv=canvasTex(1024,576,()=>{});
+  const wb=canvasTex(768,512,()=>{});
+  let tvLine="Làm lặng lẽ · kẹt thì giơ tay", tvProg=0;
+  function drawTV(){
+    const x=tv.canvas.getContext("2d"), w=1024, h=576;
+    x.fillStyle="#0E1726"; x.fillRect(0,0,w,h);
+    x.fillStyle="#17233A"; x.fillRect(0,0,w,70);
+    x.textBaseline="middle"; x.textAlign="left"; x.fillStyle="#9FB3D1"; x.font='500 28px "Be Vietnam Pro", system-ui, sans-serif'; x.fillText("AI Thực chiến · VinUni",32,36);
+    x.textAlign="right"; x.fillStyle="#FFFFFF"; x.font='700 30px "Be Vietnam Pro", system-ui, sans-serif'; x.fillText("Mã điểm danh: 4X7Q",w-32,36);
+    x.textAlign="center"; x.fillStyle="#FFFFFF"; x.font='700 62px "Be Vietnam Pro", system-ui, sans-serif'; x.fillText("Buổi 2 · Dựng agent đầu tiên",w/2,220);
+    x.fillStyle="#C7D2E3"; x.font='400 36px "Be Vietnam Pro", system-ui, sans-serif'; x.fillText(tvLine,w/2,300);
+    if(tvProg>0){ x.fillStyle="#24324D"; x.fillRect(180,380,w-360,14); x.fillStyle="#8F73E6"; x.fillRect(180,380,(w-360)*tvProg,14); }
+    tv.tex.needsUpdate=true;
+  }
+  function drawWB(){
+    const x=wb.canvas.getContext("2d"), w=768, h=512;
+    x.fillStyle="#F6F8F7"; x.fillRect(0,0,w,h);
+    x.fillStyle="#2A4FB5"; x.textAlign="left"; x.textBaseline="alphabetic";
+    x.font='72px "Patrick Hand", "Comic Sans MS", cursive'; x.fillText("AI Thực chiến",40,100);
+    x.font='46px "Patrick Hand", "Comic Sans MS", cursive';
+    x.fillText("Agent = LLM + Tools + Memory",40,190);
+    x.fillText("Prompt → Kế hoạch → Làm → Kiểm tra",40,270);
+    x.fillText("Kẹt? Giơ tay, đừng ngại",40,350);
+    x.strokeStyle="#C0392B"; x.lineWidth=4; x.beginPath(); x.ellipse(372,174,100,40,0,0,Math.PI*2); x.stroke();
+    wb.tex.needsUpdate=true;
+  }
+  drawTV(); drawWB(); if(document.fonts&&document.fonts.ready) document.fonts.ready.then(()=>{drawTV();drawWB();});
+
+  const M={
+    skin:new T.MeshLambertMaterial({color:0xe8b88f}),
+    hair:new T.MeshLambertMaterial({color:0x2a211c}),
+    hairD:new T.MeshLambertMaterial({color:0x2a211c,side:T.DoubleSide}),
+    shirt:new T.MeshLambertMaterial({color:0xeceeea}),
+    vest:new T.MeshLambertMaterial({color:0xd9cfa8}),
+    me:new T.MeshLambertMaterial({color:0x7a5bd4}),
+    ta:new T.MeshLambertMaterial({color:0x2f7f72}),
+    pants:new T.MeshLambertMaterial({color:0x3b4352}),
+    eye:new T.MeshBasicMaterial({color:0x1b1b1b}),
+    shadow:new T.MeshBasicMaterial({color:0x000000,transparent:true,opacity:.22,depthWrite:false}),
+    floor:new T.MeshLambertMaterial({map:floorTex}),
+    wall:new T.MeshLambertMaterial({color:0xf0f0ec}),
+    ceil:new T.MeshLambertMaterial({color:0xe6e6e2}),
+    white:new T.MeshLambertMaterial({color:0xffffff}),
+    tabletop:new T.MeshLambertMaterial({color:0xf4f4f1}),
+    metal:new T.MeshLambertMaterial({color:0x8d9096}),
+    black:new T.MeshLambertMaterial({color:0x1e2023}),
+    screen:new T.MeshBasicMaterial({color:0xffffff}),
+    laptop:new T.MeshLambertMaterial({color:0x2c3138}),
+    tv:new T.MeshBasicMaterial({map:tv.tex}),
+    wb:new T.MeshBasicMaterial({map:wb.tex}),
+    door:new T.MeshLambertMaterial({color:0x8a6a4c}),
+    alert:new T.SpriteMaterial({map:alertTex})
+  };
+  const G={
+    head:new T.SphereGeometry(0.3,22,16),
+    hair:new T.SphereGeometry(0.312,22,10,0,Math.PI*2,0,Math.PI*0.45),
+    hairLong:new T.CylinderGeometry(0.318,0.35,0.5,22,1,true,Math.PI*0.5,Math.PI),
+    bun:new T.SphereGeometry(0.11,12,10),
+    body:new T.CylinderGeometry(0.17,0.25,0.46,14),
+    vest:new T.CylinderGeometry(0.175,0.255,0.24,14),
+    arm:new T.CylinderGeometry(0.055,0.05,0.32,8),
+    leg:new T.CylinderGeometry(0.07,0.07,0.28,8),
+    eye:new T.SphereGeometry(0.03,8,6),
+    shadow:new T.CircleGeometry(0.3,18)
+  };
+
+  // ---------- characters ----------
+  const kids=[];
+  function makeKid(kind,sex){
+    const g=new T.Group();
+    const shirt=kind==="me"?M.me:kind==="ta"?M.ta:M.shirt;
+    const shadow=new T.Mesh(G.shadow,M.shadow); shadow.rotation.x=-Math.PI/2; shadow.position.y=0.012; g.add(shadow);
+    const legL=new T.Mesh(G.leg,M.pants); legL.position.set(-0.09,0.14,0); const legR=new T.Mesh(G.leg,M.pants); legR.position.set(0.09,0.14,0); g.add(legL,legR);
+    const hip=new T.Group(); hip.position.y=0.28; g.add(hip);
+    const body=new T.Mesh(G.body,shirt); body.position.y=0.23; hip.add(body);
+    if(kind!=="ta"){ const vest=new T.Mesh(G.vest,kind==="me"?M.me:M.vest); vest.position.y=0.17; hip.add(vest); }
+    const headG=new T.Group(); headG.position.y=0.72; hip.add(headG);
+    headG.add(new T.Mesh(G.head,M.skin));
+    const hair=new T.Mesh(G.hair,M.hair); hair.rotation.x=-0.35; hair.position.y=0.02; headG.add(hair);
+    // kiểu nữ: tóc dài sau gáy + búi nhỏ; kiểu nam: tóc ngắn như cũ
+    const hairLong=new T.Mesh(G.hairLong,M.hairD); hairLong.position.set(0,-0.14,-0.01); headG.add(hairLong);
+    const bun=new T.Mesh(G.bun,M.hair); bun.position.set(0,0.2,-0.27); headG.add(bun);
+    const e1=new T.Mesh(G.eye,M.eye); e1.position.set(-0.1,0,0.285); const e2=new T.Mesh(G.eye,M.eye); e2.position.set(0.1,0,0.285); headG.add(e1,e2);
+    const armR=new T.Group(); armR.position.set(0.22,0.42,0); hip.add(armR); const ar=new T.Mesh(G.arm,shirt); ar.position.y=-0.15; armR.add(ar);
+    const armL=new T.Group(); armL.position.set(-0.22,0.42,0); hip.add(armL); const al=new T.Mesh(G.arm,shirt); al.position.y=-0.15; armL.add(al);
+    const alert=new T.Sprite(M.alert); alert.scale.set(0.34,0.34,1); alert.position.y=1.55; alert.visible=false; g.add(alert);
+    scene.add(g);
+    const k={g,hip,headG,armR,armL,legL,legR,shadow,alert,kind,hairLong,bun,sex:"nam",bow:0,bowDur:1,nod:0,hand:false,handA:0,walk:null,sitting:false,ph:Math.random()*6,name:"",seat:-1};
+    setSex(k,sex||(Math.random()<.5?"nam":"nu"));
+    kids.push(k); return k;
+  }
+  function setSex(k,sex){ k.sex=sex; const f=sex==="nu"; k.hairLong.visible=f; k.bun.visible=f; }
+  function removeKid(k){ scene.remove(k.g); const i=kids.indexOf(k); if(i>=0) kids.splice(i,1); bubbles.filter(b=>b.k===k).forEach(b=>killBubble(b)); }
+  const SIT_Y=0.24;
+  function setSit(k,on){
+    k.sitting=on;
+    if(on){ k.g.position.y=SIT_Y; k.legL.rotation.x=k.legR.rotation.x=-Math.PI/2; k.legL.position.set(-0.09,0.2,0.14); k.legR.position.set(0.09,0.2,0.14); k.shadow.visible=false; const show=k.kind==="me"; k.legL.visible=k.legR.visible=show; }
+    else { k.g.position.y=0; k.legL.rotation.x=k.legR.rotation.x=0; k.legL.position.set(-0.09,0.14,0); k.legR.position.set(0.09,0.14,0); k.legL.visible=k.legR.visible=true; k.shadow.visible=true; }
+  }
+  function bow(k){ k.bow=k.bowDur=1.0; }
+  function nod(k){ k.nod=0.45; }
+  function walkTo(k,to,speed,done){ setSit(k,false); k.walk={to:to.clone(),speed:speed||2.2,done}; }
+
+  // ---------- layouts ----------
+  // seat: {pos, yaw (facing), dir (unit facing), table, lap (laptop distance)}
+  function layout(type,n){
+    const S=[], TB=[];
+    const add=(x,z,yaw,table,lap)=>{ S.push({pos:new T.Vector3(x,0,z),yaw,dir:new T.Vector3(Math.sin(yaw),0,Math.cos(yaw)),table,lap}); };
+    if(type==="rows"){
+      const cols=n<=100?10:15;
+      for(let i=0;i<n;i++){ const r=Math.floor(i/cols), c=i%cols; const x=(c-(cols-1)/2)*1.55, z=r*1.75; TB.push({kind:"box",x,z:z-0.45,w:1.05,d:0.55,ry:0,seats:[i]}); add(x,z,Math.PI,i,0.55); }
+    } else if(type==="island"){
+      const count=Math.ceil(n/6), per=n<=50?3:n<=100?4:n<=150?5:6;
+      for(let t=0;t<count;t++){ const r=Math.floor(t/per), c=t%per; const cx=(c-(per-1)/2)*4.9, cz=r*4.0; const tb={kind:"box",x:cx,z:cz,w:3.7,d:1.5,ry:0,seats:[]}; TB.push(tb);
+        for(let k=0;k<6&&S.length<n;k++){ const side=k<3?1:-1; tb.seats.push(S.length); add(cx+((k%3)-1)*1.2,cz+side*1.12,side>0?Math.PI:0,t,0.55); } }
+    } else {
+      const count=Math.ceil(n/5), per=n<=50?4:n<=100?5:n<=150?6:7;
+      for(let t=0;t<count;t++){ const r=Math.floor(t/per), c=t%per; const cx=(c-(per-1)/2)*3.9, cz=r*3.9; const tb={kind:"round",x:cx,z:cz,r:0.85,seats:[]}; TB.push(tb);
+        for(let k=0;k<5&&S.length<n;k++){ const a=k*Math.PI*2/5; const sx=cx+Math.sin(a)*1.25, sz=cz+Math.cos(a)*1.25; tb.seats.push(S.length); add(sx,sz,Math.atan2(cx-sx,cz-sz),t,0.6); } }
+    }
+    return {S,TB};
+  }
+
+  // ---------- room ----------
+  let room=null, IM={}, floorMesh=null, zBack=10, zFront=-6, W=20, doorPos=new T.Vector3();
+  const dummy=new T.Object3D(); dummy.rotation.order="YXZ"; const col=new T.Color();
+  function im(geo,mat,count){const m=new T.InstancedMesh(geo,mat,Math.max(1,count));m.count=count;room.add(m);return m;}
+  function place(m,i,x,y,z,ry,rx,sx,sy,sz){dummy.position.set(x,y,z);dummy.rotation.set(rx||0,ry||0,0);dummy.scale.set(sx||1,sy||1,sz||1);dummy.updateMatrix();m.setMatrixAt(i,dummy.matrix);}
+  function box(w,h,d,mat,x,y,z,ry){const m=new T.Mesh(new T.BoxGeometry(w,h,d),mat);m.position.set(x,y,z);if(ry)m.rotation.y=ry;room.add(m);return m;}
+  function plane(w,h,mat,x,y,z,ry,rx){const m=new T.Mesh(new T.PlaneGeometry(w,h),mat);m.position.set(x,y,z);m.rotation.order="YXZ";m.rotation.set(rx||0,ry||0,0);room.add(m);return m;}
+  function buildHall(){
+    if(room){ scene.remove(room); room.traverse(o=>{ if(o.geometry) o.geometry.dispose(); if(o.material&&o.material.map&&o.material.userData.own){o.material.map.dispose();o.material.dispose();} }); }
+    room=new T.Group(); scene.add(room);
+    let minX=1e9,maxX=-1e9,minZ=1e9,maxZ=-1e9;
+    seats.forEach(s=>{minX=Math.min(minX,s.pos.x);maxX=Math.max(maxX,s.pos.x);minZ=Math.min(minZ,s.pos.z);maxZ=Math.max(maxZ,s.pos.z);});
+    W=Math.max(16,(maxX-minX)+7); zFront=minZ-5.6; zBack=maxZ+4.2; const D=zBack-zFront, H=4.6, cz=(zBack+zFront)/2;
+    doorPos.set(W/2-2.2,0,zBack-1.0);
+    floorTex.repeat.set(W/2,(D+14)/2);
+    floorMesh=plane(W,D+14,M.floor,0,0,cz+7,0,-Math.PI/2);
+    // walls (inward facing; camera outside sees through)
+    plane(W,H,M.wall,0,H/2,zFront,0); plane(W,H,M.wall,0,H/2,zBack,Math.PI);
+    plane(D,H,M.wall,-W/2,H/2,cz,Math.PI/2); plane(D,H,M.wall,W/2,H/2,cz,-Math.PI/2);
+    plane(W,D,M.ceil,0,H,cz,0,Math.PI/2);
+    // wood slat wainscot
+    const wains=(len,x,z,ry)=>{ const t=slatTex.clone(); t.needsUpdate=true; t.repeat.set(len/2.2,1); const m=new T.MeshLambertMaterial({map:t}); m.userData.own=true; plane(len,1.05,m,x,0.525,z,ry); };
+    wains(W,0,zFront+0.02,0); wains(W,0,zBack-0.02,Math.PI); wains(D,-W/2+0.02,cz,Math.PI/2); wains(D,W/2-0.02,cz,-Math.PI/2);
+    // acoustic panels (instanced)
+    const P=[]; const gap=1.6;
+    for(let x=-W/2+1;x<=W/2-1;x+=gap){ P.push([x,zFront+0.04,0]); P.push([x,zBack-0.04,Math.PI]); }
+    for(let z=zFront+1;z<=zBack-1;z+=gap){ P.push([-W/2+0.04,z,Math.PI/2]); P.push([W/2-0.04,z,-Math.PI/2]); }
+    const pan=im(new T.PlaneGeometry(1.45,1.0),M.white,P.length*2);
+    let pi=0; P.forEach(([x,z,ry],k)=>{ [3.05,4.15].forEach((y,row)=>{ place(pan,pi,x,y,z,ry); pan.setColorAt(pi,col.setHex((k+row)%2?0x8e9196:0xb6b9bd)); pi++; }); });
+    pan.instanceMatrix.needsUpdate=true; pan.instanceColor.needsUpdate=true;
+    // front: whiteboard + big display + teacher desk; back: door
+    const fz=zFront+0.06;
+    box(3.2,2.0,0.05,M.metal,-W*0.18,1.95,fz); plane(3.1,1.9,M.wb,-W*0.18,1.95,fz+0.03,0);
+    box(4.5,2.6,0.12,M.black,W*0.14,2.15,fz+0.04); plane(4.3,2.42,M.tv,W*0.14,2.15,fz+0.11,0);
+    box(0.06,1.8,0.06,M.black,W*0.14-1.6,3.9,fz+0.05); box(0.06,1.8,0.06,M.black,W*0.14+1.6,3.9,fz+0.05);
+    box(1.8,0.05,0.8,M.tabletop,-W*0.32,0.76,zFront+1.6); box(1.7,0.72,0.06,M.metal,-W*0.32,0.38,zFront+1.95);
+    plane(1.4,2.4,M.door,doorPos.x,1.2,zBack-0.05,Math.PI);
+    // tables
+    const boxes=tables.filter(t=>t.kind==="box"), rounds=tables.filter(t=>t.kind==="round");
+    IM.btop=im(new T.BoxGeometry(1,1,1),M.tabletop,boxes.length);
+    IM.bleg=im(new T.BoxGeometry(1,1,1),M.metal,boxes.length*2);
+    boxes.forEach((t,i)=>{ t.inst=i; place(IM.btop,i,t.x,0.74,t.z,0,0,t.w,0.05,t.d); [-1,1].forEach((sd,j)=>place(IM.bleg,i*2+j,t.x+sd*(t.w/2-0.08),0.36,t.z,0,0,0.05,0.72,t.d*0.85)); });
+    IM.rtop=im(new T.CylinderGeometry(1,1,1,40),M.tabletop,rounds.length);
+    IM.rped=im(new T.CylinderGeometry(0.07,0.07,0.72,10),M.metal,rounds.length);
+    IM.rbase=im(new T.CylinderGeometry(0.4,0.42,0.04,24),M.metal,rounds.length);
+    rounds.forEach((t,i)=>{ t.inst=i; place(IM.rtop,i,t.x,0.74,t.z,0,0,t.r,0.05,t.r); place(IM.rped,i,t.x,0.36,t.z); place(IM.rbase,i,t.x,0.02,t.z); });
+    // chairs + laptops per seat
+    const n=seats.length;
+    IM.cseat=im(new T.BoxGeometry(0.48,0.07,0.46),M.white,n);
+    IM.cback=im(new T.BoxGeometry(0.46,0.5,0.05),M.white,n);
+    IM.cpole=im(new T.CylinderGeometry(0.03,0.03,0.42,8),M.black,n);
+    IM.cfoot=im(new T.CylinderGeometry(0.28,0.28,0.03,5),M.black,n);
+    IM.lap=im(new T.BoxGeometry(0.38,0.02,0.26),M.laptop,n);
+    IM.scr=im(new T.BoxGeometry(0.38,0.25,0.015),M.screen,n);
+    seats.forEach((s,i)=>{
+      const p=s.pos, d=s.dir;
+      place(IM.cseat,i,p.x,0.47,p.z,s.yaw); place(IM.cback,i,p.x-d.x*0.25,0.8,p.z-d.z*0.25,s.yaw,-0.08);
+      place(IM.cpole,i,p.x,0.23,p.z); place(IM.cfoot,i,p.x,0.03,p.z,s.yaw);
+      place(IM.lap,i,p.x+d.x*s.lap,0.775,p.z+d.z*s.lap,s.yaw);
+      place(IM.scr,i,p.x+d.x*(s.lap+0.13),0.9,p.z+d.z*(s.lap+0.13),s.yaw,-0.22);
+    });
+    Object.values(IM).forEach(m=>{ if(m.parent===room) m.instanceMatrix.needsUpdate=true; });
+    scene.fog.near=20; scene.fog.far=Math.max(46,D+30);
+  }
+  const SCR=[0x46525f,0x3f6f93,0x4b88b5,0x5aa2d2,0x6ebde9],SCR_DONE=0x5ccf8a,SCR_STUCK=0xff8a3d,SCR_OFF=0x1d2329;
+  function paintSeat(i){
+    const s=seats[i]; if(!s||!IM.scr) return;
+    const taken=!!s.kid||s.reserved;
+    IM.cseat.setColorAt(i,col.setHex(taken?0x2a2c30:0xa98ff0));
+    IM.cback.setColorAt(i,col.setHex(taken?0x1f2124:0xc3b2f5));
+    IM.scr.setColorAt(i,col.setHex(!s.kid?SCR_OFF:s.stuck?SCR_STUCK:s.step>=5?SCR_DONE:SCR[s.step]));
+    IM.cseat.instanceColor.needsUpdate=true; IM.cback.instanceColor.needsUpdate=true; IM.scr.instanceColor.needsUpdate=true;
+  }
+  const behind=(s,dist)=>s.pos.clone().addScaledVector(s.dir,-dist);
+  function seatLabel(i){ const s=seats[i]; if(TYPE==="rows"){ const cols=N<=100?10:15; return "ghế số "+(i+1)+", dãy "+(Math.floor(i/cols)+1); } return "ghế "+(tables[s.table].seats.indexOf(i)+1)+" ở "+TYPE_NAME[TYPE]+" số "+(s.table+1); }
+
+  // ---------- bubbles ----------
+  const bubbles=[]; const v3=new T.Vector3();
+  function bubble(k,html,ms,cls){
+    const el=document.createElement("div"); el.className="bub "+(cls||""); el.innerHTML=html; hud.appendChild(el);
+    const b={k,el,until:ms?performance.now()+ms:Infinity,h:1.75}; bubbles.push(b);
+    while(bubbles.filter(x=>x.until!==Infinity).length>7){ killBubble(bubbles.find(x=>x.until!==Infinity)); }
+    return b;
+  }
+  function killBubble(b){ if(!b) return; b.el.remove(); const i=bubbles.indexOf(b); if(i>=0) bubbles.splice(i,1); }
+  function placeBubbles(now){
+    const w=stage.clientWidth, h=stage.clientHeight;
+    for(let i=bubbles.length-1;i>=0;i--){
+      const b=bubbles[i]; if(now>b.until){killBubble(b);continue;}
+      v3.copy(b.k.g.position); v3.y+=b.h; v3.project(camera);
+      const vis=v3.z<1&&v3.x>-1.2&&v3.x<1.2&&v3.y>-1.2&&v3.y<1.2;
+      b.el.style.display=vis?"":"none";
+      if(vis) b.el.style.transform="translate("+((v3.x+1)/2*w)+"px,"+((1-v3.y)/2*h)+"px) translate(-50%,-100%)";
+    }
+  }
+
+  const me=makeKid("me",mySex||"nam"); me.name=myName;
+  function chooseSex(sx){ mySex=sx; setSex(me,sx); try{localStorage.setItem("lhl-sex",sx);}catch(e){}
+    document.querySelectorAll(".sex").forEach(b=>{const on=b.dataset.s===sx; b.classList.toggle("on",on); b.setAttribute("aria-pressed",on);}); }
+  document.querySelectorAll(".sex").forEach(b=>b.addEventListener("click",()=>{ chooseSex(b.dataset.s); render(); }));
+  chooseSex(mySex||"nam");
+  let meLabel=null;
+  function relabel(){ killBubble(meLabel); meLabel=bubble(me,"<b>Bạn</b>"+esc(myName),0,"me"); }
+
+  // ---------- build classroom ----------
+  let tas=[];
+  function buildRoom(n,type){
+    GEN++;
+    N=n||N; TYPE=type||TYPE; TAS=Math.ceil(N/50); HOT=Math.max(3,Math.round(N*0.05));
+    kids.filter(k=>k!==me).forEach(removeKid);
+    bubbles.slice().forEach(b=>{ if(b!==meLabel) killBubble(b); });
+    queue=[]; mySeat=-1; myHand=false; me.hand=false; me.alert.visible=false; $("aHand").classList.remove("on"); $("handLabel").textContent="Giơ tay"; $("sitLabel").textContent="Vào chỗ";
+    const L=layout(TYPE,N);
+    seats=L.S.map(s=>Object.assign(s,{kid:null,name:"",step:0,stuck:false,reserved:false})); tables=L.TB;
+    buildHall();
+    const order=[...Array(N).keys()].sort(()=>Math.random()-.5);
+    const fill=Math.round(N*0.84);
+    order.forEach((i,k)=>{ if(k<fill) seatKid(i); });
+    order.slice(0,Math.max(2,Math.round(N*0.05))).forEach(i=>{ const s=seats[i]; if(s.kid&&s.step<5) setStuck(i,true); });
+    seats.forEach((_,i)=>paintSeat(i));
+    me.walk=null; setSit(me,false); me.g.position.copy(doorPos); me.g.rotation.y=Math.PI; me.seat=-1;
+    tas=[]; for(let t=0;t<TAS;t++){ const k=makeKid("ta"); k.name="Trợ giảng "+(t+1); const hx=W*0.05+(t-(TAS-1)/2)*1.3; k.home=new T.Vector3(hx,0,zFront+2.4); k.g.position.copy(k.home); k.g.rotation.y=0; k.busy=false; k.atHome=true; tas.push(k); }
+    $("cap").textContent=N;
+    document.querySelectorAll(".size").forEach(b=>{const on=+b.dataset.n===N; b.classList.toggle("on",on); b.setAttribute("aria-pressed",on);});
+    document.querySelectorAll(".tbl").forEach(b=>{const on=b.dataset.t===TYPE; b.classList.toggle("on",on); b.setAttribute("aria-pressed",on);});
+    $("hotNote").textContent="Chỉ đếm số người, không hiện tên. Bước chuyển cam khi từ "+HOT+" người trở lên đang kẹt ở đó.";
+    $("helpNote").textContent=TAS+" trợ giảng (áo xanh) đi tới đứng sau ghế người đang kẹt, theo thứ tự hàng chờ.";
+    $("doorText").textContent="Bạn đang đứng ở cửa sau phòng thực hành. Bấm một ghế tím để đi tới và ngồi.";
+    camYaw=0.25; camPitch=0.5; camDist=7; overview=false; $("bCam").classList.remove("on"); $("bCam").textContent="Nhìn toàn phòng";
+    camPos.set(doorPos.x,6,zBack+8); camLook.set(doorPos.x,1,zBack-4);
+    render();
+  }
+  function seatKid(i){
+    const s=seats[i]; const k=makeKid("other"); k.name=rname(); k.seat=i;
+    k.g.position.copy(s.pos); k.g.rotation.y=s.yaw; setSit(k,true);
+    s.kid=k; s.name=k.name; s.step=Math.floor(Math.random()*3); s.stuck=false; s.reserved=false;
+    return k;
+  }
+  function setStuck(i,on){
+    const s=seats[i]; if(!s||!s.kid) return; s.stuck=on; s.kid.hand=on; s.kid.alert.visible=on;
+    if(on&&queue.indexOf(i)<0) queue.push(i);
+    if(!on){ const q=queue.indexOf(i); if(q>=0) queue.splice(q,1); }
+    paintSeat(i);
+  }
+  document.querySelectorAll(".size").forEach(b=>b.addEventListener("click",()=>buildRoom(+b.dataset.n,TYPE)));
+  document.querySelectorAll(".tbl").forEach(b=>b.addEventListener("click",()=>buildRoom(N,b.dataset.t)));
+
+  // ---------- my movement ----------
+  function standUpMe(){
+    if(mySeat<0) return; const i=mySeat; const s=seats[i];
+    if(myHand) lowerHand(false);
+    s.kid=null; s.name=""; s.step=0; s.stuck=false; paintSeat(i); mySeat=-1; me.seat=-1; setSit(me,false);
+    me.g.position.copy(behind(s,0.55)); $("sitLabel").textContent="Vào chỗ";
+  }
+  function goSeat(i){
+    const s=seats[i]; if(!s) return;
+    if(i===mySeat) return;
+    if(s.kid||s.reserved){ toast("Ghế này đã có người."); return; }
+    standUpMe(); seats.forEach((o,j)=>{ if(o.reserved==="me"){ o.reserved=false; paintSeat(j);} });
+    s.reserved="me"; paintSeat(i);
+    const gen=GEN;
+    $("doorText").textContent="Đang đi tới "+seatLabel(i)+"…";
+    walkTo(me,behind(s,0.7),2.6,()=>{
+      if(gen!==GEN||s.reserved!=="me") return;
+      walkTo(me,s.pos,1.5,()=>{
+        if(gen!==GEN||s.reserved!=="me") return;
+        s.reserved=false; s.kid=me; s.name=myName; s.step=myStep; s.stuck=false; mySeat=i; me.seat=i;
+        me.g.position.copy(s.pos); me.g.rotation.y=s.yaw; setSit(me,true); paintSeat(i);
+        $("sitLabel").textContent="Rời chỗ";
+        $("doorText").textContent="Bạn đã ngồi ở "+seatLabel(i)+". Bắt đầu từ bước 1 trên bảng tiến độ.";
+        knock(.6); render();
+      });
+    });
+  }
+  function goFloor(p){
+    const half=W/2-0.6;
+    p.x=Math.max(-half,Math.min(half,p.x)); p.z=Math.max(zFront+2,Math.min(zBack-0.6,p.z)); p.y=0;
+    standUpMe(); seats.forEach((o,j)=>{ if(o.reserved==="me"){ o.reserved=false; paintSeat(j);} });
+    $("doorText").textContent="Bạn đang đi dạo trong phòng thực hành.";
+    walkTo(me,p,2.4,null); render();
+  }
+  function needSeat(){ if(mySeat<0){toast("Ngồi vào một ghế trước đã.");return true;} return false; }
+  function nearestFreeSeat(pt,filter){ let best=-1,bd=1e9; seats.forEach((s,i)=>{ if(!s.kid&&!s.reserved&&(!filter||filter(s))){ const d=s.pos.distanceTo(pt); if(d<bd){bd=d;best=i;} } }); return best; }
+
+  // ---------- camera & input ----------
+  let camYaw=0.25, camPitch=0.5, camDist=7, overview=false;
+  const camPos=new T.Vector3(0,6,18), camLook=new T.Vector3();
+  const ray=new T.Raycaster(), ndc=new T.Vector2();
+  let down=null;
+  cv.addEventListener("pointerdown",e=>{ down={x:e.clientX,y:e.clientY,moved:false}; try{cv.setPointerCapture(e.pointerId);}catch(_){} });
+  cv.addEventListener("pointermove",e=>{
+    if(!down) return; const dx=e.clientX-down.x, dy=e.clientY-down.y;
+    if(!down.moved&&Math.hypot(dx,dy)>6){ down.moved=true; cv.classList.add("drag"); }
+    if(down.moved){ camYaw-=dx*0.008; camPitch=Math.max(0.12,Math.min(1.25,camPitch+dy*0.005)); down.x=e.clientX; down.y=e.clientY; }
+  });
+  cv.addEventListener("pointerup",e=>{
+    cv.classList.remove("drag"); if(!down) return; const wasDrag=down.moved; down=null; if(wasDrag) return;
+    actx();
+    const r=cv.getBoundingClientRect(); ndc.set(((e.clientX-r.left)/r.width)*2-1,-((e.clientY-r.top)/r.height)*2+1);
+    ray.setFromCamera(ndc,camera);
+    const seatMeshes=[IM.cseat,IM.cback,IM.lap,IM.scr], tableMeshes=[IM.btop,IM.rtop];
+    const hits=ray.intersectObjects(seatMeshes.concat(tableMeshes,[floorMesh]),false);
+    if(!hits.length) return; const h=hits[0];
+    if(seatMeshes.indexOf(h.object)>=0&&h.instanceId!=null){ goSeat(h.instanceId); return; }
+    if(tableMeshes.indexOf(h.object)>=0&&h.instanceId!=null){
+      const kind=h.object===IM.btop?"box":"round"; const tb=tables.find(t=>t.kind===kind&&t.inst===h.instanceId);
+      const j=tb?nearestFreeSeat(h.point,s=>s.table===tables.indexOf(tb)):-1;
+      if(j>=0) goSeat(j); else toast("Bàn này đã kín chỗ."); return;
+    }
+    goFloor(h.point.clone());
+  });
+  cv.addEventListener("pointercancel",()=>{down=null;cv.classList.remove("drag");});
+  cv.addEventListener("wheel",e=>{ e.preventDefault(); camDist=Math.max(3.5,Math.min(16,camDist*(1+e.deltaY*0.0012))); },{passive:false});
+  $("bCam").onclick=()=>{ overview=!overview; $("bCam").classList.toggle("on",overview); $("bCam").textContent=overview?"Về sau lưng bạn":"Nhìn toàn phòng"; };
+
+  // ---------- actions ----------
+  $("aGreet").onclick=()=>{
+    actx(); bow(me);
+    const near=kids.filter(k=>k!==me&&k.kind==="other"&&k.sitting).map(k=>({k,d:k.g.position.distanceTo(me.g.position)})).filter(o=>o.d<3.2).sort((a,b)=>a.d-b.d).slice(0,3);
+    if(!near.length){toast("Xung quanh chưa có ai.");return;}
+    near.forEach((o,n)=>setTimeout(()=>{ if(!o.k.g.parent) return; bow(o.k); bubble(o.k,esc(o.k.name)+" cúi chào lại bạn",2600); st.greet++; render(); },500+n*380));
+  };
+  $("aSit").onclick=()=>{
+    actx();
+    if(mySeat>=0){ const s=seats[mySeat]; standUpMe(); goFloor(behind(s,1.0)); return; }
+    const best=nearestFreeSeat(me.g.position);
+    if(best<0){toast("Phòng đã đủ chỗ.");return;}
+    goSeat(best);
+  };
+  $("aStep").onclick=()=>{
+    if(needSeat()) return;
+    if(myStep>=5){toast("Bạn đã xong cả 5 bước. Thử Lần thẻ trong lúc chờ lớp.");return;}
+    myStep++; seats[mySeat].step=myStep; if(myHand) lowerHand(false);
+    paintSeat(mySeat); knock(); nod(me);
+    bubble(me,myStep>=5?"Xong lab!":"Bước "+myStep+" xong",1500,"ok");
+    if(myStep>=5) bell(); render();
+  };
+  function lowerHand(msg){
+    myHand=false; me.hand=false; me.alert.visible=false; $("aHand").classList.remove("on"); $("handLabel").textContent="Giơ tay";
+    const q=queue.indexOf(mySeat); if(q>=0) queue.splice(q,1);
+    if(mySeat>=0){ seats[mySeat].stuck=false; paintSeat(mySeat); }
+    if(msg) toast(msg); render();
+  }
+  $("aHand").onclick=()=>{
+    if(needSeat()) return;
+    if(myHand){lowerHand("Đã hạ tay. Bạn tự gỡ được rồi.");return;}
+    if(myStep>=5){toast("Bạn đã xong lab rồi.");return;}
+    myHand=true; st.hand++; me.hand=true; me.alert.visible=true; $("aHand").classList.add("on"); $("handLabel").textContent="Hạ tay";
+    seats[mySeat].stuck=true; paintSeat(mySeat); queue.push(mySeat);
+    bubble(me,"Đang chờ trợ giảng · thứ "+queue.length,2200,"");
+    render();
+  };
+  function setMyName(nm){ myName=nm; me.name=myName; $("myName").textContent=myName; if(mySeat>=0) seats[mySeat].name=myName; relabel(); try{localStorage.setItem("lhl-name",nm);}catch(e){} }
+  $("bRename").onclick=()=>{ setMyName(rname()); render(); };
+
+  let ci=0, flipped=false;
+  $("aBeads").onclick=()=>{
+    if(needSeat()) return;
+    const ov=document.createElement("div"); ov.className="overlay";
+    ov.innerHTML='<div class="card" role="dialog" aria-label="Lần thẻ"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><h3>Chuỗi thuật ngữ AI</h3><span class="note">Mỗi thẻ là một hạt</span></div><div class="beads" id="beads"></div><div class="flash" id="flash"></div><div class="row"><button class="btn" id="cFlip">Lật thẻ</button><button class="btn primary" id="cNext">Nhớ rồi, lần hạt kế</button><button class="btn" id="cClose">Đóng</button></div></div>';
+    sceneEl.appendChild(ov);
+    const draw=()=>{
+      $("beads").innerHTML=DECK.map((_,j)=>'<span class="bead'+(j<ci?' done':j===ci?' now':'')+'"></span>').join("");
+      const f=$("flash"); f.classList.toggle("back",flipped&&ci<DECK.length);
+      if(ci>=DECK.length){f.innerHTML='Hết một vòng<small>20/20 thuật ngữ. Bấm “Lần hạt kế” để bắt đầu lại.</small>';return;}
+      const [w,m]=DECK[ci]; f.innerHTML=flipped?(m+'<small>'+w+'</small>'):(w+'<small>Thẻ '+(ci+1)+'/20 · bấm Lật thẻ để xem nghĩa</small>');
+    };
+    draw();
+    $("cFlip").onclick=()=>{flipped=!flipped;draw();};
+    $("cNext").onclick=()=>{ if(ci>=DECK.length){ci=0;flipped=false;draw();return;} knock(.5); ci++; flipped=false; st.card++; render(); draw(); };
+    $("cClose").onclick=()=>ov.remove();
+    $("cNext").focus();
+  };
+
+  let dur=25*60, left=dur, speed=1, tick=null;
+  const fmt=s=>String(Math.floor(s/60)).padStart(2,"0")+":"+String(Math.floor(s%60)).padStart(2,"0");
+  function drawT(){ $("timer").textContent=fmt(left); const p=tick?1-left/dur:0; if(Math.abs(p-tvProg)>0.004||p===0){ tvProg=p; drawTV(); } }
+  function setDur(m){ if(tick) return; dur=m*60; left=dur; $("t25").classList.toggle("on",m===25); $("t50").classList.toggle("on",m===50); drawT(); }
+  $("t25").onclick=()=>setDur(25); $("t50").onclick=()=>setDur(50);
+  $("tFast").onclick=()=>{speed=speed===1?60:1; $("tFast").classList.toggle("on",speed>1);};
+  function endSession(msg){ clearInterval(tick); tick=null; $("tStart").textContent="Bắt đầu phiên"; left=dur; tvLine=msg; tvProg=0; drawTV(); drawT(); }
+  $("tStart").onclick=()=>{
+    if(tick){ endSession("Làm lặng lẽ · kẹt thì giơ tay"); return; }
+    if(needSeat()) return;
+    bell(); $("tStart").textContent="Dừng phiên"; tvLine="Phiên tập trung "+Math.round(dur/60)+" phút đang chạy"; drawTV();
+    tick=setInterval(()=>{ left=Math.max(0,left-speed); drawT(); if(left<=0){ bell(); st.sess++; render(); endSession("Hết phiên · đứng dậy vươn vai"); toast("Bạn đã ngồi trọn một phiên."); } },1000);
+  };
+
+  function render(){
+    const people=seats.filter(s=>s.kid);
+    $("occ").textContent=people.length;
+    $("stuckN").textContent=people.filter(s=>s.stuck).length;
+    $("doneN").textContent=people.filter(s=>s.step>=5).length;
+    const total=people.length||1;
+    $("steplist").innerHTML=STEPS.map((t,k)=>{
+      const done=people.filter(s=>s.step>k).length;
+      const stuckHere=people.filter(s=>s.stuck&&s.step===k).length;
+      const mine=mySeat>=0&&myStep===k;
+      return '<div class="srow'+(stuckHere>=HOT?' hot':'')+'"><span class="lbl'+(mine?' mine':'')+'">'+(k+1)+'. '+t+(stuckHere?' · '+stuckHere+' kẹt':'')+'</span><b>'+done+'/'+people.length+'</b><span class="bar"><i style="width:'+(done/total*100)+'%"></i></span></div>';
+    }).join("");
+    const MAXQ=8, myPos=queue.indexOf(mySeat);
+    const items=queue.slice(0,MAXQ).map(i=>'<li class="'+(i===mySeat?'me':'')+'">'+(i===mySeat?'Bạn':esc(seats[i].name))+' · bước '+(seats[i].step+1)+'</li>');
+    if(queue.length>MAXQ) items.push('<li>…và '+(queue.length-MAXQ)+' người nữa'+(myPos>=MAXQ?' (bạn đứng thứ '+(myPos+1)+')':'')+'</li>');
+    $("helpq").innerHTML=items.length?items.join(""):'<li>Chưa ai giơ tay.</li>';
+    $("stepLabel").textContent=myStep>=5?"đã xong 5/5":"bước "+(myStep+1)+"/5";
+    $("q1n").textContent=myStep+"/5"; $("q1").classList.toggle("done",myStep>=5);
+    $("q2n").textContent=Math.min(st.card,20)+"/20"; $("q2").classList.toggle("done",st.card>=20);
+    $("q3n").textContent=Math.min(st.sess,1)+"/1"; $("q3").classList.toggle("done",st.sess>=1);
+    $("sGreet").textContent=st.greet; $("sHand").textContent=st.hand;
+  }
+
+  // ---------- simulated classmates ----------
+  setInterval(()=>{
+    const occ=seats.map((s,i)=>s.kid&&s.kid!==me&&s.kid.sitting?i:-1).filter(i=>i>=0);
+    if(!occ.length) return;
+    const n=Math.ceil(N/40);
+    for(let t=0;t<n;t++){
+      const j=pick(occ), s=seats[j], r=Math.random();
+      if(s.stuck) continue;
+      if(r<.42&&s.step<5){ s.step++; nod(s.kid); paintSeat(j); }
+      else if(r<.55&&s.step<5){ setStuck(j,true); }
+      else if(r<.72){ bow(s.kid); if(Math.random()<.35&&s.kid.g.position.distanceTo(me.g.position)<9) bubble(s.kid,esc(s.name)+" đã cúi chào",2200); }
+    }
+    const gen=GEN, free=seats.map((s,i)=>!s.kid&&!s.reserved?i:-1).filter(i=>i>=0);
+    if(Math.random()<.18&&free.length>1){
+      const i=pick(free), s=seats[i]; s.reserved=true; paintSeat(i);
+      const k=makeKid("other"); k.name=rname(); k.g.position.copy(doorPos).add(new T.Vector3((Math.random()-.5)*1.0,0,0));
+      walkTo(k,behind(s,0.7),2.2,()=>{ if(gen!==GEN){removeKid(k);return;} walkTo(k,s.pos,1.4,()=>{ if(gen!==GEN){removeKid(k);return;} s.reserved=false; s.kid=k; s.name=k.name; s.step=0; k.seat=i; k.g.rotation.y=s.yaw; setSit(k,true); paintSeat(i); render(); }); });
+    } else if(Math.random()<.08&&occ.length>N*0.7){
+      const j=pick(occ), s=seats[j]; if(!s.stuck){ const k=s.kid; s.kid=null; s.name=""; s.step=0; paintSeat(j); k.seat=-1; walkTo(k,behind(s,0.7),1.4,()=>walkTo(k,doorPos,2.2,()=>removeKid(k))); }
+    }
+    render();
+  },1300);
+
+  setInterval(()=>{
+    tas.forEach(ta=>{
+      if(ta.busy) return;
+      if(!queue.length){ if(!ta.atHome){ ta.busy=true; const gen=GEN; walkTo(ta,ta.home,2.4,()=>{ if(gen!==GEN) return; ta.busy=false; ta.atHome=true; ta.g.rotation.y=0; }); } return; }
+      const j=queue.shift(), s=seats[j]; if(!s||!s.kid) return;
+      ta.busy=true; ta.atHome=false; const gen=GEN;
+      walkTo(ta,behind(s,0.78),2.8,()=>{
+        if(gen!==GEN) return;
+        ta.g.rotation.y=s.yaw; nod(ta);
+        if(s.kid===me) bubble(ta,"Trợ giảng đang xem màn hình của bạn",2000,"ta");
+        setTimeout(()=>{
+          if(gen!==GEN) return;
+          if(s.kid===me&&myHand){ lowerHand("Trợ giảng đã gỡ xong chỗ kẹt cho bạn."); }
+          else if(s.kid&&s.stuck){ setStuck(j,false); }
+          ta.busy=false; render();
+        },1900);
+      });
+    });
+  },400);
+
+  // ---------- frame loop ----------
+  const clock=new T.Clock(); const tmp=new T.Vector3(), look=new T.Vector3();
+  function resize(){ const w=stage.clientWidth, h=stage.clientHeight; if(!w||!h) return; renderer.setSize(w,h,false); camera.aspect=w/h; camera.updateProjectionMatrix(); }
+  if(window.ResizeObserver) new ResizeObserver(resize).observe(stage); else window.addEventListener("resize",resize);
+  resize();
+  function animKid(k,dt,t){
+    if(k.walk){
+      tmp.subVectors(k.walk.to,k.g.position); tmp.y=0; const d=tmp.length();
+      if(d<0.04){ k.g.position.x=k.walk.to.x; k.g.position.z=k.walk.to.z; k.g.position.y=0; const done=k.walk.done; k.walk=null; k.legL.rotation.x=k.legR.rotation.x=0; if(done) done(); }
+      else { const step=Math.min(d,k.walk.speed*dt); tmp.multiplyScalar(step/d); k.g.position.add(tmp); k.g.rotation.y=Math.atan2(tmp.x,tmp.z); const sw=Math.sin(t*11+k.ph)*0.55; k.legL.rotation.x=sw; k.legR.rotation.x=-sw; k.g.position.y=Math.abs(Math.sin(t*11+k.ph))*0.04; }
+    }
+    if(k.bow>0) k.bow=Math.max(0,k.bow-dt);
+    const b=k.bow>0?Math.sin((1-k.bow/k.bowDur)*Math.PI):0;
+    if(k.nod>0) k.nod=Math.max(0,k.nod-dt);
+    const nd=k.nod>0?Math.sin((1-k.nod/0.45)*Math.PI):0;
+    k.hip.rotation.x=0.62*b+(k.sitting&&!k.hand&&k.kind==="other"?0.08+Math.sin(t*0.8+k.ph)*0.03:0);
+    k.headG.rotation.x=0.35*nd;
+    k.handA+=((k.hand?1:0)-k.handA)*Math.min(1,dt*7);
+    k.armR.rotation.z=0.12+k.handA*2.8; k.armL.rotation.z=-0.12;
+    if(k.alert.visible) k.alert.position.y=1.55+Math.sin(t*4+k.ph)*0.05;
+  }
+  function frame(){
+    const dt=Math.min(clock.getDelta(),0.05), t=clock.elapsedTime;
+    for(const k of kids) animKid(k,dt,t);
+    const target=me.g.position; let want, at;
+    if(overview){ const D=zBack-zFront; want=tmp.set(0,6+D*0.5,zBack+4); at=look.set(0,0,(zBack+zFront)/2+1); }
+    else { const cp=Math.cos(camPitch); want=tmp.set(target.x+Math.sin(camYaw)*camDist*cp, 1+camDist*Math.sin(camPitch), target.z+Math.cos(camYaw)*camDist*cp); at=look.set(target.x-Math.sin(camYaw)*1.2,0.9,target.z-Math.cos(camYaw)*1.2); }
+    camPos.lerp(want,0.1); camLook.lerp(at,0.12);
+    camera.position.copy(camPos); camera.lookAt(camLook);
+    renderer.render(scene,camera);
+    placeBubbles(performance.now());
+    requestAnimationFrame(frame);
+  }
+
+  buildRoom(50,"island"); relabel(); drawT(); render();
+  (function sexDialog(){
+    const fig=(f)=>'<svg viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="22" r="13" fill="#f2d3b3"/><path d="M19 21a13 13 0 0 1 26 0c-4-4-9-5-13-5s-9 1-13 5z" fill="#2a211c"/>'+(f?'<path d="M19 21c-2 8-1 15 1 19h6c-3-5-4-12-3-18zM45 21c2 8 1 15-1 19h-6c3-5 4-12 3-18z" fill="#2a211c"/><circle cx="32" cy="8" r="4" fill="#2a211c"/>':'')+'<path d="M18 62c0-12 6-18 14-18s14 6 14 18z" fill="#7a5bd4"/></svg>';
+    let pick=mySex||"nam";
+    const ov=document.createElement("div"); ov.className="overlay";
+    ov.innerHTML='<form class="card" role="dialog" aria-label="Vào phòng lab"><h3>Vào phòng lab</h3>'+
+      '<label class="note" for="eName">Tên hiện cho bạn cùng lớp</label><div class="namerow"><input id="eName" maxlength="24" autocomplete="off" placeholder="Nhập tên hoặc bấm Ngẫu nhiên"><button type="button" class="btn" id="eRand">Ngẫu nhiên</button></div>'+
+      '<p class="note">Kiểu nhân vật. Ai cũng mặc đồng phục giống nhau, chỉ khác kiểu tóc.</p>'+
+      '<div class="sexpick"><button type="button" class="btn" data-s="nam">'+fig(false)+'Nam</button><button type="button" class="btn" data-s="nu">'+fig(true)+'Nữ</button></div>'+
+      '<button class="btn primary" id="eGo">Vào phòng</button><p class="note">Đổi lại được ở bảng bên phải.</p></form>';
+    sceneEl.appendChild(ov);
+    const inp=ov.querySelector("#eName"); inp.value=myName;
+    const sexBtns=ov.querySelectorAll(".sexpick button");
+    const mark=()=>sexBtns.forEach(b=>{const on=b.dataset.s===pick; b.classList.toggle("on",on); b.setAttribute("aria-pressed",on);});
+    sexBtns.forEach(b=>b.onclick=()=>{ pick=b.dataset.s; mark(); }); mark();
+    ov.querySelector("#eRand").onclick=()=>{ inp.value=rname(); inp.focus(); };
+    ov.querySelector("form").onsubmit=e=>{ e.preventDefault();
+      const nm=inp.value.replace(/\s+/g," ").trim().slice(0,24);
+      setMyName(nm||rname()); chooseSex(pick); ov.remove(); render(); };
+    inp.focus(); inp.select();
+  })();
+  requestAnimationFrame(frame);
+})();
+</script>
+
+</body>
+</html>
