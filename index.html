@@ -147,7 +147,8 @@ a:focus-visible,button:focus-visible,select:focus-visible{outline:2px solid var(
 .sws{display:flex;flex-wrap:wrap;gap:8px}
 .sw{width:32px;height:32px;border-radius:50%;border:2px solid var(--paper-2);box-shadow:0 0 0 1px var(--line);cursor:pointer;padding:0}
 .sw.on{box-shadow:0 0 0 3px var(--violet)}
-.looks{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.looks{display:grid;grid-template-columns:repeat(auto-fill,minmax(88px,1fr));gap:8px}
+.looks .dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:4px;vertical-align:middle;box-shadow:0 0 0 1px var(--line)}
 .looks .btn{display:grid;justify-items:center;gap:2px;padding:4px 4px 6px;font-size:12px;line-height:1.25}
 .looks img,.looks .ph{width:100%;aspect-ratio:1;border-radius:8px;background:var(--floor);display:block}
 .lrand{justify-self:start}
@@ -815,13 +816,14 @@ body{overflow:hidden}
   function chooseLook(lk){ myLook=fixLook(lk); setLook(me,myLook); try{localStorage.setItem("lhl-look2",JSON.stringify(myLook));}catch(e){} }
   // ảnh nhỏ cận mặt cho các ô kiểu tóc
   const thumbs={};
-  function thumb(lk){
-    const key=JSON.stringify(lk); if(thumbs[key]!==undefined) return thumbs[key];
+  function thumb(lk,mode){
+    const key=(mode||"head")+JSON.stringify(lk); if(thumbs[key]!==undefined) return thumbs[key];
     try{
       if(!thumb.r){ thumb.r=new T.WebGLRenderer({antialias:true,alpha:true,preserveDrawingBuffer:true}); thumb.r.setSize(120,120); thumb.r.outputEncoding=T.sRGBEncoding;
         thumb.s=new T.Scene(); thumb.s.add(new T.HemisphereLight(0xffffff,0x8a8177,1.0)); const d=new T.DirectionalLight(0xffffff,0.5); d.position.set(3,5,4); thumb.s.add(d);
         thumb.c=new T.PerspectiveCamera(30,1,0.1,20); thumb.c.position.set(0.8,1.3,1.6); thumb.c.lookAt(0,1.03,0);
         thumb.k=makeKid("me",lk); scene.remove(thumb.k.g); kids.splice(kids.indexOf(thumb.k),1); thumb.k.shadow.visible=false; thumb.k.g.rotation.y=0.15; thumb.s.add(thumb.k.g); }
+      if(mode==="body"){ thumb.c.position.set(1.0,1.0,2.6); thumb.c.lookAt(0,0.62,0); } else { thumb.c.position.set(0.8,1.3,1.6); thumb.c.lookAt(0,1.03,0); }
       setLook(thumb.k,lk); thumb.r.render(thumb.s,thumb.c); thumbs[key]=thumb.r.domElement.toDataURL();
     }catch(e){ thumbs[key]=""; }
     return thumbs[key];
@@ -859,14 +861,16 @@ body{overflow:hidden}
     const pane=ov.querySelector("#edPane"), pv=ov.querySelector("#edPv");
     const has3d=prevInit(); if(has3d){ pv.appendChild(prev.r.domElement); setLook(prev.k,cur); prev.auto=true; }
     const opts=(title,list,key,cls)=>'<p class="eyebrow">'+title+'</p><div class="'+(cls||'chips')+'">'+list.map((n,j)=>'<button type="button" class="btn'+(cur[key]===j?' on':'')+'" aria-pressed="'+(cur[key]===j)+'" data-k="'+key+'" data-v="'+j+'">'+n+'</button>').join("")+'</div>';
+    const tiles=(title,list,key,mode,colors)=>'<p class="eyebrow">'+title+'</p><div class="looks">'+list.map((n,j)=>{ const u=thumb(Object.assign({},cur,{[key]:j},key==="hair"?{gl:0,acc:0}:{}),mode); const lab=colors?'<span><i class="dot" style="background:#'+colors[j][1].toString(16).padStart(6,"0")+'"></i>'+colors[j][0]+'</span>':n;
+      return '<button type="button" class="btn'+(cur[key]===j?' on':'')+'" aria-pressed="'+(cur[key]===j)+'" data-k="'+key+'" data-v="'+j+'">'+(u?'<img alt="" src="'+u+'">':'<span class="ph"></span>')+lab+'</button>'; }).join("")+'</div>';
     const sw=(title,list,key)=>'<p class="eyebrow">'+title+'</p><div class="sws">'+list.map(([n,c],j)=>'<button type="button" class="sw'+(cur[key]===j?' on':'')+'" aria-pressed="'+(cur[key]===j)+'" title="'+n+'" aria-label="'+n+'" data-k="'+key+'" data-v="'+j+'" style="background:#'+c.toString(16).padStart(6,"0")+'"></button>').join("")+'</div>';
     const draw=()=>{
       ov.querySelectorAll(".seg .btn").forEach(b=>{ const on=b.dataset.s===cur.s; b.classList.toggle("on",on); b.setAttribute("aria-pressed",on); });
       ov.querySelectorAll(".tab").forEach(b=>{ const on=b.dataset.t===tab; b.classList.toggle("on",on); b.setAttribute("aria-selected",on); });
       const o=OPT[cur.s];
-      if(tab==="toc") pane.innerHTML='<p class="eyebrow">Kiểu tóc</p><div class="looks">'+o.hair.map((n,j)=>{ const u=thumb(Object.assign({},cur,{hair:j,gl:0,acc:0})); return '<button type="button" class="btn'+(cur.hair===j?' on':'')+'" aria-pressed="'+(cur.hair===j)+'" data-k="hair" data-v="'+j+'">'+(u?'<img alt="" src="'+u+'">':'<span class="ph"></span>')+n+'</button>'; }).join("")+'</div>'+sw("Màu tóc",HAIR_C,"hc");
-      else if(tab==="mat") pane.innerHTML=sw("Màu da",SKIN_C,"sk")+opts("Mắt",o.eye,"eye")+opts("Kính",GLS,"gl");
-      else pane.innerHTML=opts("Phụ kiện",o.acc,"acc")+(o.bot.length>1?opts("Phần dưới đồng phục",o.bot,"bot"):'')+'<p class="note">Áo trắng và gile là đồng phục chung của lớp.</p>';
+      if(tab==="toc") pane.innerHTML=tiles("Kiểu tóc",o.hair,"hair")+tiles("Màu tóc",HAIR_C,"hc","head",HAIR_C);
+      else if(tab==="mat") pane.innerHTML=tiles("Màu da",SKIN_C,"sk","head",SKIN_C)+tiles("Mắt",o.eye,"eye")+tiles("Kính",GLS,"gl");
+      else pane.innerHTML=tiles("Phụ kiện",o.acc,"acc")+(o.bot.length>1?tiles("Phần dưới đồng phục",o.bot,"bot","body"):'')+'<p class="note">Áo trắng và gile là đồng phục chung của lớp.</p>';
       pane.querySelectorAll("[data-k]").forEach(b=>b.onclick=()=>{ cur[b.dataset.k]=+b.dataset.v; apply(); });
     };
     const apply=(cheer)=>{ cur=fixLook(cur); if(has3d){ setLook(prev.k,cur); if(cheer){ prev.k.smile=1.2; prev.jump=0.5; } } draw(); };
