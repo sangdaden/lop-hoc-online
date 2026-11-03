@@ -3221,14 +3221,21 @@ body.drawer .rail,body.drawer .kcard{display:none}
     const d=LIVE.mem[u]||{}, nm=d.name||"người này";
     if(a==="kick"&&!(await askKick(nm))) return;
     try{ const ok=await rpc("lhl_mod",{p_code:LIVE.code,p_uid:u,p_act:a}); if(ok===false){ toast("Không làm được với người này."); return; } }
-    catch(e){ toast("Không gửi được. Kiểm tra mạng rồi thử lại."); return; }
+    catch(e){ toast(modErr(e,"Không gửi được. Kiểm tra mạng rồi thử lại."),7000); return; }
     toast({stand:"Đã cho "+nm+" đứng dậy, ghế đã trống.",lock:"Đã tạm khóa "+nm+".",unlock:"Đã mở khóa cho "+nm+".",rename:"Đã đổi tên "+nm+".",kick:"Đã mời "+nm+" ra khỏi lớp.",unban:"Đã cho "+nm+" vào lại."}[a]);
     if(a==="kick") closeMod();
     pollLoop();
   }
-  function askKick(nm){ return new Promise(done=>{
+  function askKick(nm){ return askBox("Mời "+nm+" ra khỏi lớp?",nm+" rời phòng ngay, ghế được trả lại. Họ không vào lại được buổi này, trừ khi bạn bấm “Cho vào lại” trong Người trong lớp.","Mời ra",true); }
+  // Lỗi từ máy chủ: nói rõ khi máy chủ chưa có hàm mới (chưa chạy lại file SQL) hoặc tab không còn giữ lớp
+  function modErr(e,dft){ const m=String(e&&(e.message||e.code)||e||"");
+    if(/Could not find the function|schema cache|PGRST202|does not exist/i.test(m)) return "Máy chủ chưa có tính năng này. Chạy lại toàn bộ file supabase/lop-hoc-lang.sql trên Supabase rồi thử lại.";
+    if(/khong du quyen/.test(m)) return "Tab này không còn giữ lớp (lớp đã đóng hoặc Key Coach khác đã vào). Tải lại trang rồi thử lại.";
+    console.warn(e); return dft; }
+  // Hộp hỏi lại theo kiểu của trang (thay confirm() của trình duyệt)
+  function askBox(title,body,okLabel,danger){ return new Promise(done=>{
     const ov=document.createElement("div"); ov.className="overlay";
-    ov.innerHTML='<form class="card" role="dialog" aria-label="Mời ra khỏi lớp"><h3>Mời '+esc(nm)+' ra khỏi lớp?</h3><p class="note">'+esc(nm)+' rời phòng ngay, ghế được trả lại. Họ không vào lại được buổi này, trừ khi bạn bấm “Cho vào lại” trong Người trong lớp.</p><div class="row"><button type="button" class="btn" id="kkNo">Thôi</button><button class="btn primary" id="kkYes" style="background:#A84B20;border-color:#A84B20">Mời ra</button></div></form>';
+    ov.innerHTML='<form class="card" role="dialog" aria-label="'+esc(title)+'"><h3>'+esc(title)+'</h3><p class="note">'+esc(body)+'</p><div class="row"><button type="button" class="btn" id="kkNo">Thôi</button><button class="btn primary" id="kkYes"'+(danger?' style="background:#A84B20;border-color:#A84B20"':'')+'>'+esc(okLabel)+'</button></div></form>';
     sceneEl.appendChild(ov); const end=v=>{ ov.remove(); done(v); };
     ov.querySelector("#kkNo").onclick=()=>end(false); ov.querySelector("form").onsubmit=e=>{ e.preventDefault(); end(true); };
     ov.addEventListener("keydown",e=>{ if(e.key==="Escape") end(false); }); ov.querySelector("#kkYes").focus();
@@ -3263,9 +3270,9 @@ body.drawer .rail,body.drawer .kcard{display:none}
   $("ngQ").addEventListener("input",()=>{ MOD.q=$("ngQ").value; renderNguoi(); });
   document.querySelectorAll('[data-tab="nguoi"]').forEach(b=>b.addEventListener("click",()=>setTimeout(renderNguoi,0)));
   $("ngNew").onclick=async()=>{
-    if(!confirm("Đổi mã vào lớp? Mã cũ "+(LIVE.pass||"")+" sẽ không dùng được nữa. Ai đang trong lớp vẫn ở lại.")) return;
+    if(!(await askBox("Đổi mã vào lớp?","Mã cũ "+(LIVE.pass||"")+" sẽ không dùng được nữa. Ai đang trong lớp vẫn ở lại, màn hình lớn hiện mã mới.","Đổi mã"))) return;
     try{ const v=await rpc("lhl_newpass",{p_code:LIVE.code}); LIVE.pass=v; try{ localStorage.setItem("lhl-pass-"+LIVE.code,v); }catch(e){} renderLive(); renderNguoi(); toast("Mã vào lớp mới: "+v+". Màn hình lớn đã đổi theo."); }
-    catch(e){ toast("Không đổi được mã vào lớp."); }
+    catch(e){ toast(modErr(e,"Không đổi được mã vào lớp."),7000); }
   };
   // Phía học viên / Lab Coach: bị tạm khóa, bị đổi tên, bị cho đứng dậy, bị mời ra
   function applyMine(md){
