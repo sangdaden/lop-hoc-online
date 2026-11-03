@@ -2536,11 +2536,13 @@ body.drawer .rail,body.drawer .kcard{display:none}
     return {code,role,lab:j.lab||lab,pass:jp,fresh,old:j.old};
   }
   // Ghi bản ghi của mình: gộp các thay đổi trong 150 ms rồi gửi một lần
-  let mePatch=null, meT=0;
+  let mePatch=null, meT=0, meAt=0;
+  function meFlush(){ clearTimeout(meT); const p=mePatch; mePatch=null; if(p) rpcQ("lhl_me",{p_code:LIVE.code,p_patch:p}); }
   function netMe(patch){
     if(!LIVE.on||LIVE.closed) return; Object.assign(LIVE.me,patch);
+    if(!mePatch) meAt=Date.now();
     mePatch=Object.assign(mePatch||{},patch); clearTimeout(meT);
-    meT=setTimeout(()=>{ const p=mePatch; mePatch=null; rpcQ("lhl_me",{p_code:LIVE.code,p_patch:p}); },150);
+    meT=setTimeout(meFlush,150);
   }
   async function liveJoin(P){
     LIVE.on=true; LIVE.code=P.code; LIVE.role=P.role; LIVE.lab=P.lab||""; LIVE.pass=P.pass||""; document.body.dataset.live="1";
@@ -2560,12 +2562,14 @@ body.drawer .rail,body.drawer .kcard{display:none}
   }
   // Sau khi dựng lại phòng (buildRoom xóa tiến độ), lấy lại tiến độ của mình
   function restoreMe(){ if(!LIVE.on) return; myStep=LIVE.me.step||0; myChk=LIVE.me.chk||0; myRole=LIVE.me.grpRole||""; if(LIVE.me.nop&&!myNop) myNop="(đã nộp)"; relabel(); }
-  let pollN=0, pollFail=0;
+  let pollN=0, pollFail=0, pollBusy=false, pollT=0, pollDue=0;
+  // Tab ẩn: trình duyệt hãm setTimeout (có khi 1 phút/lần), nên đồng hồ ở worker (hiddenTick) gọi bù khi trễ hạn.
+  // Tab ẩn vẫn báo "còn đây" mỗi lần hỏi, để người khác không thấy mình biến mất.
   async function pollLoop(){
-    if(!LIVE.on) return;
-    try{ const r=await rpc("lhl_poll",{p_code:LIVE.code,p_since:Math.max(0,LIVE.since-4000),p_beat:pollN++%4===0}); onPoll(r,false); if(pollFail>=3) toast("Đã kết nối lại."); pollFail=0; }
+    if(!LIVE.on||pollBusy) return; pollBusy=true; clearTimeout(pollT);
+    try{ const r=await rpc("lhl_poll",{p_code:LIVE.code,p_since:Math.max(0,LIVE.since-4000),p_beat:document.hidden||pollN++%4===0}); onPoll(r,false); if(pollFail>=3) toast("Đã kết nối lại."); pollFail=0; }
     catch(e){ pollFail++; if(pollFail===3) toast("Mất kết nối tới phòng. Đang thử lại…"); }
-    setTimeout(pollLoop,document.hidden?6000:2500);
+    pollBusy=false; const wait=document.hidden?6000:2500; pollDue=Date.now()+wait; pollT=setTimeout(pollLoop,wait);
   }
   function onPoll(r,first){
     NET.off=r.now-Date.now(); LIVE.since=r.now;
@@ -2663,8 +2667,9 @@ body.drawer .rail,body.drawer .kcard{display:none}
     render();
   }
   // Gửi vị trí mình đang đi tới (khi chưa ngồi), để người khác thấy bạn đi lại
-  setInterval(()=>{ if(!LIVE.on||!LIVE.joined||mySeat>=0) return; const p=me.walk?me.walk.to:me.g.position; const key=p.x.toFixed(1)+","+p.z.toFixed(1);
-    if(key!==LIVE.lastTo){ LIVE.lastTo=key; netMe({x:+p.x.toFixed(2),z:+p.z.toFixed(2)}); } },700);
+  function sendPos(){ if(!LIVE.on||!LIVE.joined||mySeat>=0) return; const p=me.walk?me.walk.to:me.g.position; const key=p.x.toFixed(1)+","+p.z.toFixed(1);
+    if(key!==LIVE.lastTo){ LIVE.lastTo=key; netMe({x:+p.x.toFixed(2),z:+p.z.toFixed(2)}); } }
+  setInterval(sendPos,700);
   // Giữ ghế: máy chủ chỉ cho một người một ghế
   async function claimSeat(i){ if(!LIVE.on) return true; try{ return await rpc("lhl_seat",{p_code:LIVE.code,p_seat:i}); }catch(e){ return false; } }
   // Bảng "Phòng": mã phòng, link mời, mã Lab Coach, đóng phòng
@@ -2684,7 +2689,7 @@ body.drawer .rail,body.drawer .kcard{display:none}
     try{ await rpc("lhl_open",{p_code:LIVE.code,p_open:open}); LIVE.closed=!open; renderLive(); toast(open?"Đã mở lại phòng.":"Đã đóng phòng."); }catch(e){ toast("Không đổi được trạng thái phòng."); } };
 
   // ---------- frame loop ----------
-  const clock=new T.Clock(); const tmp=new T.Vector3(), look=new T.Vector3();
+  const tmp=new T.Vector3(), look=new T.Vector3();
   function resize(){ const w=stage.clientWidth, h=stage.clientHeight; if(!w||!h) return; renderer.setSize(w,h,false); camera.aspect=w/h; camera.updateProjectionMatrix(); }
   if(window.ResizeObserver) new ResizeObserver(resize).observe(stage); else window.addEventListener("resize",resize);
   resize();
@@ -2716,10 +2721,35 @@ body.drawer .rail,body.drawer .kcard{display:none}
     if(ex==="normal"&&t>k.blinkAt){ if(t>k.blinkAt+0.14) k.blinkAt=t+2+Math.random()*4; else ex="blink"; }
     setExpr(k,ex);
   }
+  // Chạy thế giới theo thời gian thật, tách khỏi khung hình: khi tab bị ẩn (chuyển tab, thu nhỏ),
+  // requestAnimationFrame dừng nhưng nhân vật vẫn phải đi tiếp, ngồi xuống ghế, xong các việc đang dở.
+  const simT0=performance.now(); let simLast=simT0;
+  function simAdvance(){
+    const now=performance.now(); let dt=(now-simLast)/1000; simLast=now;
+    if(dt<=0) return; dt=Math.min(dt,60); const t=(now-simT0)/1000, d0=Math.min(dt,0.05);
+    for(const k of kids){
+      // bị trễ nhiều (tab ẩn lâu): cho người đang đi bước bù từng nhịp nhỏ tới khi tới nơi
+      if(k.walk&&dt>0.05){ let r=dt-0.05; while(r>0&&k.walk){ const d=Math.min(0.05,r); animKid(k,d,t); r-=d; } }
+      animKid(k,d0,t);
+    }
+    decorTick(d0);
+  }
+  function hiddenTick(){
+    if(!document.hidden) return;
+    simAdvance();
+    if(LIVE.on){ sendPos(); if(mePatch&&Date.now()-meAt>400) meFlush();
+      if(LIVE.joined&&!pollBusy&&pollDue&&Date.now()>pollDue+1500) pollLoop(); }
+  }
+  // Worker không bị hãm nhịp như setTimeout của tab ẩn, dùng làm đồng hồ khi tab ẩn
+  try{ const w=new Worker(URL.createObjectURL(new Blob(["setInterval(function(){postMessage(0)},250)"],{type:"text/javascript"}))); w.onmessage=hiddenTick; }
+  catch(e){ setInterval(hiddenTick,250); }
+  document.addEventListener("visibilitychange",()=>{
+    if(document.hidden){ simAdvance(); return; }
+    // quay lại tab: bù phần thế giới đã trôi, hỏi máy chủ ngay thay vì chờ lượt hỏi chậm của tab ẩn
+    simAdvance(); if(LIVE.on&&LIVE.joined&&!pollBusy) pollLoop();
+  });
   function frame(){
-    const dt=Math.min(clock.getDelta(),0.05), t=clock.elapsedTime;
-    for(const k of kids) animKid(k,dt,t);
-    decorTick(dt);
+    simAdvance();
     const target=me.g.position; let want, at;
     if(view!=="me"){ const cp=Math.cos(vw.pitch); want=tmp.set(vw.fx+Math.sin(vw.yaw)*vw.dist*cp, 0.5+vw.dist*Math.sin(vw.pitch), vw.fz+Math.cos(vw.yaw)*vw.dist*cp); at=look.set(vw.fx,0.5,vw.fz); }
     else { const cp=Math.cos(camPitch); want=tmp.set(target.x+Math.sin(camYaw)*camDist*cp, 1+camDist*Math.sin(camPitch), target.z+Math.cos(camYaw)*camDist*cp); at=look.set(target.x-Math.sin(camYaw)*1.2,0.9,target.z-Math.cos(camYaw)*1.2); }
