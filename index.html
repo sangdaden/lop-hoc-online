@@ -1705,6 +1705,39 @@ body.drawer .rail,body.drawer .kcard{display:none}
     // --- chỗ ngồi ngoài bàn học: 3 ghế lười góc nghỉ, ghế bục giảng (ai cũng ngồi được), ghế dọc tường (cho Lab Coach) ---
     RS.length=0; kids.forEach(k=>{ k.rest=null; });
     [[-.85,-.35],[.75,-.5],[.1,.9]].forEach(([ox,oz],i)=>{ const x=gx+ox, z=gz+oz; RS.push({kind:"bean",name:"Góc nghỉ",mesh:bb,inst:i,pos:new T.Vector3(x,0,z),yaw:Math.atan2(gx-x,gz-z),y:.3,by:null}); });
+    // --- hốc nghỉ dọc hai tường bên (Sang duyệt phương án B, 03/11/2026): tường trái quầy cửa sổ, tường phải xen kẽ ghế lười / sofa chữ L ---
+    // số hốc mỗi bên tăng theo sĩ số (~1 hốc mỗi bên cho 80 người), né ghế dọc tường và chậu cây giữa tường trái
+    { const per=Math.max(1,Math.round(N/80)), lo=zFront+3.6, hi=zBack-4.6, busy=[];
+      [D*0.24,D*0.62].forEach(t=>{ const z=zFront+t; if(z+.75<=zBack-3.8) busy.push(z+.375); });
+      const pick=[]; for(let t=0;t<=60;t++){ const z=lo+(hi-lo)*t/60; if(busy.every(b=>Math.abs(z-b)>2.3)) pick.push(z); }
+      const choose=extra=>{ const out=[]; if(!pick.length||hi<=lo) return out; for(let i=0;i<per;i++){ const tg=lo+(hi-lo)*(i+.5)/per; let b=null; pick.forEach(z=>{ if(extra.every(e=>Math.abs(z-e)>1.7)&&(b==null||Math.abs(z-tg)<Math.abs(b-tg))) b=z; }); if(b!=null&&out.every(o=>Math.abs(o-b)>2.9)) out.push(b); } return out; };
+      const ZL=choose([cz+.3]), ZR=choose([]);
+      // tường trái: quầy gỗ cao dưới cửa sổ + 4 ghế đẩu quay ra cửa sổ
+      const stS=im(new T.CylinderGeometry(.2,.2,.06,18),M.white,ZL.length*4), stP=im(new T.CylinderGeometry(.03,.03,.72,8),M.black,ZL.length*4), stF=im(new T.CylinderGeometry(.18,.18,.02,18),M.black,ZL.length*4);
+      stS.setColorAt(0,col.setHex(0x23407A)); // có màu sẵn kể cả khi 0 hốc (vật liệu dùng chung màu theo instance)
+      ZL.forEach((z,i)=>{ const xw=-W/2;
+        box(.55,.06,2.6,m.woodL,xw+.38,1.05,z); box(.08,1.0,2.6,m.wood,xw+.14,.5,z); obsBox(xw+.38,z,.6,2.6);
+        [-.95,-.32,.32,.95].forEach((o,j)=>{ const x=xw+.95, k=i*4+j; place(stS,k,x,.75,z+o); place(stP,k,x,.37,z+o); place(stF,k,x,.01,z+o); stS.setColorAt(k,col.setHex(j%2?0xF2C14E:0x23407A)); obsCirc(x,z+o,.2);
+          RS.push({kind:"bar",name:"Quầy cửa sổ",mesh:stS,inst:k,pos:new T.Vector3(x,0,z+o),yaw:-Math.PI/2,y:.61,by:null}); }); });
+      // tường phải: hốc ghế lười (2 chỗ) và sofa chữ L (3 chỗ) xen kẽ
+      const nB=ZR.filter((z,i)=>i%2===0).length, nS=ZR.length-nB;
+      const bs=im(new T.SphereGeometry(.4,18,12),M.white,nB*2), cu=im(new T.BoxGeometry(.62,.14,.62),M.white,nS*3);
+      bs.setColorAt(0,col.setHex(0xB9C9A6)); cu.setColorAt(0,col.setHex(0x2E4E8F)); let bi=0, ci=0;
+      ZR.forEach((z,i)=>{ const xw=W/2;
+        if(i%2===0){ const cx=xw-1.15;
+          const rg=new T.Mesh(new T.CircleGeometry(.95,36),m.rug); rg.position.set(cx,.006,z); rg.rotation.x=-Math.PI/2; room.add(rg);
+          const tb=new T.Mesh(new T.CylinderGeometry(.28,.28,.04,24),m.woodL); tb.position.set(cx-.15,.44,z); room.add(tb); const tl3=new T.Mesh(new T.CylinderGeometry(.04,.04,.42,8),m.wood); tl3.position.set(cx-.15,.21,z); room.add(tl3); obsCirc(cx-.15,z,.3);
+          [[-.6,0xB9C9A6],[.6,0xF6D78A]].forEach(([o,c])=>{ const x=xw-.75, zz=z+o, k=bi++; place(bs,k,x,.24,zz,0,0,1,.6,1); bs.setColorAt(k,col.setHex(c)); obsCirc(x,zz,.4);
+            RS.push({kind:"bean",name:"Hốc nghỉ",mesh:bs,inst:k,pos:new T.Vector3(x,0,zz),yaw:Math.atan2(cx-.15-x,z-zz),y:.3,by:null}); });
+        } else {
+          box(.85,.42,2.0,m.navy,xw-.45,.21,z); box(.22,.55,2.0,m.navy,xw-.11,.7,z); // phần dọc tường
+          box(1.0,.42,.85,m.navy,xw-1.35,.21,z+.575); box(1.0,.55,.22,m.navy,xw-1.35,.7,z+.89); // tay chữ L
+          obsBox(xw-.45,z,.85,2.0); obsBox(xw-1.35,z+.575,1.0,.85);
+          box(.6,.05,.5,m.woodL,xw-1.55,.42,z-.55); obsBox(xw-1.55,z-.55,.6,.5);
+          [[xw-.5,z-.6,-Math.PI/2],[xw-.5,z+.15,-Math.PI/2],[xw-1.35,z+.5,Math.PI]].forEach(([x,zz,ry],j)=>{ const k=ci++; place(cu,k,x,.49,zz,ry); cu.setColorAt(k,col.setHex(j===1?0xF2C14E:0x2E4E8F));
+            RS.push({kind:"sofa",name:"Sofa góc",mesh:cu,inst:k,pos:new T.Vector3(x,0,zz),yaw:ry,y:.42,by:null}); });
+        } });
+    }
     const CH=[[-W*0.32,zFront+0.9,0,"pod"]];
     [D*0.24,D*0.62].forEach(t=>[0,.75].forEach(o=>{ const z=zFront+t+o; if(z>zBack-3.8) return; CH.push([-W/2+.42,z,Math.PI/2,"wall"],[W/2-.42,z,-Math.PI/2,"wall"]); }));
     const chS=im(new T.BoxGeometry(.48,.06,.46),M.white,CH.length), chB=im(new T.BoxGeometry(.46,.5,.05),M.white,CH.length), chL=im(new T.BoxGeometry(.04,.45,.04),M.black,CH.length*4);
