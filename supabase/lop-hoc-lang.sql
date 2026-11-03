@@ -334,5 +334,8 @@ do $$ declare f record; begin
   end loop;
 end $$;
 
+-- Báo API nạp lại danh sách hàm ngay (tránh lỗi "Could not find the function ... in the schema cache").
+notify pgrst, 'reload schema';
+
 -- Mật mã Key Coach: đổi 'doi-mat-ma-nay' thành mật mã của bạn rồi chạy lại riêng dòng này khi muốn đổi.
 insert into lhl_config(k, v) values ('key_code', 'doi-mat-ma-nay') on conflict (k) do update set v = excluded.v;

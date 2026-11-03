@@ -43,6 +43,8 @@ Gửi hai giá trị này để dán vào `SB_URL` và `SB_KEY` ở đầu đo�
 4. Hết buổi bấm **Đóng phòng**. Buổi sau Key Coach mở lại cùng tên phòng: trang mở **buổi mới** với mã vào lớp và mã Lab Coach mới, người và đăng ký demo của buổi trước được xóa (điểm cộng vẫn giữ).
 5. Phòng đang mở mà Key Coach khác mở cùng tên phòng thì người đó nhận quyền dẫn, dữ liệu giữ nguyên.
 
+**Báo lỗi "Could not find the function … in the schema cache"?** Nghĩa là Supabase chưa có hàm mới. Chạy lại toàn bộ file SQL mới nhất (bấm Run, thấy Success), đợi vài giây rồi tải lại trang game.
+
 **Đã chạy file SQL bản cũ?** Chạy lại toàn bộ file mới một lần (dữ liệu không mất), rồi chạy lại dòng mật mã Key Coach nếu bạn đã đổi.
 
 ## Cách hoạt động (tóm tắt)
