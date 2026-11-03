@@ -418,7 +418,7 @@ body.drawer .rail,body.drawer .kcard{display:none}
         <button class="act r-hv" id="aHand" title="Giơ tay khi bị kẹt, Lab Coach sẽ tới"><svg viewBox="0 0 24 24"><path d="M8 13V5.5a1.5 1.5 0 0 1 3 0V11M11 10V4.5a1.5 1.5 0 0 1 3 0V11M14 10.5V6a1.5 1.5 0 0 1 3 0v8a6 6 0 0 1-6 6h-.5a5.5 5.5 0 0 1-4.6-2.5L4 14.5a1.5 1.5 0 0 1 2.5-1.7L8 15"/></svg><span id="handLabel">Giơ tay</span><small id="handN">0</small></button>
         <button class="act r-hv" id="aBonus" title="Ghi nhận điểm cộng: ghi lý do, coach xác nhận"><svg viewBox="0 0 24 24"><path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.8l-5.2 2.8 1-5.8-4.3-4.1 5.9-.9z"/></svg>Điểm cộng<small id="bonusN">0</small></button>
         <button class="act r-lab main" id="lTake" title="Nhận người kế tiếp trong hàng chờ"><svg viewBox="0 0 24 24"><path d="M4 6h10M4 12h7M4 18h5M15 13l3 3 4-6"/></svg>Nhận lượt<small id="lTakeN">0</small></button>
-        <button class="act r-lab" id="lFix" disabled title="Gỡ xong cho người đang giúp"><svg viewBox="0 0 24 24"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L4 17l3 3 5.3-5.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.5-2.5z"/></svg>Gỡ xong<small id="lFixN">0</small></button>
+        <button class="act r-lab" id="lFix" disabled title="Xem xong, quay về. Học viên tự hạ tay khi gỡ được"><svg viewBox="0 0 24 24"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L4 17l3 3 5.3-5.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.5-2.5z"/></svg>Xem xong<small id="lFixN">0</small></button>
         <button class="act r-lab" id="lEsc" title="Báo Key Coach giảng lại cho cả lớp"><svg viewBox="0 0 24 24"><path d="M12 19V5M6 11l6-6 6 6"/></svg>Báo Key<small id="lEscN">0</small></button>
         <button class="act r-key main" id="kOpen" title="Sang phase tiếp cho cả phòng"><svg viewBox="0 0 24 24"><path d="M5 12h12M13 6l6 6-6 6"/></svg>Sang phase<small id="kOpenN">P0</small></button>
         <button class="act r-key" id="kPlus" title="Thêm 5 phút cho phase đang chạy"><svg viewBox="0 0 24 24"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2M9 2h6"/></svg>+5 phút<small id="kPlusN">00:00</small></button>
@@ -483,7 +483,7 @@ body.drawer .rail,body.drawer .kcard{display:none}
           <span><i class="coachkey" style="background:#22324f;box-shadow:inset 0 -4px #d8a93b"></i>Key Coach đang dẫn</span><b id="cGuide">phase 1</b>
           <span>Lần giảng lại cho cả lớp</span><b id="cRe">0</b>
           <span><i class="coachkey" style="background:#2f7f72"></i>Lab Coach trong phòng</span><b id="cLab">1</b>
-          <span>Lượt đã gỡ kẹt</span><b id="cFix">0</b>
+          <span>Lượt coach tới xem</span><b id="cFix">0</b>
           <span>Chờ trung bình</span><b id="cWait">–</b>
         </div>
         <p class="note" id="coachNote">Key Coach đứng đầu phòng, dẫn nhịp cả lớp và giảng lại bước có nhiều người kẹt. Mỗi Lab Coach phụ trách một khu bàn, đi tới ghế người giơ tay.</p>
@@ -1184,7 +1184,7 @@ body.drawer .rail,body.drawer .kcard{display:none}
   // ---------- build classroom ----------
   let tas=[], keyC=null, keyHome=null, keySpot=null, myHelp=-1;
   function buildRoom(n,type){
-    GEN++;
+    GEN++; roomAt=performance.now();
     N=n||N; TYPE=type||TYPE; TAS=Math.ceil(N/50); HOT=Math.max(3,Math.round(N*0.05));
     kids.filter(k=>k!==me).forEach(removeKid);
     bubbles.slice().forEach(b=>{ if(b!==meLabel) killBubble(b); });
@@ -1231,9 +1231,22 @@ body.drawer .rail,body.drawer .kcard{display:none}
     s.kid=k; s.name=k.name; s.step=MODE==="tuhoc"?Math.floor(Math.random()*NS):Math.min(KS.guide,Math.floor(Math.random()*2)); s.stuck=false; s.reserved=false; s.nop=false; s.bon=0;
     return k;
   }
+  // Giơ tay chỉ là thông báo: coach thấy và tới xem, còn hạ tay là việc của học viên.
+  let lastPing=0, pingN=0, roomAt=0;
+  function notifyHand(i){
+    if(ROLE!=="lab"||!seats[i]||(TAS>1&&seats[i].zone!==me.zone)) return;
+    const now=performance.now(); if(now-roomAt<1500) return; pingN++; if(now-lastPing<3000) return;
+    toast(pingN>1?pingN+" người vừa giơ tay ở khu bạn":"Có người giơ tay ở khu bạn · "+seats[i].name+" · "+grpName(i)); knock(.5); lastPing=now; pingN=0;
+  }
+  // Học viên mô phỏng tự quyết: phần lớn tự hạ tay sau khi được xem, số còn lại giữ tay để coach quay lại.
+  function selfLower(j,kid,p,msg){
+    setTimeout(()=>{ const s=seats[j]; if(!s||s.kid!==kid||!s.stuck||s.coming) return;
+      if(Math.random()<p){ setStuck(j,false); if(msg&&kid.g.position.distanceTo(me.g.position)<10) bubble(kid,esc(s.name)+" "+msg,1800,"ok"); render(); }
+    },1200+Math.random()*3500);
+  }
   function setStuck(i,on){
-    const s=seats[i]; if(!s||!s.kid) return; s.stuck=on; s.kid.hand=on; s.kid.alert.visible=on;
-    if(on&&queue.indexOf(i)<0){ queue.push(i); qAt[i]=performance.now(); }
+    const s=seats[i]; if(!s||!s.kid) return; s.stuck=on; s.kid.hand=on; s.kid.alert.visible=on; s.coming=null; s.seen=false;
+    if(on&&queue.indexOf(i)<0){ queue.push(i); qAt[i]=performance.now(); notifyHand(i); }
     if(!on){ const q=queue.indexOf(i); if(q>=0) queue.splice(q,1); delete qAt[i]; }
     paintSeat(i);
   }
@@ -1382,15 +1395,15 @@ body.drawer .rail,body.drawer .kcard{display:none}
   function lowerHand(msg){
     myHand=false; me.hand=false; me.alert.visible=false; $("aHand").classList.remove("on"); $("handLabel").textContent="Giơ tay";
     const q=queue.indexOf(mySeat); if(q>=0) queue.splice(q,1); delete qAt[mySeat];
-    if(mySeat>=0){ seats[mySeat].stuck=false; paintSeat(mySeat); }
+    if(mySeat>=0){ const s=seats[mySeat]; s.stuck=false; s.coming=null; s.seen=false; paintSeat(mySeat); }
     if(msg) toast(msg); render();
   }
   $("aHand").onclick=()=>{
     if(needSeat()) return;
-    if(myHand){lowerHand("Đã hạ tay. Bạn tự gỡ được rồi.");return;}
+    if(myHand){lowerHand("Đã hạ tay.");return;}
     if(myStep>=NS){toast("Bạn đã xong cả ngày lab rồi.");return;}
     myHand=true; st.hand++; me.hand=true; me.alert.visible=true; $("aHand").classList.add("on"); $("handLabel").textContent="Hạ tay";
-    seats[mySeat].stuck=true; paintSeat(mySeat); queue.push(mySeat); qAt[mySeat]=performance.now();
+    seats[mySeat].stuck=true; seats[mySeat].coming=null; seats[mySeat].seen=false; paintSeat(mySeat); queue.push(mySeat); qAt[mySeat]=performance.now();
     bubble(me,"Đang chờ Lab Coach "+(seats[mySeat].zone+1)+" · thứ "+queue.length,2200,"");
     render();
   };
@@ -1428,9 +1441,9 @@ body.drawer .rail,body.drawer .kcard{display:none}
         +(b?'<div class="srow brk'+(MODE==="lop"&&KS.brk&&KS.guide===k?' now':'')+'"><span>Nghỉ '+b.phut+"'"+'</span><span></span></div>':'');
     }).join("");
     const MAXQ=8, myPos=queue.indexOf(mySeat);
-    const items=queue.slice(0,MAXQ).map(i=>'<li class="'+(i===mySeat?'me':'')+'">'+(i===mySeat?'Bạn':esc(seats[i].name))+' · '+esc(phaseOf(seats[i].step).ngan||"")+' · '+grpName(i)+(TAS>1?' · khu '+(seats[i].zone+1):'')+'</li>');
+    const items=queue.slice(0,MAXQ).map(i=>'<li class="'+(i===mySeat?'me':'')+'">'+(i===mySeat?'Bạn':esc(seats[i].name))+' · '+esc(phaseOf(seats[i].step).ngan||"")+' · '+grpName(i)+(TAS>1?' · khu '+(seats[i].zone+1):'')+(seats[i].coming?' · '+esc(seats[i].coming)+' đang tới':seats[i].seen?' · đã xem, chờ tự hạ tay':'')+'</li>');
     if(queue.length>MAXQ) items.push('<li>…và '+(queue.length-MAXQ)+' người nữa'+(myPos>=MAXQ?' (bạn đứng thứ '+(myPos+1)+')':'')+'</li>');
-    if(ROLE==="hv"){ items.length=0; items.push(myPos>=0?'<li class="me">Bạn đứng thứ '+(myPos+1)+' / '+queue.length+' người đang chờ</li>':'<li>'+(queue.length?queue.length+' người đang chờ Lab Coach':'Chưa ai giơ tay')+'</li>'); }
+    if(ROLE==="hv"){ items.length=0; items.push(myPos>=0?'<li class="me">'+(seats[mySeat].coming?esc(seats[mySeat].coming)+' đang tới chỗ bạn':seats[mySeat].seen?'Lab Coach đã xem. Gỡ được thì bấm Hạ tay':'Bạn đứng thứ '+(myPos+1)+' / '+queue.length+' người đang giơ tay')+'</li>':'<li>'+(queue.length?queue.length+' người đang chờ Lab Coach':'Chưa ai giơ tay')+'</li>'); }
     $("helpq").innerHTML=items.length?items.join(""):'<li>Chưa ai giơ tay.</li>';
     { const g=mySeat>=0?myGate():"", p=phaseOf(myStep), n=(p.tuKiem||[]).length;
       $("stepLabel").textContent=myStep>=NS?"✓":g?"…":myChk+"/"+n; $("aStep").title=myStep>=NS?"Đã xong "+NS+"/"+NS+" phase":g&&!KS.brk?"Chờ Key Coach mở phase tiếp":g?"Đang nghỉ":"Tick mục "+(myChk+1)+"/"+n+" của phase "+myStep; }
@@ -1446,7 +1459,7 @@ body.drawer .rail,body.drawer .kcard{display:none}
     $("sGreet").textContent=st.greet; $("sHand").textContent=st.hand;
     $("cGuide").textContent=KS.brk?"đang nghỉ":"phase "+KS.guide+"/"+(NS-1); $("cRe").textContent=KS.re; $("cLab").textContent=TAS;
     $("cFix").textContent=HS.done; $("cWait").textContent=HS.n?Math.round(HS.wait/HS.n)+" giây":"–";
-    $("lTakeN").textContent=queue.length; $("lFixN").textContent=HS.mine; $("lEscN").textContent=HS.esc; $("greetN").textContent=st.greet; $("handN").textContent=st.hand;
+    $("lTakeN").textContent=queue.filter(i=>seats[i]&&!seats[i].seen&&!seats[i].coming).length; $("lFixN").textContent=HS.mine; $("lEscN").textContent=HS.esc; $("greetN").textContent=st.greet; $("handN").textContent=st.hand;
     $("kOpenN").textContent=KS.brk?"nghỉ":"P"+KS.guide; $("kPlusN").textContent=mmss(KS.left); $("kReN").textContent=KS.re; $("kCallN").textContent=KS.call;
     renderHud(people);
   }
@@ -1506,10 +1519,14 @@ body.drawer .rail,body.drawer .kcard{display:none}
   // ---------- Key Coach & Lab Coach ----------
   // Lấy người kế tiếp trong hàng chờ, ưu tiên khu của Lab Coach đó; ghi lại thời gian chờ.
   function takeNext(zone,only){
-    if(!queue.length) return -1;
-    let qi=only!=null?queue.indexOf(only):queue.findIndex(i=>seats[i]&&seats[i].zone===zone); if(qi<0) qi=0;
-    const j=queue.splice(qi,1)[0]; const now=performance.now();
-    HS.n++; HS.wait+=(now-(qAt[j]||now))/1000; delete qAt[j]; return j;
+    // Không xoá khỏi hàng chờ: tay vẫn giơ cho tới khi học viên tự hạ. Chỉ đánh dấu ai đang được tới xem.
+    const free=i=>seats[i]&&seats[i].kid&&!seats[i].coming;
+    let j=only!=null&&free(only)?only:-1;
+    if(j<0&&only==null) j=queue.find(i=>free(i)&&!seats[i].seen&&seats[i].zone===zone);
+    if(j==null||j<0) j=only==null?queue.find(i=>free(i)&&!seats[i].seen):-1;
+    if(j==null||j<0) return -1;
+    const now=performance.now(); if(!seats[j].seen){ HS.n++; HS.wait+=(now-(qAt[j]||now))/1000; }
+    return j;
   }
   // Bước có nhiều người kẹt nhất (min: tối thiểu bao nhiêu người)
   function worstStep(min){ let best=-1,bn=min-1; for(let k=0;k<NS;k++){ const c=seats.filter(s=>s.kid&&s.stuck&&s.step===k).length; if(c>bn){bn=c;best=k;} } return best; }
@@ -1525,8 +1542,8 @@ body.drawer .rail,body.drawer .kcard{display:none}
       seats.forEach(s=>{ if(s.kid&&s.kid!==me&&s.kid.sitting) nod(s.kid); });
       setTimeout(()=>{
         if(gen!==GEN) return;
-        seats.forEach((s,i)=>{ if(s.kid&&s.kid!==me&&s.stuck&&s.step===k&&Math.random()<.6) setStuck(i,false); });
-        if(mySeat>=0&&myHand&&myStep===k) toast("Key Coach vừa giảng lại phase "+k+". Vẫn kẹt thì cứ giữ tay, Lab Coach sẽ tới.");
+        seats.forEach((s,i)=>{ if(s.kid&&s.kid!==me&&s.stuck&&s.step===k) selfLower(i,s.kid,.6,""); });
+        if(mySeat>=0&&myHand&&myStep===k) toast("Key Coach vừa giảng lại phase "+k+". Gỡ được thì bấm “Hạ tay”, vẫn kẹt thì cứ giữ tay.");
         setKeyOver(""); render();
         walkTo(kc,kc.home,2.2,()=>{ if(gen!==GEN) return; kc.g.rotation.y=0; kc.busy=false; });
       },3500);
@@ -1562,25 +1579,26 @@ body.drawer .rail,body.drawer .kcard{display:none}
     $("doorText").textContent="Đang đi tới "+seatLabel(j)+" ("+s.name+", "+grpName(j)+", phase "+s.step+")…";
     walkTo(me,behind(s,0.78),3.0,()=>{
       if(gen!==GEN) return;
-      if(!s.kid){ me.busy=false; myHelp=-1; $("doorText").textContent="Người này đã rời phòng. Nhận lượt kế."; return; }
-      me.g.rotation.y=s.yaw; nod(me); myHelp=j; $("lFix").disabled=false;
+      if(!s.kid){ s.coming=null; me.busy=false; myHelp=-1; $("doorText").textContent="Người này đã rời phòng. Nhận lượt kế."; return; }
+      me.g.rotation.y=s.yaw; nod(me); myHelp=j; $("lFix").disabled=false; if(!s.stuck){ $("doorText").textContent=s.name+" đã tự hạ tay trước khi bạn tới. Bấm “Xem xong” để quay về."; return; }
       bubble(s.kid,esc(s.name)+" · kẹt ở phase "+s.step+": "+esc(phaseOf(s.step).ngan||""),2400);
-      $("doorText").textContent="Bạn đang đứng sau "+seatLabel(j)+". Xem màn hình, gỡ xong thì bấm “Gỡ xong”.";
+      $("doorText").textContent="Bạn đang đứng sau "+seatLabel(j)+". Xem màn hình cùng học viên, xong thì bấm “Xem xong”. Học viên sẽ tự hạ tay khi gỡ được.";
     });
     render();
   }
   $("lTake").onclick=()=>{
     actx();
-    if(me.busy){ toast(myHelp>=0?"Bấm “Gỡ xong” cho người đang giúp trước đã.":"Bạn đang đi tới một bàn."); return; }
-    const j=takeNext(me.zone); if(j<0){ toast("Chưa ai giơ tay."); return; }
+    if(me.busy){ toast(myHelp>=0?"Bấm “Xem xong” cho người đang xem trước đã.":"Bạn đang đi tới một bàn."); return; }
+    const j=takeNext(me.zone); if(j<0){ toast(queue.length?"Ai giơ tay cũng đã có Lab Coach tới xem. Chờ học viên tự hạ tay.":"Chưa ai giơ tay."); return; }
+    seats[j].coming=me.name;
     helpSeat(j);
   };
   $("lFix").onclick=()=>{
     if(myHelp<0){ toast("Nhận một lượt trước đã."); return; }
     const j=myHelp, s=seats[j]; myHelp=-1; me.busy=false; $("lFix").disabled=true;
-    if(s&&s.kid){ s.stuck=false; s.kid.hand=false; s.kid.alert.visible=false; paintSeat(j); bow(s.kid); bubble(s.kid,esc(s.name)+" cúi đầu cảm ơn",2200); }
+    if(s&&s.kid&&s.stuck){ s.coming=null; s.seen=true; bow(s.kid); bubble(s.kid,esc(s.name)+" cúi đầu cảm ơn",2200); selfLower(j,s.kid,.85,"tự hạ tay"); const kid=s.kid; setTimeout(()=>{ if(s.kid===kid&&s.stuck&&s.seen&&!s.coming) s.seen=false; },20000); }
     HS.done++; HS.mine++; knock(.6);
-    $("doorText").textContent="Đã gỡ xong. Còn "+queue.length+" người trong hàng chờ.";
+    $("doorText").textContent="Đã xem xong. Học viên tự hạ tay khi gỡ được. Còn "+queue.filter(i=>seats[i]&&!seats[i].seen&&!seats[i].coming).length+" người chưa có ai tới.";
     render();
   };
   $("lEsc").onclick=()=>{
@@ -1604,7 +1622,7 @@ body.drawer .rail,body.drawer .kcard{display:none}
   function coachClick(h,onSeat){
     if(onSeat&&h.instanceId!=null){
       const j=h.instanceId, s=seats[j];
-      if(ROLE==="lab"&&s.stuck&&queue.indexOf(j)>=0){ if(me.busy){ toast("Gỡ xong người đang giúp trước đã."); return; } takeNext(me.zone,j); helpSeat(j); return; }
+      if(ROLE==="lab"&&s.stuck&&queue.indexOf(j)>=0){ if(me.busy){ toast("Bấm “Xem xong” cho người đang xem trước đã."); return; } if(s.coming){ toast(s.coming+" đang tới chỗ này rồi."); return; } takeNext(me.zone,j); s.coming=me.name; helpSeat(j); return; }
       if(me.busy) return; walkTo(me,behind(s,0.9),2.6,null); return;
     }
     if(me.busy) return;
@@ -1643,7 +1661,7 @@ body.drawer .rail,body.drawer .kcard{display:none}
     const n=Math.ceil(N/40);
     for(let t=0;t<n;t++){
       const j=pick(occ), s=seats[j], r=Math.random();
-      if(s.stuck) continue;
+      if(s.stuck){ if(!s.coming&&Math.random()<.12){ setStuck(j,false); } continue; }
       const can=s.step<NS&&(MODE==="tuhoc"||(!KS.brk&&s.step<=KS.guide));
       if(MODE==="lop"&&KS.guide===NS-1&&s.step>=NS-1&&!s.nop&&Math.random()<.25){ s.nop=true; }
       if(r<(can?.30:0)){ s.step++; nod(s.kid); paintSeat(j); }
@@ -1664,18 +1682,21 @@ body.drawer .rail,body.drawer .kcard{display:none}
   setInterval(()=>{
     tas.forEach(ta=>{
       if(ta.busy) return;
-      if(!queue.length){ if(!ta.atHome){ ta.busy=true; const gen=GEN; walkTo(ta,ta.home,2.4,()=>{ if(gen!==GEN) return; ta.busy=false; ta.atHome=true; ta.g.rotation.y=0; }); } return; }
+      if(!queue.some(i=>seats[i]&&!seats[i].coming&&!seats[i].seen)){ if(!ta.atHome){ ta.busy=true; const gen=GEN; walkTo(ta,ta.home,2.4,()=>{ if(gen!==GEN) return; ta.busy=false; ta.atHome=true; ta.g.rotation.y=0; }); } return; }
       const j=takeNext(ta.zone), s=seats[j]; if(j<0||!s||!s.kid) return;
-      ta.busy=true; ta.atHome=false; const gen=GEN;
+      ta.busy=true; ta.atHome=false; const gen=GEN; s.coming=ta.name; const kid=s.kid; render();
       walkTo(ta,behind(s,0.78),2.8,()=>{
         if(gen!==GEN) return;
         ta.g.rotation.y=s.yaw; nod(ta);
         if(s.kid===me) bubble(ta,esc(ta.name)+" đang xem màn hình của bạn",2000,"ta");
         setTimeout(()=>{
           if(gen!==GEN) return;
-          if(s.kid===me&&myHand){ lowerHand(ta.name+" đã gỡ xong chỗ kẹt cho bạn."); HS.done++; }
-          else if(s.kid&&s.stuck){ setStuck(j,false); HS.done++; }
-          ta.busy=false; render();
+          HS.done++; ta.busy=false;
+          if(s.kid===kid&&s.stuck){ s.coming=null; s.seen=true;
+            if(kid===me) toast(ta.name+" đã xem xong. Gỡ được rồi thì bấm “Hạ tay”.");
+            else selfLower(j,kid,.85,"tự hạ tay");
+            setTimeout(()=>{ if(s.kid===kid&&s.stuck&&s.seen&&!s.coming) s.seen=false; },20000); }
+          render();
         },1900);
       });
     });
