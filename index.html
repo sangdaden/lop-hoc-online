@@ -109,7 +109,7 @@ a:focus-visible,button:focus-visible,select:focus-visible{outline:2px solid var(
 @media (max-width:560px){.actions{grid-template-columns:repeat(2,minmax(0,1fr))}}
 /* Vai trò: mỗi vai chỉ thấy nút của mình (Học viên 4 nút, Lab Coach 4, Key Coach 5) */
 .actions:not([data-role="hv"]) .r-hv,.actions:not([data-role="lab"]) .r-lab,.actions:not([data-role="key"]) .r-key{display:none}
-.actions[data-role="lab"]{grid-template-columns:repeat(4,minmax(0,1fr))}.actions[data-role="key"]{grid-template-columns:repeat(5,minmax(0,1fr))}
+.actions[data-role="lab"]{grid-template-columns:repeat(4,minmax(0,1fr))}.actions[data-role="key"]{grid-template-columns:repeat(3,minmax(0,1fr))}
 @media (max-width:560px){.actions[data-role="lab"],.actions[data-role="key"]{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .act:disabled{opacity:.45;cursor:default}
 .coachkey{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:middle}
@@ -187,6 +187,10 @@ a:focus-visible,button:focus-visible,select:focus-visible{outline:2px solid var(
 .phasebar .tag{padding:1px 8px;border-radius:10px;border:1px solid var(--line);background:var(--paper-2);font-size:12px}
 .ctxbar{all:unset;cursor:pointer;display:block;text-align:center;padding:10px;border-radius:10px;background:var(--violet);color:var(--paper-2);font-weight:600;font-size:14px}
 .ctxbar[hidden]{display:none}
+.demoq{display:grid;gap:4px;font-size:13px;margin:0;padding-left:20px}
+.demoq li.me{color:var(--violet);font-weight:700}
+.demo-state{display:inline-block;padding:1px 8px;border-radius:10px;font-size:12px;font-weight:600;background:var(--line);color:var(--muted)}
+.demo-state.open{background:var(--ok);color:var(--paper-2)}
 /* Phân quyền: AUTH = vai đã vào phòng (có mật mã), ROLE = vai đang xem.
    Phần quản lý phòng chỉ Key Coach thấy; phần cá nhân của học viên chỉ hiện khi đang ở vai Học viên. */
 body:not([data-auth="key"]) .only-key{display:none!important}
@@ -311,6 +315,7 @@ body{overflow:hidden}
         <button class="act r-key" id="kOpen"><svg viewBox="0 0 24 24"><path d="M5 12h12M13 6l6 6-6 6"/></svg>Sang phase tiếp<small id="kOpenN">phase 1</small></button>
         <button class="act r-key" id="kPlus"><svg viewBox="0 0 24 24"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2M9 2h6"/></svg>Thêm 5 phút<small id="kPlusN">còn 00:00</small></button>
         <button class="act r-key" id="kRe"><svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.4-5.7M4 4v4h4"/></svg>Giảng lại<small id="kReN">đã giảng lại 0</small></button>
+        <button class="act r-key" id="kDemo"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="12" rx="1.5"/><path d="M8 20h8M12 16v4M10 8.5l4 1.5-4 1.5z"/></svg><span id="kDemoL">Mở đăng ký demo</span><small id="kDemoN">đang đóng</small></button>
         <button class="act r-key" id="kCall"><svg viewBox="0 0 24 24"><path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4zM10 21h4"/></svg>Gọi chú ý<small id="kCallN">0 lần</small></button>
       </div>
     </div>
@@ -331,6 +336,12 @@ body{overflow:hidden}
         <h3>Tiến độ cả lớp</h3>
         <div class="steplist" id="steplist"></div>
         <p class="note" id="hotNote">Chỉ đếm số người, không hiện tên.</p>
+      </div>
+      <div class="panel">
+        <h3>Lên demo <span class="demo-state" id="demoState">đang đóng</span></h3>
+        <ol class="demoq" id="demoq"></ol>
+        <div class="toolbar for-hv"><button class="btn" id="fDemo" disabled>Đăng ký demo cho nhóm</button></div>
+        <p class="note" id="demoNote"></p>
       </div>
       <div class="panel">
         <h3>Hàng chờ Lab Coach</h3>
@@ -432,7 +443,7 @@ body{overflow:hidden}
       {ten:"Kiểm chứng + research",ngan:"Kiểm chứng",phut:30,cheDo:"nhom",ai:"duoc",tuKiem:["Có validation: phỏng vấn 2–3 người hoặc survey 5–10 người","Có 2–3 giải pháp đã có, kèm link kiểm được"]},
       {ten:"Workflow + Problem Statement",ngan:"Workflow + PS",phut:45,cheDo:"nhom",ai:"duoc",tuKiem:["Có workflow hiện tại: bước, người làm, thời gian, bottleneck","Có workflow sau tối ưu: Rule / AI ở bước nào, boundary, fallback","Có Problem Statement v0 đủ 6 field"]},
       {ten:"Nghỉ",phut:10,cheDo:"nghi"},
-      {ten:"Rule / Workflow / Agent + quyết định",ngan:"Quyết định",phut:25,cheDo:"nhom",ai:"phanbien",tuKiem:["Đã so sánh No AI / Rule / Workflow / Agent trên cùng một bài","Có Problem Statement v1","Có quyết định Go / Not Yet / No-Go và lý do"]},
+      {ten:"Rule / Workflow / Agent + quyết định",ngan:"Quyết định",phut:25,cheDo:"nhom",ai:"phanbien",moDemo:true,tuKiem:["Đã so sánh No AI / Rule / Workflow / Agent trên cùng một bài","Có Problem Statement v1","Có quyết định Go / Not Yet / No-Go và lý do"]},
       {ten:"Reflection cá nhân",ngan:"Reflection",phut:15,cheDo:"canhan",ai:"khong",nopBai:true,tuKiem:["Ghi rõ vai trò và đóng góp của mình trong nhóm","Ghi trung thực AI đã giúp gì, sai ở đâu, mình sửa gì","Tự giải thích được mạch problem → workflow → metric → boundary → AI"]}
     ],
     the:[
@@ -1040,7 +1051,7 @@ body{overflow:hidden}
     seats.forEach(s=>{ s.zone=Math.min(TAS-1,Math.floor((s.pos.x-x0)/(x1-x0+1e-6)*TAS)); });
     seats.forEach((_,i)=>paintSeat(i));
     Object.keys(qAt).forEach(k=>delete qAt[k]); queue.forEach(i=>qAt[i]=performance.now());
-    Object.assign(KS,{guide:0,re:0,call:0,over:"",lastRe:{},brk:false,left:PH[WORK[0]].phut*60,openAt:performance.now()}); myStep=0; myChk=0; myRole=""; myGrp=-1; Object.keys(PIT).forEach(k=>delete PIT[k]); pitchBub=null; Object.assign(HS,{n:0,wait:0,done:0,esc:0,mine:0}); myHelp=-1;
+    Object.assign(KS,{guide:0,re:0,call:0,over:"",lastRe:{},brk:false,left:PH[WORK[0]].phut*60,openAt:performance.now()}); myStep=0; myChk=0; myRole=""; myGrp=-1; DEMO.open=false; DEMO.list.length=0; Object.keys(PIT).forEach(k=>delete PIT[k]); pitchBub=null; Object.assign(HS,{n:0,wait:0,done:0,esc:0,mine:0}); myHelp=-1;
     me.walk=null; setSit(me,false); me.seat=-1; dress(me,ROLE==="hv"?"me":ROLE==="lab"?"ta":"key"); me.zone=0;
     const labHome=t=>new T.Vector3(W*0.05+(t-(TAS-1)/2)*1.3,0,zFront+2.4);
     keyHome=new T.Vector3(-W*0.12,0,zFront+3.0); keySpot=new T.Vector3(-W*0.18+1.85,0,zFront+1.2);
@@ -1258,7 +1269,7 @@ body{overflow:hidden}
     $("grpRole").textContent=myRole||"–";
     { const n=(phaseOf(myStep).tuKiem||[]).length; $("myAt").textContent=myStep>=NS?"xong cả ngày":"phase "+myStep+" · mục "+(myChk+1)+"/"+n; }
     $("myFix").hidden=ROLE!=="hv"; $("fBack").disabled=!(myStep>0||myChk>0); $("fRole").hidden=!myRole; $("fNop").hidden=!myNop;
-    renderPhase(); renderCtx();
+    renderPhase(); renderCtx(); renderDemo();
     $("q3n").textContent=Math.min(st.sess,1)+"/1"; $("q3").classList.toggle("done",st.sess>=1);
     $("sGreet").textContent=st.greet; $("sHand").textContent=st.hand;
     $("cGuide").textContent=KS.brk?"đang nghỉ":"phase "+KS.guide+"/"+(NS-1); $("cRe").textContent=KS.re; $("cLab").textContent=TAS;
@@ -1495,6 +1506,46 @@ body{overflow:hidden}
     if(h!==mySeat&&performance.now()-P.since>7000){ bow(seats[h].kid); passStick(P); }
   },1000);
 
+  // ---------- Đăng ký lên demo ----------
+  // Đăng ký theo nhóm (nhóm = bàn). Chỉ bấm được khi Key Coach mở đăng ký; thứ tự lên demo = thứ tự đăng ký.
+  // Danh sách chỉ hiện tên nhóm, không hiện tên người, không xếp hạng.
+  const DEMO={open:false,list:[]};
+  const demoCan=()=>DEMO.open&&MODE==="lop"&&ROLE==="hv"&&mySeat>=0;
+  function setDemoOpen(on){
+    if(DEMO.open===on) return; DEMO.open=on; knock(.7);
+    bubble(keyC,on?"Mở đăng ký lên demo":"Đóng đăng ký demo",2600,"ta");
+    if(ROLE==="hv") toast(on?"Key Coach đã mở đăng ký demo. Nhóm nào muốn lên thì đăng ký.":"Key Coach đã đóng đăng ký demo.");
+    render();
+  }
+  function demoToggle(){
+    if(!DEMO.open){ toast("Key Coach chưa mở đăng ký demo."); return; }
+    if(needSeat()) return;
+    const g=seats[mySeat].grp, i=DEMO.list.indexOf(g);
+    if(i<0){ DEMO.list.push(g); knock(.6); bow(me); undoToast("Nhóm "+grpName(mySeat)+" đã đăng ký demo, thứ "+DEMO.list.length+".",()=>{ const k=DEMO.list.indexOf(g); if(k>=0) DEMO.list.splice(k,1); render(); }); }
+    else { DEMO.list.splice(i,1); undoToast("Đã hủy đăng ký demo của nhóm "+grpName(mySeat)+".",()=>{ if(DEMO.list.indexOf(g)<0) DEMO.list.splice(Math.min(i,DEMO.list.length),0,g); render(); }); }
+    render();
+  }
+  const grpLabel=g=>{ const i=grpSeats(g)[0]; return i!=null?grpName(i):"nhóm "+(g+1); };
+  function renderDemo(){
+    const open=DEMO.open&&MODE==="lop", myG=mySeat>=0?seats[mySeat].grp:-1, mine=DEMO.list.indexOf(myG);
+    $("demoState").textContent=open?"đang mở":"đang đóng"; $("demoState").classList.toggle("open",open);
+    $("demoq").innerHTML=DEMO.list.length?DEMO.list.map(g=>'<li class="'+(g===myG?'me':'')+'">'+esc(grpLabel(g))+(g===myG?' · nhóm bạn':'')+'</li>').join(""):'<li>Chưa nhóm nào đăng ký.</li>';
+    const b=$("fDemo"); b.disabled=!open||mySeat<0; b.textContent=mine>=0?"Hủy đăng ký demo":"Đăng ký demo cho nhóm";
+    $("demoNote").textContent=MODE!=="lop"?"Đăng ký demo chỉ có trong giờ học.":!open?"Nút đăng ký chỉ bấm được khi Key Coach mở đăng ký.":mySeat<0?"Ngồi vào bàn nhóm để đăng ký.":mine>=0?"Nhóm bạn lên demo thứ "+(mine+1)+". Bấm nhầm thì hủy được.":"Một người đăng ký là tính cho cả nhóm.";
+    $("kDemoL").textContent=DEMO.open?"Đóng đăng ký demo":"Mở đăng ký demo"; $("kDemoN").textContent=(DEMO.open?"đang mở · ":"đang đóng · ")+DEMO.list.length+" nhóm";
+  }
+  $("fDemo").onclick=()=>{ actx(); demoToggle(); };
+  $("kDemo").onclick=()=>{ actx(); if(MODE!=="lop"){ toast("Đăng ký demo chỉ có trong giờ học."); return; } setDemoOpen(!DEMO.open); toast(DEMO.open?"Đã mở đăng ký demo. Các nhóm sẽ thấy nút đăng ký.":"Đã đóng đăng ký demo. Còn "+DEMO.list.length+" nhóm trong danh sách."); };
+  // Mô phỏng: khi đang mở, thỉnh thoảng một nhóm khác đăng ký; Key Coach mô phỏng mở đăng ký ở phase có moDemo.
+  setInterval(()=>{
+    if(MODE!=="lop") return;
+    if(ROLE!=="key"&&!DEMO.open&&!KS.brk&&phaseOf(KS.guide).moDemo&&performance.now()-KS.openAt>4000) setDemoOpen(true);
+    if(!DEMO.open||Math.random()>.35) return;
+    const myG=mySeat>=0?seats[mySeat].grp:-1;
+    const gs=[...new Set(seats.filter(x=>x.kid&&x.kid!==me).map(x=>x.grp))].filter(g=>g!==myG&&DEMO.list.indexOf(g)<0);
+    if(gs.length&&DEMO.list.length<Math.max(3,Math.round(gs.length*0.4))){ DEMO.list.push(pick(gs)); render(); }
+  },2500);
+
   // Một nút ngữ cảnh duy nhất: chỉ hiện đúng lúc, rồi ẩn.
   let ctxDo=null;
   function renderCtx(){
@@ -1503,6 +1554,7 @@ body{overflow:hidden}
       const p=MODE==="lop"&&!KS.brk?phaseOf(KS.guide):null, P=pitchState();
       if(p&&p.cheDo==="nhom"&&!myRole){ t="Nhận vai trong nhóm "+grpName(mySeat); f=pickRole; }
       else if(P&&holder(P)===mySeat){ t="Xong lượt pitch · chuyền que cho người kế bên"; f=()=>{ st.pitch++; bow(me); const at=P.at; passStick(P); undoToast("Đã chuyền que nói.",()=>takeStickBack(P,at)); }; }
+      else if(demoCan()&&DEMO.list.indexOf(seats[mySeat].grp)<0){ t="Đăng ký lên demo cho nhóm "+grpName(mySeat); f=demoToggle; }
       else if(!myNop&&(myStep>=NS||(MODE==="lop"&&!KS.brk&&phaseOf(KS.guide).nopBai))){ t="Nộp bài Ngày "+DAY.so+" · dán link repo"; f=submitDlg; }
     }
     ctxDo=f; b.hidden=!f; if(f) b.textContent=t;
