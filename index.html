@@ -307,6 +307,14 @@ body{overflow:hidden;background:var(--stage-bg)}
 .rail i.d{background:var(--hud-ok)} .rail i.c{background:#c8b6ff;box-shadow:0 0 0 4px rgba(200,182,255,.3)} .rail i.w{background:var(--hud-warn)} .rail i.me{outline:2px solid #fff;outline-offset:2px}
 .rail i.br{width:12px;height:3px;border-radius:2px;background:rgba(255,255,255,.2)} .rail i.br.c{background:var(--hud-ok);box-shadow:none}
 .kcard{position:absolute;right:max(14px,env(safe-area-inset-right,0px));top:calc(max(14px,env(safe-area-inset-top,0px)) + 54px);z-index:5;width:220px;border-radius:12px;padding:10px 12px;display:grid;gap:5px;font-size:13px}
+.kctl{display:flex;flex-wrap:wrap;gap:5px;padding-top:6px;border-top:1px solid rgba(255,255,255,.18)}
+.kctl[hidden]{display:none}
+.kctl button{all:unset;cursor:pointer;padding:3px 8px;border-radius:8px;background:rgba(255,255,255,.16);font-size:12px;font-weight:600}
+.kctl button:hover{background:rgba(255,255,255,.28)}
+.kctl button:focus-visible{outline:2px solid #fff}
+.kctl button:disabled{opacity:.4;cursor:default}
+.kctl .u{margin-left:auto}
+.kctl small{flex-basis:100%;font-size:11px;opacity:.75}
 .kcard .r{display:flex;justify-content:space-between;gap:8px} .kcard b{font-variant-numeric:tabular-nums}
 .kcard .bar{height:5px;border-radius:3px;background:rgba(255,255,255,.18);overflow:hidden} .kcard .bar i{display:block;height:100%;background:var(--hud-ok)}
 .kcard.hot .bar i{background:var(--hud-warn)} .kcard .w{color:#ffb27c}
@@ -406,7 +414,7 @@ body.drawer .rail,body.drawer .kcard{display:none}
         <button class="ib glass" id="bLop" data-tab="lop" title="Cả lớp" aria-label="Tiến độ cả lớp"><svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg><i class="dotw" id="lopDot" hidden></i></button>
         <button class="ib glass only-key" id="bPhong" data-tab="phong" title="Thiết lập phòng" aria-label="Thiết lập phòng"><svg viewBox="0 0 24 24"><path d="M4 20V8l8-4 8 4v12M9 20v-6h6v6"/></svg></button>
       </div>
-      <div class="kcard glass for-coach" id="kCard"></div>
+      <div class="kcard glass for-coach" id="kCard"><div id="kInfo"></div><div class="kctl" id="kCtl" hidden><button type="button" id="kBack" title="Quay lại phase trước (hoặc giờ nghỉ trước đó)">◀ Phase trước</button><button type="button" id="kMinus" title="Bớt 5 phút của phase đang chạy">−5'</button><button type="button" id="kPlus2" title="Thêm 5 phút">+5'</button><button type="button" id="kUndo" class="u" disabled title="Hoàn tác thao tác gần nhất của Key Coach">↶ Hoàn tác</button><small id="kLast"></small></div></div>
       <div class="views for-coach" id="views" role="group" aria-label="Góc nhìn"></div>
       <button class="rail glass" id="rail" aria-label="Tiến độ cả lớp theo phase, bấm để mở bảng"></button>
       <p class="status" id="doorText" role="status">Bạn đang đứng ở cửa sau phòng thực hành. Bấm một ghế tím để đi tới và ngồi.</p>
@@ -1201,7 +1209,7 @@ body.drawer .rail,body.drawer .kcard{display:none}
     seats.forEach(s=>{ s.zone=Math.min(TAS-1,Math.floor((s.pos.x-x0)/(x1-x0+1e-6)*TAS)); });
     seats.forEach((_,i)=>paintSeat(i));
     Object.keys(qAt).forEach(k=>delete qAt[k]); queue.forEach(i=>qAt[i]=performance.now());
-    Object.assign(KS,{guide:0,re:0,call:0,over:"",lastRe:{},brk:false,left:PH[WORK[0]].phut*60,openAt:performance.now()}); myStep=0; myChk=0; myRole=""; myGrp=-1; DEMO.open=false; DEMO.list.length=0; BON.mine.length=0; BON.q.length=0; Object.keys(PIT).forEach(k=>delete PIT[k]); pitchBub=null; Object.assign(HS,{n:0,wait:0,done:0,esc:0,mine:0}); myHelp=-1;
+    Object.assign(KS,{guide:0,re:0,call:0,over:"",lastRe:{},brk:false,left:PH[WORK[0]].phut*60,openAt:performance.now()}); myStep=0; myChk=0; myRole=""; myGrp=-1; DEMO.open=false; DEMO.list.length=0; KOPS.length=0; BON.mine.length=0; BON.q.length=0; Object.keys(PIT).forEach(k=>delete PIT[k]); pitchBub=null; Object.assign(HS,{n:0,wait:0,done:0,esc:0,mine:0}); myHelp=-1;
     me.walk=null; setSit(me,false); me.seat=-1; dress(me,ROLE==="hv"?"me":ROLE==="lab"?"ta":"key"); me.zone=0;
     const labHome=t=>new T.Vector3(W*0.05+(t-(TAS-1)/2)*1.3,0,zFront+2.4);
     keyHome=new T.Vector3(-W*0.12,0,zFront+3.0); keySpot=new T.Vector3(-W*0.18+1.85,0,zFront+1.2);
@@ -1480,7 +1488,8 @@ body.drawer .rail,body.drawer .kcard{display:none}
     if(ROLE!=="hv"){
       const k=KS.guide, p=phaseOf(k), done=people.filter(s=>s.step>k).length, stuck=people.filter(s=>s.stuck&&s.step===k).length;
       $("kCard").classList.toggle("hot",stuck>=HOT);
-      $("kCard").innerHTML=MODE!=="lop"?'<div class="r"><span>Phòng tự học</span><b>'+total+' người</b></div>':KS.brk?'<div class="r"><span>Đang nghỉ</span><b>'+mmss(KS.left)+'</b></div>':
+      $("kCtl").hidden=!(ROLE==="key"&&MODE==="lop"); renderKeyCtl();
+      $("kInfo").innerHTML=MODE!=="lop"?'<div class="r"><span>Phòng tự học</span><b>'+total+' người</b></div>':KS.brk?'<div class="r"><span>Đang nghỉ</span><b>'+mmss(KS.left)+'</b></div>':
         '<div class="r"><span>'+(ROLE==="key"?"Đang dẫn":"Phase")+' '+k+' · '+esc(p.ngan||p.ten)+'</span><b>'+done+'/'+total+'</b></div><div class="bar"><i style="width:'+(total?done/total*100:0)+'%"></i></div>'+
         (stuck?'<div class="'+(stuck>=HOT?'w':'')+'">'+stuck+' người kẹt ở phase này</div>':'<div style="opacity:.7">Chưa ai kẹt ở phase này</div>')+
         (ROLE==="lab"?'<div class="r"><span>Khu '+(me.zone+1)+' · chờ</span><b>'+queue.filter(i=>seats[i].zone===me.zone).length+'</b></div>':'');
@@ -1556,9 +1565,10 @@ body.drawer .rail,body.drawer .kcard{display:none}
     else { if(KS.guide>=NS-1) return false; const b=breakAfter(KS.guide); if(b){ KS.brk=true; KS.left=b.phut*60; KS.openAt=performance.now(); setKeyOver(""); bell(); bubble(keyC,"Nghỉ "+b.phut+" phút",2600,"ta"); render(); return true; } KS.guide++; }
     const p=phaseOf(KS.guide); KS.left=p.phut*60; KS.openAt=performance.now();
     setKeyOver(""); knock(.7); bubble(keyC,"Mở phase "+KS.guide+": "+p.ten,2600,"ta");
-    Object.keys(PIT).forEach(k=>delete PIT[k]); killBubble(pitchBub); pitchBub=null; seats.forEach(x=>{ if(x.kid) x.kid.pitching=false; });
+    resetPitch();
     render(); return true;
   }
+  function resetPitch(){ Object.keys(PIT).forEach(k=>delete PIT[k]); killBubble(pitchBub); pitchBub=null; seats.forEach(x=>{ if(x.kid) x.kid.pitching=false; }); }
   function addFive(){ KS.left+=300; drawTV(); render(); }
   // Key Coach mô phỏng (khi bạn không đóng vai Key Coach): mở bước kế khi ≥60% lớp đã qua bước đang dẫn,
   // giảng lại khi một bước chuyển cam (≥ HOT người kẹt), mỗi bước cách nhau ít nhất 25 giây.
@@ -1592,12 +1602,20 @@ body.drawer .rail,body.drawer .kcard{display:none}
     const j=takeNext(me.zone); if(j<0){ toast(queue.length?"Ai giơ tay cũng đã có Lab Coach tới xem. Chờ học viên tự hạ tay.":"Chưa ai giơ tay."); return; }
     seats[j].coming=me.name;
     helpSeat(j);
+    undoToast("Đã nhận lượt "+seats[j].name+".",()=>releaseTurn(j));
   };
+  // Trả lượt vừa nhận nhầm: người đó quay lại hàng chờ như cũ, Lab Coach về chỗ.
+  function releaseTurn(j){
+    const s=seats[j]; if(s&&s.coming===me.name) s.coming=null;
+    if(myHelp===j||myHelp===-2){ myHelp=-1; me.busy=false; $("lFix").disabled=true; walkTo(me,me.home,2.6,()=>{ me.g.rotation.y=0; }); }
+    HS.n=Math.max(0,HS.n-1); $("doorText").textContent="Đã trả lượt. Người đó vẫn trong hàng chờ."; render();
+  }
   $("lFix").onclick=()=>{
     if(myHelp<0){ toast("Nhận một lượt trước đã."); return; }
     const j=myHelp, s=seats[j]; myHelp=-1; me.busy=false; $("lFix").disabled=true;
     if(s&&s.kid&&s.stuck){ s.coming=null; s.seen=true; bow(s.kid); bubble(s.kid,esc(s.name)+" cúi đầu cảm ơn",2200); selfLower(j,s.kid,.85,"tự hạ tay"); const kid=s.kid; setTimeout(()=>{ if(s.kid===kid&&s.stuck&&s.seen&&!s.coming) s.seen=false; },20000); }
     HS.done++; HS.mine++; knock(.6);
+    undoToast("Đã xem xong.",()=>{ if(me.busy){ toast("Bạn đang đi tới bàn khác."); return; } HS.done=Math.max(0,HS.done-1); HS.mine=Math.max(0,HS.mine-1); if(s&&s.kid&&s.stuck){ s.seen=false; s.coming=me.name; helpSeat(j); } else render(); });
     $("doorText").textContent="Đã xem xong. Học viên tự hạ tay khi gỡ được. Còn "+queue.filter(i=>seats[i]&&!seats[i].seen&&!seats[i].coming).length+" người chưa có ai tới.";
     render();
   };
@@ -1609,14 +1627,60 @@ body.drawer .rail,body.drawer .kcard{display:none}
     render();
   };
   // Bạn là Key Coach
-  $("kOpen").onclick=()=>{ actx(); if(MODE!=="lop"){ toast("Phòng tự học không có phase chung."); return; } if(!openNext()) toast("Đã ở phase cuối. Nhắc lớp nộp bài."); };
-  $("kPlus").onclick=()=>{ actx(); if(MODE!=="lop") return; addFive(); toast("Đã thêm 5 phút cho "+(KS.brk?"giờ nghỉ":"phase "+KS.guide)+"."); };
+
+  // ---------- Hoàn tác cho Key Coach ----------
+  // Mỗi thao tác Key Coach là một thay đổi trên trạng thái chung của phòng (phase, giờ nghỉ, giờ còn lại, đăng ký demo).
+  // Trước khi đổi thì chụp lại trạng thái; hoàn tác = ghi lại ảnh chụp đó. Khi chuyển lên Firebase,
+  // roomSnap()/roomApply() là chỗ đọc/ghi doc phòng, KOPS là lịch sử thao tác của Key Coach.
+  const KOPS=[];
+  const roomSnap=()=>({guide:KS.guide,brk:KS.brk,left:KS.left,demo:DEMO.open});
+  function roomApply(r){
+    const moved=r.guide!==KS.guide||r.brk!==KS.brk;
+    KS.guide=r.guide; KS.brk=r.brk; KS.left=r.left; KS.openAt=performance.now();
+    if(r.demo!==DEMO.open) setDemoOpen(r.demo);
+    if(moved){ resetPitch(); bubble(keyC,KS.brk?"Quay lại giờ nghỉ":"Quay lại phase "+KS.guide+": "+phaseOf(KS.guide).ten,2600,"ta"); }
+    setKeyOver(""); drawTV(); render();
+  }
+  // fn đổi trạng thái rồi trả về nhãn thao tác, hoặc false nếu không đổi gì.
+  function keyOp(fn){
+    const before=roomSnap(), label=fn(); if(!label) return false;
+    KOPS.push({label,before}); if(KOPS.length>20) KOPS.shift();
+    undoToast(label+".",keyUndo); render(); return true;
+  }
+  function keyUndo(){
+    if(undoEl){ undoEl.remove(); undoEl=null; }
+    const op=KOPS.pop(); if(!op){ toast("Chưa có thao tác nào để hoàn tác."); return; }
+    roomApply(op.before); knock(.4); toast("Đã hoàn tác: "+op.label+".");
+  }
+  // Lùi về phase trước. Phase trước có giờ nghỉ phía sau thì lùi về giờ nghỉ đó. Không xóa tiến độ của học viên.
+  function prevPhase(){
+    if(KS.brk){ KS.brk=false; KS.left=phaseOf(KS.guide).phut*60; }
+    else { if(KS.guide<=0) return false; KS.guide--; const b=breakAfter(KS.guide); if(b){ KS.brk=true; KS.left=b.phut*60; } else KS.left=phaseOf(KS.guide).phut*60; }
+    KS.openAt=performance.now(); resetPitch(); setKeyOver(""); knock(.5);
+    bubble(keyC,KS.brk?"Quay lại giờ nghỉ":"Quay lại phase "+KS.guide+": "+phaseOf(KS.guide).ten,2600,"ta");
+    return true;
+  }
+  const phaseLbl=()=>KS.brk?"giờ nghỉ":"phase "+KS.guide;
+  function renderKeyCtl(){
+    if(ROLE!=="key") return;
+    $("kBack").disabled=KS.guide<=0&&!KS.brk; $("kMinus").disabled=KS.left<=60;
+    const op=KOPS[KOPS.length-1]; $("kUndo").disabled=!op;
+    $("kUndo").title=op?"Hoàn tác: "+op.label:"Chưa có thao tác nào để hoàn tác";
+    $("kLast").textContent=op?"Vừa làm: "+op.label+(KOPS.length>1?" · còn "+(KOPS.length-1)+" bước trước":""):"Còn "+mmss(KS.left)+" cho "+phaseLbl();
+  }
+  $("kBack").onclick=()=>{ actx(); if(!keyOp(()=>prevPhase()&&"Đã lùi về "+phaseLbl())) toast("Đang ở phase đầu tiên."); };
+  $("kMinus").onclick=()=>{ actx(); keyOp(()=>{ if(KS.left<=60) return false; KS.left=Math.max(60,KS.left-300); drawTV(); return "Đã bớt 5 phút của "+phaseLbl(); }); };
+  $("kPlus2").onclick=()=>$("kPlus").click();
+  $("kUndo").onclick=()=>{ actx(); keyUndo(); };
+  $("kOpen").onclick=()=>{ actx(); if(MODE!=="lop"){ toast("Phòng tự học không có phase chung."); return; } if(!keyOp(()=>openNext()&&(KS.brk?"Đã vào giờ nghỉ sau phase "+KS.guide:"Đã mở phase "+KS.guide))) toast("Đã ở phase cuối. Nhắc lớp nộp bài."); };
+  $("kPlus").onclick=()=>{ actx(); if(MODE!=="lop") return; keyOp(()=>{ addFive(); return "Đã thêm 5 phút cho "+phaseLbl(); }); };
   $("kRe").onclick=()=>{ actx(); if(me.busy){ toast("Bạn đang giảng."); return; } const w=worstStep(1); reExplain(w>=0?w:KS.guide); };
   $("kCall").onclick=()=>{
     actx(); bell(); KS.call++; bow(me);
     seats.forEach(s=>{ if(s.kid&&s.kid!==me&&s.kid.sitting) nod(s.kid); });
     setKeyOver("Mọi người nhìn lên màn hình một chút");
     setTimeout(()=>{ if(KS.over.startsWith("Mọi người")) setKeyOver(""); },4000);
+    undoToast("Đã gọi cả lớp chú ý.",()=>{ KS.call=Math.max(0,KS.call-1); if(KS.over.startsWith("Mọi người")) setKeyOver(""); render(); });
     render();
   };
   function coachClick(h,onSeat){
@@ -1784,7 +1848,7 @@ body.drawer .rail,body.drawer .kcard{display:none}
     $("kDemoL").textContent=DEMO.open?"Đóng demo":"Mở demo"; $("kDemoN").textContent=DEMO.list.length; $("kDemo").classList.toggle("open",DEMO.open); $("kDemo").title=(DEMO.open?"Đang mở đăng ký demo · bấm để đóng":"Đang đóng · bấm để mở đăng ký demo")+" · "+DEMO.list.length+" nhóm đã đăng ký";
   }
   $("fDemo").onclick=()=>{ actx(); demoToggle(); };
-  $("kDemo").onclick=()=>{ actx(); if(MODE!=="lop"){ toast("Đăng ký demo chỉ có trong giờ học."); return; } setDemoOpen(!DEMO.open); toast(DEMO.open?"Đã mở đăng ký demo. Các nhóm sẽ thấy nút đăng ký.":"Đã đóng đăng ký demo. Còn "+DEMO.list.length+" nhóm trong danh sách."); };
+  $("kDemo").onclick=()=>{ actx(); if(MODE!=="lop"){ toast("Đăng ký demo chỉ có trong giờ học."); return; } keyOp(()=>{ setDemoOpen(!DEMO.open); return DEMO.open?"Đã mở đăng ký demo":"Đã đóng đăng ký demo (còn "+DEMO.list.length+" nhóm)"; }); };
   // Mô phỏng: khi đang mở, thỉnh thoảng một nhóm khác đăng ký; Key Coach mô phỏng mở đăng ký ở phase có moDemo.
   setInterval(()=>{
     if(MODE!=="lop") return;
