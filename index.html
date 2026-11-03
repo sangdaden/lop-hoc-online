@@ -916,6 +916,16 @@ body[data-auth="key"] .game #livePanel{order:-1}
 :root[data-theme="dark"] .tourtip .tn,:root[data-theme="dark"] .tourtip .skip{color:#9AA79F}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .tourtip{background:#1c2420;color:#E4EAE5}
   :root:not([data-theme="light"]) .tourtip .tn,:root:not([data-theme="light"]) .tourtip .skip{color:#9AA79F}}
+/* Ngăn kéo luôn vừa bề ngang: cột lưới không giãn theo nội dung, hàng tab co lại khi có 4 tab */
+.game .side{grid-template-columns:minmax(0,1fr)}
+.game .side>*{min-width:0}
+.game .side .dhead{gap:4px}
+.game .side .dhead .dtabs{flex:1 1 auto;gap:2px}
+.game .side .dhead .dtab{padding:6px 8px;font-size:13.5px}
+.game .side .dhead .pref{width:28px}
+.game .side .dhead #dClose{width:32px}
+.game #livePanel .kv{grid-template-columns:minmax(0,1fr) auto}
+.game #livePanel .note{overflow-wrap:anywhere}
 </style>
 <script>
 (()=>{
