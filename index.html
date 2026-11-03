@@ -221,6 +221,7 @@ body[data-role="hv"] .for-coach{display:none!important}
 .chk label{display:flex;gap:8px;align-items:center}
 .inp{all:unset;border:1px solid var(--line);border-radius:8px;padding:8px 10px;background:var(--paper);font-size:14px}
 .inp:focus-visible{outline:2px solid var(--violet)}
+.inp[hidden]{display:none}
 .helpq{display:grid;gap:4px;font-size:13px;margin:0;padding-left:20px}
 .helpq li.me{color:var(--violet);font-weight:700}
 .quest{display:grid;grid-template-columns:18px 1fr auto;gap:8px;align-items:center;font-size:14px}
@@ -1622,7 +1623,7 @@ body.drawer .rail,body.drawer .kcard{display:none}
       pCode.placeholder="Tên phòng, ví dụ H201";
       pPass.hidden=role==="key"&&keyOk; pPass.value=role==="hv"?String(URQ_C()):"";
       pPass.type=role==="key"?"password":"text"; pPass.inputMode=role==="key"?"text":"numeric";
-      pPass.placeholder=role==="key"?"Mật mã Key Coach":role==="lab"?"Mã Lab Coach (6 số)":"Mã vào lớp (4 số)";
+      pPass.placeholder=role==="key"?"Mật mã Key Coach":role==="lab"?"Mã Lab Coach (4 số)":"Mã vào lớp (4 số)";
       ov.querySelector("#pNote").textContent=role==="key"?"Nhập tên phòng học (1 chữ cái + 3 số) và chọn buổi. Phòng đang đóng thì mở buổi mới với mã vào lớp và mã Lab Coach mới.":role==="lab"?"Key Coach gửi mã Lab Coach. Nhập đúng mã là vào thẳng lớp đó.":"Key Coach đọc mã cho cả lớp. Nhập đúng mã là vào thẳng lớp của bạn."; };
     function URQ_C(){ const c=(URLQ.get("c")||"").replace(/\D/g,"").slice(0,6); if(c) return c; try{ return localStorage.getItem("lhl-pass-"+normCode(URLQ.get("p")||""))||""; }catch(e){ return ""; } }
     if(pCode) ov.querySelector("#pSim").onclick=async()=>{
