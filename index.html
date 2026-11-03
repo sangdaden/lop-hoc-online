@@ -214,7 +214,7 @@ body[data-role="hv"] .for-coach{display:none!important}
 .quest b{font-family:var(--f-num);font-size:12px;color:var(--muted);font-weight:500}
 .timer{font-family:var(--f-num);font-size:30px;font-weight:600;font-variant-numeric:tabular-nums}
 .note{font-size:12px;color:var(--muted)}
-.toast.undo{display:flex;gap:12px;align-items:center;bottom:52px}
+.toast.undo{display:flex;gap:12px;align-items:center;bottom:44px}
 .toast.undo button{all:unset;cursor:pointer;font-weight:700;color:var(--violet-soft);text-decoration:underline}
 .toast.undo button:focus-visible{outline:2px solid var(--paper)}
 .toast{position:absolute;left:50%;bottom:14px;transform:translateX(-50%);background:var(--ink);color:var(--paper);padding:8px 14px;border-radius:8px;font-size:13px;max-width:92%;z-index:30;text-align:center}
@@ -481,10 +481,10 @@ body{overflow:hidden}
     if(undoEl) undoEl.remove();
     const t=document.createElement("div"); t.className="toast undo"; t.setAttribute("role","status");
     const sp=document.createElement("span"); sp.textContent=msg; const b=document.createElement("button"); b.type="button"; b.textContent="Hoàn tác";
-    b.onclick=()=>{ t.remove(); undoEl=null; fn(); }; t.append(sp,b); sceneEl.appendChild(t); undoEl=t;
+    b.onclick=()=>{ t.remove(); undoEl=null; fn(); }; t.append(sp,b); stage.appendChild(t); undoEl=t;
     setTimeout(()=>{ if(undoEl===t){ t.remove(); undoEl=null; } },8000);
   }
-  function toast(msg){const t=document.createElement("div");t.className="toast";t.textContent=msg;sceneEl.appendChild(t);setTimeout(()=>t.remove(),2600);}
+  function toast(msg){const t=document.createElement("div");t.className="toast";t.textContent=msg;stage.appendChild(t);setTimeout(()=>t.remove(),2600);}
   const esc=s=>String(s).replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
 
   let ac=null;
@@ -1516,8 +1516,8 @@ body{overflow:hidden}
     ov.querySelectorAll("[data-k]").forEach(x=>x.onclick=()=>{ const prev=myRole; myRole=DAY.vai[+x.dataset.k]; relabel(); knock(.6); ov.remove(); undoToast("Bạn nhận vai "+myRole+".",()=>{ myRole=prev; relabel(); render(); }); render(); });
     $("rClose").onclick=()=>ov.remove();
   }
-  function unsubmit(){ myNop=""; try{localStorage.removeItem("lhl-nop-"+DAY.id);}catch(_){} if(mySeat>=0) seats[mySeat].nop=false; toast("Đã hủy nộp. Nộp lại khi sẵn sàng."); render(); }
-  $("fBack").onclick=()=>{ actx(); stepBack(); };
+  function unsubmit(){ if(undoEl){ undoEl.remove(); undoEl=null; } myNop=""; try{localStorage.removeItem("lhl-nop-"+DAY.id);}catch(_){} if(mySeat>=0) seats[mySeat].nop=false; toast("Đã hủy nộp. Nộp lại khi sẵn sàng."); render(); }
+  $("fBack").onclick=()=>{ actx(); if(undoEl){ undoEl.remove(); undoEl=null; } stepBack(); };
   $("fRole").onclick=()=>{ if(needSeat()) return; pickRole(); };
   $("fNop").onclick=()=>{ unsubmit(); };
   function submitDlg(){
