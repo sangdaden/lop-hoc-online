@@ -396,6 +396,10 @@ body:not([data-role="hv"]) .rail{top:calc(50% + 60px)}
 @keyframes lvIn{from{opacity:0;margin-top:6px}to{opacity:1;margin-top:0}}
 .bub.qn{min-width:24px;height:24px;padding:0;display:grid;place-items:center;border-radius:50%;background:var(--hud-warn);border:2px solid #fff;font-weight:700}
 .bub.qn.far{background:#8b8b93}
+/* Tên người khác: chỉ hiện khi mình đi lại gần, hoặc khi họ đang giơ tay */
+.bub.nm{padding:2px 8px;font-size:11px;font-weight:500;background:rgba(24,20,17,.62);opacity:0;transition:opacity .25s;pointer-events:none}
+.bub.nm.on{opacity:1}
+.bub.nm.hand{background:var(--hud-warn);font-weight:600}
 /* Ngăn kéo bên phải: Sổ lab · Cả lớp · Phòng */
 .game .side{position:absolute;top:0;right:0;bottom:0;z-index:15;width:min(360px,100%);box-sizing:border-box;overflow-y:auto;padding:max(14px,env(safe-area-inset-top,0px)) max(14px,env(safe-area-inset-right,0px)) 24px 14px;display:grid;gap:12px;align-content:start;background:color-mix(in srgb,var(--paper) 94%,transparent);border-left:1px solid var(--line);box-shadow:-10px 0 30px rgba(0,0,0,.25)}
 .game .side[hidden]{display:none}
@@ -1703,6 +1707,20 @@ body.drawer .rail,body.drawer .kcard{display:none}
     }
   }
 
+  // Tên nổi trên đầu người khác: khi mình đi tới gần (tối đa vài người gần nhất), và luôn hiện khi họ giơ tay.
+  const NAME_NEAR=2.4, NAME_MAX=4, nameBubs=new Map(); let nameT=0;
+  function nameTick(now){
+    if(now-nameT<150) return; nameT=now;
+    const want=new Map(), p=me.g.position, near=[];
+    kids.forEach(k=>{ if(k===me||!k.name||!k.g.visible) return;
+      if(k.hand){ want.set(k,true); return; }
+      const d=k.g.position.distanceTo(p); if(d<NAME_NEAR) near.push([d,k]); });
+    near.sort((a,b)=>a[0]-b[0]).slice(0,NAME_MAX).forEach(([,k])=>want.set(k,false));
+    nameBubs.forEach((b,k)=>{ if(!want.has(k)||bubbles.indexOf(b)<0){ killBubble(b); nameBubs.delete(k); } });
+    want.forEach((hand,k)=>{ let b=nameBubs.get(k); const cls="bub nm on"+(hand?" hand":"");
+      if(!b){ b=bubble(k,esc(k.name),0,"nm"); b.h=k.coach?1.85:1.75; nameBubs.set(k,b); requestAnimationFrame(()=>b.el.className=cls); }
+      else { if(b.el.textContent!==k.name) b.el.textContent=k.name; if(b.el.className!==cls) b.el.className=cls; } });
+  }
   const me=makeKid("me",myLook); me.name=myName; myLook=me.lk;
   function chooseLook(lk){ myLook=fixLook(lk); setLook(me,myLook); try{localStorage.setItem("lhl-look2",JSON.stringify(myLook));}catch(e){} netMe({look:myLook}); }
   // ảnh nhỏ cận mặt cho các ô kiểu tóc
@@ -3111,6 +3129,7 @@ body.drawer .rail,body.drawer .kcard{display:none}
     { const fd=camPos.distanceTo(camLook); scene.fog.near=Math.max(20,fd*0.9); scene.fog.far=Math.max(fogFar,fd+(zBack-zFront)+8); }
     guideTick(performance.now());
     renderer.render(scene,camera);
+    nameTick(performance.now());
     placeBubbles(performance.now());
     requestAnimationFrame(frame);
   }
