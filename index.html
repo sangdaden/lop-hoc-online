@@ -922,65 +922,242 @@ body.drawer .rail,body.drawer .kcard{display:none}
     if(acc==="Kẹp tóc"){ add(G.clip,lam(0xf2b84b),0.2,0.2,0.16,0,0.5,0.5); add(G.clip,lam(0xf2b84b),0.22,0.15,0.17,0,0.5,0.5); }
     if(acc==="Băng đô"){ add(G.band2,lam(0xe07a8a),0,0.03,0,0.3); }
   }
-  // ---------- characters ----------
-  const kids=[];
-  function makeKid(kind,lk){
+  // ================= NHÂN VẬT BẢN CHỈNH: cùng phong cách, khối liền nhau =================
+  const N2={}; // hình học dùng chung, tạo một lần
+  const V3=T.Vector3;
+  function latheUp(pts,seg,ps,pl){ // điểm từ dưới lên để pháp tuyến hướng ra ngoài
+    return new T.LatheGeometry(pts.map(p=>new T.Vector2(p[0],p[1])),seg||24,ps||0,pl||Math.PI*2); }
+  function curveInterp(keys,a){ for(let i=1;i<keys.length;i++){ if(a<=keys[i][0]){ const [a0,t0]=keys[i-1],[a1,t1]=keys[i]; const u=(a-a0)/(a1-a0||1); const s=u*u*(3-2*u); return t0+(t1-t0)*s; } } return keys[keys.length-1][1]; }
+  // TÓC LIỀN KHỐI: một vỏ cầu duy nhất, đường chân tóc vẽ bằng hàm theo góc quanh đầu.
+  // θ (đơn vị π) < 0,5: trên đầu; > 0,5: phần tóc rủ thẳng xuống (dài/bob).
+  const HAIR_DEF={
+    short:{keys:[[0,.33],[.6,.34],[1.1,.40],[1.45,.43],[1.8,.5],[2.4,.58],[Math.PI,.6]],sc:.035,sn:4,sa:.85,bul:.05},
+    side:{signed:true,keys:[[-Math.PI,.6],[-2.2,.56],[-1.5,.43],[-.9,.42],[-.35,.385],[.25,.31],[.9,.33],[1.5,.43],[2.2,.56],[Math.PI,.6]],sc:.025,sn:3,sa:.9,bul:.06,sweep:.05},
+    spiky:{keys:[[0,.31],[.7,.33],[1.2,.40],[1.6,.45],[2.4,.57],[Math.PI,.59]],sc:.03,sn:5,sa:.8,bul:.04},
+    buzz:{keys:[[0,.29],[.8,.31],[1.3,.38],[1.7,.44],[2.4,.55],[Math.PI,.57]],sc:0,bul:0,R:.306},
+    curly:{keys:[[0,.32],[.7,.34],[1.2,.41],[1.6,.46],[2.4,.57],[Math.PI,.6]],sc:0,bul:.015},
+    manbun:{keys:[[0,.29],[.7,.31],[1.2,.39],[1.6,.45],[2.4,.56],[Math.PI,.58]],sc:0,bul:.04},
+    long:{keys:[[0,.4],[.62,.42],[.86,.56],[1.06,.94],[Math.PI,.98]],sc:.035,sn:5,sa:.72,bul:.06,len:.62,flare:.14},
+    highbun:{keys:[[0,.36],[.7,.40],[1.2,.44],[1.6,.5],[2.4,.6],[Math.PI,.62]],sc:.03,sn:4,sa:.75,bul:.04},
+    ponytail:{signed:true,keys:[[-Math.PI,.6],[-2.2,.58],[-1.5,.49],[-.8,.43],[-.3,.38],[.3,.36],[.8,.4],[1.5,.47],[2.2,.58],[Math.PI,.6]],sc:.025,sn:4,sa:.8,bul:.04},
+    bob:{keys:[[0,.38],[.66,.39],[.86,.56],[1.05,.7],[Math.PI,.72]],sc:0,bul:.06,len:.62,flare:.1,curl:true},
+    braids:{keys:[[0,.39],[.7,.41],[1.2,.45],[1.6,.5],[2.4,.6],[Math.PI,.62]],sc:.03,sn:5,sa:.75,bul:.04},
+    curlylong:{keys:[[0,.39],[.62,.42],[.86,.56],[1.06,.9],[Math.PI,.94]],sc:.04,sn:5,sa:.72,bul:.08,len:.6,flare:.2}
+  };
+  function hairShell(style){
+    const key="hs_"+style; if(N2[key]) return N2[key];
+    const D=HAIR_DEF[style], R=D.R||.318;
+    const geo=new T.SphereGeometry(1,36,26,0,Math.PI*2,0,Math.PI);
+    const p=geo.attributes.position, v=new V3();
+    for(let i=0;i<p.count;i++){
+      v.fromBufferAttribute(p,i);
+      const th=Math.acos(Math.max(-1,Math.min(1,v.y)))/Math.PI; // 0..1
+      const az=Math.atan2(v.x,v.z), A=Math.abs(az);
+      let lim=curveInterp(D.keys,D.signed?az:A);
+      if(D.sc&&A<D.sa){ const fade=1-A/D.sa; lim+=D.sc*fade*Math.pow(Math.abs(Math.cos(az*D.sn)),3); }
+      const t=Math.min(th,lim);
+      let x,y,z;
+      if(t<=.5){ const a=t*Math.PI; const rr=R*(1+(D.bul||0)*Math.cos(a)*Math.cos(a)); const sweep=(D.sweep||0)*Math.max(0,Math.sin(az+.4))*Math.sin(a*2);
+        x=Math.sin(a)*Math.sin(az)*(rr+sweep); z=Math.sin(a)*Math.cos(az)*(rr+sweep); y=Math.cos(a)*(rr+sweep*0.5); }
+      else { const u=(t-.5)/.5; let rr=R*(1+(D.flare||0)*u); if(D.curl&&u>.75) rr-= (u-.75)*.12; y=-u*(D.len||.6); x=Math.sin(az)*rr; z=Math.cos(az)*rr; }
+      p.setXYZ(i,x,y,z);
+    }
+    geo.computeVertexNormals();
+    return N2[key]=geo;
+  }
+  // ống thuôn (đuôi ngựa, bím): bán kính đổi theo chiều dài, có thể có gờ bện
+  function taperTube(pts,r0,r1,bumps){
+    const curve=new T.CatmullRomCurve3(pts.map(a=>new V3(...a)));
+    const TS=40, RS=10, geo=new T.TubeGeometry(curve,TS,1,RS,false);
+    const p=geo.attributes.position, v=new V3();
+    for(let i=0;i<=TS;i++){ const u=i/TS, c=curve.getPointAt(u); let r=r0+(r1-r0)*u; if(bumps) r*=1+0.28*Math.abs(Math.sin(u*Math.PI*bumps)); r*=Math.min(1,0.35+u*8)*(u>.9?1-(u-.9)*4:1);
+      for(let j=0;j<=RS;j++){ const idx=i*(RS+1)+j; v.fromBufferAttribute(p,idx).sub(c).multiplyScalar(r).add(c); p.setXYZ(idx,v.x,v.y,v.z); } }
+    geo.computeVertexNormals(); return geo;
+  }
+  function g2(){ if(N2.ready) return N2; N2.ready=true;
+    N2.head=new T.SphereGeometry(0.3,26,18);
+    N2.ear=new T.SphereGeometry(0.06,12,10);
+    N2.torso=latheUp([[0,-0.05],[0.19,-0.05],[0.205,0.03],[0.19,0.14],[0.2,0.26],[0.203,0.33],[0.19,0.40],[0.158,0.44],[0.1,0.47],[0,0.48]],28);
+    N2.pelvis=latheUp([[0,-0.11],[0.17,-0.11],[0.2,-0.04],[0.207,0.03],[0,0.03]],24);
+    N2.vest=(()=>{ const g=latheUp([[0.208,-0.01],[0.212,0.03],[0.198,0.14],[0.207,0.26],[0.205,0.34]],28,0.32,Math.PI*2-0.64); const p=g.attributes.position,v=new V3();
+      for(let i=0;i<p.count;i++){ v.fromBufferAttribute(p,i); const ph=Math.atan2(v.x,v.z), r=Math.hypot(v.x,v.z); if(v.y>0.12&&Math.abs(ph)<1.6){ const d=Math.sign(ph)*(v.y-0.12)*1.9*(1-Math.abs(ph)/1.6); const n=ph+d; p.setXYZ(i,Math.sin(n)*r,v.y,Math.cos(n)*r); } }
+      g.computeVertexNormals(); return g; })();
+    N2.collar=new T.TorusGeometry(0.152,0.024,6,24);
+    N2.flapM=new T.BoxGeometry(0.075,0.012,0.07);
+    N2.flapF=new T.SphereGeometry(0.05,14,8);
+    N2.placket=new T.BoxGeometry(0.03,0.3,0.008);
+    N2.button=new T.SphereGeometry(0.014,6,4);
+    N2.shoulder=new T.SphereGeometry(0.06,12,8);
+    N2.arm=new T.CylinderGeometry(0.062,0.054,0.25,12);
+    N2.cuff=new T.TorusGeometry(0.054,0.014,5,12);
+    N2.hand=new T.SphereGeometry(0.056,10,8);
+    N2.thumb=new T.SphereGeometry(0.022,6,4);
+    N2.thigh=new T.CylinderGeometry(0.074,0.068,0.13,10); N2.knee=new T.SphereGeometry(0.068,10,8); N2.shin=new T.CylinderGeometry(0.068,0.062,0.11,10);
+    N2.shoe=new T.SphereGeometry(1,12,8,0,Math.PI*2,0,Math.PI*0.62);
+    N2.sole=new T.CylinderGeometry(1,1,1,16);
+    N2.skirt=(()=>{ const g=latheUp([[0.31,-0.2],[0.255,-0.08],[0.216,0.0],[0.207,0.04]],48); const p=g.attributes.position,v=new V3();
+      for(let i=0;i<p.count;i++){ v.fromBufferAttribute(p,i); const ph=Math.atan2(v.x,v.z), r=Math.hypot(v.x,v.z); const k=1+0.045*Math.max(0,-(v.y-0.02))/0.22*Math.cos(ph*14); p.setXYZ(i,Math.sin(ph)*r*k,v.y,Math.cos(ph)*r*k); }
+      g.computeVertexNormals(); return g; })();
+    N2.bun=new T.SphereGeometry(0.115,18,14); N2.bunBig=new T.SphereGeometry(0.13,18,14);
+    N2.tie=new T.TorusGeometry(0.06,0.02,8,18);
+    N2.lap=(()=>{ // váy khi ngồi: MỘT mảnh liền từ eo, vắt qua đùi, rủ xuống trước gối
+      const SA=40, SR=12, pos=[], idx=[]; const ss=(a,b,x)=>{ const t=Math.min(1,Math.max(0,(x-a)/(b-a))); return t*t*(3-2*t); };
+      for(let r=0;r<=SR;r++){ const t=r/SR;
+        for(let i=0;i<=SA;i++){ const a=i/SA*Math.PI*2, sa=Math.sin(a), ca=Math.cos(a);
+          // gấu nhìn từ trên: hình chữ nhật bo tròn lệch về trước
+          const k=Math.pow(Math.pow(Math.abs(sa),3)+Math.pow(Math.abs(ca),3),-1/3);
+          const hx=sa*k*0.235*(1+0.025*Math.cos(a*14)), hz=ca*k*(ca>0?0.335:0.235)*(1+0.025*Math.cos(a*14))+(ca>0?0.07:0);
+          const wx=sa*0.207, wz=ca*0.207, e=1-Math.pow(1-t,1.8);
+          const x=wx+(hx-wx)*e, z=wz+(hz-wz)*e;
+          const hy=-0.105+0.01*Math.max(0,ca); const yl=0.04+(hy-0.04)*Math.pow(t,1.6);
+          const foot=ss(0.21,0.15,Math.abs(x))*ss(-0.06,0.03,z)*ss(0.43,0.36,z);
+          const y=Math.max(yl,0.098*foot*(1-Math.pow(t,8))+yl*(1-foot)*0+ (foot<1?yl*(1-foot):0));
+          pos.push(x,y,z); } }
+      for(let r=0;r<SR;r++) for(let i=0;i<SA;i++){ const a=r*(SA+1)+i,b=a+SA+1; idx.push(a,b,a+1,b,b+1,a+1); }
+      const g=new T.BufferGeometry(); g.setAttribute('position',new T.Float32BufferAttribute(pos,3)); g.setIndex(idx); g.computeVertexNormals(); return g; })(); N2.curl=new T.SphereGeometry(0.088,9,7); N2.curlL=new T.SphereGeometry(0.09,9,7);
+    N2.spike=new T.ConeGeometry(0.07,0.2,8);
+    N2.lens=new T.TorusGeometry(0.064,0.011,8,24); N2.lensSq=new T.TorusGeometry(0.08,0.011,4,4);
+    N2.bar=new T.CylinderGeometry(0.009,0.009,1,6);
+    N2.band=new T.TorusGeometry(0.335,0.022,8,32,Math.PI);
+    N2.cup=new T.CylinderGeometry(0.078,0.078,0.06,18); N2.cupPad=new T.TorusGeometry(0.06,0.018,8,18);
+    N2.beanie=new T.SphereGeometry(0.338,32,16,0,Math.PI*2,0,Math.PI*0.5); N2.beanieRim=new T.TorusGeometry(0.33,0.042,10,32); N2.pom=new T.SphereGeometry(0.075,14,10);
+    N2.clip=new T.BoxGeometry(0.1,0.026,0.03);
+    N2.headband=new T.TorusGeometry(0.322,0.03,8,32,Math.PI);
+    N2.face=new T.SphereGeometry(0.303,20,12,Math.PI/2-0.9,1.8,Math.PI/2-0.75,1.5);
+    N2.shadow=new T.CircleGeometry(0.3,24);
+    return N2;
+  }
+  // đoạn thẳng nối 2 điểm (gọng kính)
+  function bar(a,b,mat,parent){ const m=new T.Mesh(N2.bar,mat); const A=new V3(...a),B=new V3(...b); m.position.copy(A).add(B).multiplyScalar(.5); m.scale.set(1,A.distanceTo(B),1); m.quaternion.setFromUnitVectors(new V3(0,1,0),B.clone().sub(A).normalize()); parent.add(m); return m; }
+
+  // Gộp nhiều khối cùng chất liệu (con trực tiếp của cùng một nhóm) thành một lượt vẽ
+  function mergeMeshes(list,parent){
+    if(list.length<2) return list[0];
+    const pos=[],nor=[]; const v=new V3(), n=new V3(), nm=new T.Matrix3();
+    list.forEach(m=>{ m.updateMatrix(); let g=m.geometry; if(g.index) g=g.toNonIndexed(); const P=g.attributes.position, N=g.attributes.normal; nm.getNormalMatrix(m.matrix);
+      for(let i=0;i<P.count;i++){ v.fromBufferAttribute(P,i).applyMatrix4(m.matrix); n.fromBufferAttribute(N,i).applyMatrix3(nm).normalize(); pos.push(v.x,v.y,v.z); nor.push(n.x,n.y,n.z); }
+      parent.remove(m); });
+    const g=new T.BufferGeometry(); g.setAttribute('position',new T.Float32BufferAttribute(pos,3)); g.setAttribute('normal',new T.Float32BufferAttribute(nor,3));
+    const out=new T.Mesh(g,list[0].material); parent.add(out); return out; }
+  function mergeByMaterial(parent){ const by=new Map(); parent.children.slice().forEach(c=>{ if(c.isMesh&&!c.children.length){ const k=c.material.uuid; if(!by.has(k)) by.set(k,[]); by.get(k).push(c); } });
+    by.forEach(list=>{ if(list.length>1) mergeMeshes(list,parent).userData.merged=true; }); }
+  function buildHair2(gr,L){
+    g2(); const hm=lam(HAIR_C[L.hc][1],true), sx=L.s;
+    const add=(geo,mat,x,y,z,rx,ry,rz,s)=>{ const m=new T.Mesh(geo,mat); m.position.set(x,y,z); m.rotation.set(rx||0,ry||0,rz||0); if(s) m.scale.set(...s); gr.add(m); return m; };
+    const st=sx==="nam"?["short","side","spiky","buzz","curly","manbun"][L.hair]:["long","highbun","ponytail","bob","braids","curlylong"][L.hair];
+    const hat=OPT[sx].acc[L.acc]==="Mũ len";
+    add(hairShell(st),hm,0,0,0);
+    const tieM=lam(sx==="nu"?0xd96f7f:0x2b2b2b);
+    const onHead=(az,el,d)=>new V3(Math.sin(az)*Math.cos(el)*d,Math.sin(el)*d,Math.cos(az)*Math.cos(el)*d);
+    if(st==="spiky"&&!hat) [[0,1.35],[.5,1.1],[-.5,1.1],[2.6,1.0],[-2.6,1.0],[3.1,.95],[1.2,.95],[-1.2,.95],[.2,.85],[-.25,.85],[1.9,.9],[-1.9,.9]].forEach(([az,el])=>{ const d=onHead(az,el,1); const m=new T.Mesh(N2.spike,hm); m.position.copy(d).multiplyScalar(.31); m.quaternion.setFromUnitVectors(new V3(0,1,0),d.clone().add(new V3(0,.35,-.25)).normalize()); gr.add(m); });
+    if(st==="curly"&&!hat){ for(let i=0;i<84;i++){ const az=i*2.39996, el=Math.asin(0.06+(i/84)*0.93); if(Math.cos(az)>0.45&&el<0.72) continue; const d=onHead(az,el,.3); add(N2.curl,hm,d.x,d.y,d.z); }
+      for(let i=0;i<6;i++){ const az=-0.75+i*0.3, d=onHead(az,0.92,.3); add(N2.curl,hm,d.x,d.y,d.z,0,0,0,[.8,.8,.8]); } }
+    if(st==="manbun"&&!hat){ add(N2.bun,hm,0,0.16,-0.3); add(N2.tie,tieM,0,0.12,-0.25,0.9); }
+    if(st==="highbun"&&!hat){ add(N2.bunBig,hm,0,0.36,-0.06); add(N2.tie,tieM,0,0.27,-0.05,Math.PI/2-0.25); }
+    if(st==="ponytail"){ add(N2.tie,tieM,0,0.12,-0.29,0.5); add(taperTube([[0,0.12,-0.27],[0,0.1,-0.4],[0,-0.08,-0.47],[0,-0.3,-0.45],[0,-0.42,-0.4]],0.075,0.04),hm,0,0,0); }
+    if(st==="braids") [-1,1].forEach(s=>{ add(taperTube([[s*0.24,0.02,-0.12],[s*0.29,-0.12,-0.1],[s*0.29,-0.3,-0.04],[s*0.27,-0.45,0.0]],0.055,0.042,7),hm,0,0,0); add(N2.tie,tieM,s*0.272,-0.44,-0.005,Math.PI/2,0,0,[.8,.8,.8]); });
+    if(st==="curlylong") for(let r=0;r<3;r++) for(let a=0;a<8;a++){ const az=Math.PI*(0.42+a*0.165), y=0.0-r*0.17, rr=0.335+r*0.03; add(N2.curlL,hm,Math.sin(az)*rr,y,Math.cos(az)*rr); }
+    // kính: gọng nối từ mép tròng tới tai
+    if(L.gl){ const fm=lam(0x23201f); [-1,1].forEach(sd=>{ const g=add(L.gl===1?N2.lens:N2.lensSq,fm,sd*0.1,0,0.302); if(L.gl===2) g.rotation.z=Math.PI/4; bar([sd*(L.gl===1?0.164:0.17),0.01,0.29],[sd*0.282,0.03,0.04],fm,gr); }); bar([-0.036,0.012,0.305],[0.036,0.012,0.305],fm,gr); }
+    const acc=OPT[sx].acc[L.acc];
+    if(acc==="Tai nghe"){ const pm=lam(0x2c3138), cm=lam(0xf0b43a); add(N2.band,pm,0,0.0,0); [-1,1].forEach(sd=>{ add(N2.cup,cm,sd*0.325,0,0,0,0,Math.PI/2); add(N2.cupPad,pm,sd*0.3,0,0,0,Math.PI/2,0); }); }
+    if(acc==="Mũ len"){ add(N2.beanie,lam(0x5d7fb0),0,0.03,0,-0.22); add(N2.beanieRim,lam(0x4a6a99),0,0.055,-0.01,Math.PI/2-0.22); add(N2.pom,lam(0xf3efe6),0,0.37,-0.08); }
+    if(acc==="Kẹp tóc"){ const cm=lam(0xf2b84b); add(N2.clip,cm,0.2,0.22,0.17,0,0.6,0.55); add(N2.clip,cm,0.225,0.17,0.175,0,0.6,0.55); }
+    if(acc==="Băng đô"){ add(N2.headband,lam(0xe07a8a),0,0.02,0.0,0.32); }
+    mergeByMaterial(gr);
+  }
+
+  function makeKid2(kind,lk){
+    g2();
     const g=new T.Group();
-    const shirt=kind==="me"?M.me:kind==="ta"?M.ta:M.shirt;
-    const shadow=new T.Mesh(G.shadow,M.shadow); shadow.rotation.x=-Math.PI/2; shadow.position.y=0.012; g.add(shadow);
-    const legL=new T.Mesh(G.leg,M.pants); legL.position.set(-0.09,0.14,0); const legR=new T.Mesh(G.leg,M.pants); legR.position.set(0.09,0.14,0); g.add(legL,legR);
-    [legL,legR].forEach(l=>{ const sh=new T.Mesh(G.shoe,M.shoe); sh.position.set(0,-0.13,0.035); sh.scale.set(1,0.6,1.45); l.add(sh); });
+    const shirt=kind==="me"?M.me:kind==="ta"?M.ta:kind==="key"?M.key:M.shirt;
+    const shadow=new T.Mesh(N2.shadow,M.shadow); shadow.rotation.x=-Math.PI/2; shadow.position.y=0.012; g.add(shadow);
+    // chân: khớp ở hông, giày liền cổ chân
+    const legs=[-1,1].map(sd=>{ const L=new T.Group(); L.position.set(sd*0.085,0.28,0); g.add(L);
+      const th=new T.Mesh(N2.thigh,M.pants); th.position.y=-0.065; L.add(th);
+      const knee=new T.Group(); knee.position.y=-0.13; L.add(knee);
+      const kj=new T.Mesh(N2.knee,M.pants); knee.add(kj);
+      const shin=new T.Mesh(N2.shin,M.pants); shin.position.y=-0.055; knee.add(shin);
+      const foot=new T.Group(); knee.add(foot);
+      const sh=new T.Mesh(N2.shoe,M.shoe); sh.position.set(0,-0.132,0.03); sh.scale.set(0.078,0.06,0.115); foot.add(sh);
+      const so=new T.Mesh(N2.sole,M.sole); so.position.set(0,-0.138,0.03); so.scale.set(0.08,0.01,0.117); foot.add(so);
+      L.userData.legM=[th,kj,shin]; L.userData.knee=knee; L.userData.thigh=th; L.userData.sd=sd; L.userData.shin=shin; L.userData.foot=foot; return L; });
     const hip=new T.Group(); hip.position.y=0.28; g.add(hip);
+    const pelvis=new T.Mesh(N2.pelvis,M.pants); hip.add(pelvis);
+    const skirt=new T.Mesh(N2.skirt,M.skirt); hip.add(skirt);
+    // váy khi ngồi: một vạt phủ kín đùi và gối, loe nhẹ ở gấu
+    const lap=new T.Mesh(N2.lap,M.skirt); lap.visible=false; hip.add(lap);
     const torso=new T.Group(); hip.add(torso);
-    const body=new T.Mesh(G.body,shirt); body.position.y=0.23; torso.add(body);
-    const vest=new T.Mesh(G.vest,kind==="me"?M.meDark:M.vest); vest.position.y=0.17; torso.add(vest); vest.visible=kind!=="ta";
-    [0.11,0.19].forEach(y=>{ const b=new T.Mesh(G.button,M.btn); b.position.set(0,y-0.17,0.222-(y-0.05)*0.12); vest.add(b); });
-    const collarM=new T.Group(); [-1,1].forEach(sd=>{ const c=new T.Mesh(G.collarM,M.white); c.position.set(sd*0.055,0.445,0.12); c.rotation.set(-0.5,sd*-0.5,sd*0.5); collarM.add(c); }); torso.add(collarM);
-    const collarF=new T.Mesh(G.collarF,M.white); collarF.position.set(0,0.455,0.01); collarF.rotation.x=Math.PI/2-0.15; torso.add(collarF);
-    const skirt=new T.Mesh(G.skirt,M.skirt); skirt.position.y=-0.03; hip.add(skirt);
+    const body=new T.Mesh(N2.torso,shirt); torso.add(body);
+    const placket=new T.Mesh(N2.placket,M.white); placket.position.set(0,0.2,0.198); torso.add(placket);
+    mergeMeshes([0.08,0.17,0.26].map(y=>{ const b=new T.Mesh(N2.button,M.btn); b.position.set(0,y,0.205); torso.add(b); return b; }),torso);
+    const vest=new T.Mesh(N2.vest,kind==="me"?M.meDark:kind==="key"?M.keyVest:M.vest); torso.add(vest); vest.visible=kind!=="ta";
+    const collar=new T.Mesh(N2.collar,M.white); collar.position.y=0.44; collar.rotation.x=Math.PI/2; torso.add(collar);
+    mergeMeshes([placket,collar],torso);
+    const collarM=new T.Group(); [-1,1].forEach(sd=>{ const c=new T.Mesh(N2.flapM,M.white); c.position.set(sd*0.05,0.425,0.135); c.rotation.set(0.75,sd*-0.55,0); collarM.add(c); }); torso.add(collarM);
+    const collarF=new T.Group(); [-1,1].forEach(sd=>{ const c=new T.Mesh(N2.flapF,M.white); c.position.set(sd*0.05,0.43,0.13); c.scale.set(1,0.3,0.8); c.rotation.set(0.6,0,sd*0.3); collarF.add(c); }); torso.add(collarF);
+    // tay: vai tròn liền thân, cổ tay áo, bàn tay có ngón cái
+    const sleeves=[]; const handsArr=[];
+    const arms=[1,-1].map(sd=>{ const A=new T.Group(); A.position.set(sd*0.19,0.39,0); torso.add(A);
+      const sh=new T.Mesh(N2.shoulder,shirt); A.add(sh);
+      const up=new T.Mesh(N2.arm,shirt); up.position.y=-0.125; A.add(up);
+      const cf=new T.Mesh(N2.cuff,shirt); cf.position.y=-0.248; cf.rotation.x=Math.PI/2; A.add(cf);
+      const h=new T.Mesh(N2.hand,M.skin); h.position.y=-0.3; h.scale.set(0.95,1.1,0.85); A.add(h);
+      const th=new T.Mesh(N2.thumb,M.skin); th.position.set(-sd*0.03,-0.285,0.035); A.add(th);
+      const sl=mergeMeshes([sh,up,cf],A), hd=mergeMeshes([h,th],A); sleeves.push(sl); handsArr.push(hd); A.userData.up=sl; return A; });
     const headG=new T.Group(); headG.position.y=0.72; hip.add(headG);
-    const headM=new T.Mesh(G.head,M.skin); headG.add(headM);
-    const ears=[-1,1].map(sd=>{ const e=new T.Mesh(G.ear,M.skin); e.position.set(sd*0.29,-0.01,0.0); e.scale.set(0.55,1,0.8); headG.add(e); return e; });
-    const faceM=new T.Mesh(G.face,M.skin); faceM.renderOrder=2; headG.add(faceM);
+    const headM=new T.Mesh(N2.head,M.skin); headG.add(headM);
+    const ears=[-1,1].map(sd=>{ const e=new T.Mesh(N2.ear,M.skin); e.position.set(sd*0.288,-0.02,0.01); e.scale.set(0.5,0.95,0.75); headG.add(e); return e; });
+    const faceM=new T.Mesh(N2.face,M.skin); faceM.renderOrder=2; headG.add(faceM);
     const lookG=new T.Group(); headG.add(lookG);
-    const armR=new T.Group(); armR.position.set(0.22,0.42,0); torso.add(armR); const ar=new T.Mesh(G.arm,shirt); ar.position.y=-0.15; armR.add(ar);
-    const armL=new T.Group(); armL.position.set(-0.22,0.42,0); torso.add(armL); const al=new T.Mesh(G.arm,shirt); al.position.y=-0.15; armL.add(al);
-    const hands=[ar,al].map(a=>{ const h=new T.Mesh(G.hand,M.skin); h.position.y=-0.18; a.add(h); return h; });
     const alert=new T.Sprite(M.alert); alert.scale.set(0.34,0.34,1); alert.position.y=1.55; alert.visible=false; g.add(alert);
     const badge=new T.Sprite(M.badgeLab); badge.scale.set(0.72,0.18,1); badge.position.y=1.42; badge.visible=false; g.add(badge);
-    scene.add(g);
-    const k={g,hip,torso,headG,armR,armL,legL,legR,shadow,alert,badge,body,vest,ar,al,kind,headM,faceM,lookG,ears,hands,collarM,collarF,skirt,sex:"nam",lk:null,expr:"",blinkAt:Math.random()*4,smile:0,
-      bow:0,bowDur:1,nod:0,hand:false,handA:0,walk:null,sitting:false,ph:Math.random()*6,name:"",seat:-1};
-    setLook(k,lk||randLook());
+    const k={g,hip,torso,headG,armR:arms[0],armL:arms[1],legL:legs[0],legR:legs[1],shadow,alert,badge,body,vest,ar:arms[0].userData.up,al:arms[1].userData.up,sleeves,kind,headM,faceM,lookG,ears,hands:handsArr,collarM,collarF,skirt,lap,pelvis,
+      sex:"nam",lk:null,expr:"",blinkAt:Math.random()*4,smile:0,bow:0,bowDur:1,nod:0,hand:false,handA:0,walk:null,sitting:false,ph:Math.random()*6,name:"",seat:-1};
+    setLook2(k,lk||randLook());
+    return k;
+  }
+  function setLook2(k,lk){
+    lk=fixLook(lk)||randLook(); k.lk=lk; k.sex=lk.s; const f=lk.s==="nu";
+    k.lookG.children.forEach(c=>{ if(c.userData.merged) c.geometry.dispose(); }); k.lookG.clear(); buildHair2(k.lookG,lk);
+    const sm=lam(SKIN_C[lk.sk][1]); k.headM.material=sm; k.ears.forEach(e=>e.material=sm); k.hands.forEach(h=>h.material=sm);
+    k.torso.scale.set(f?0.92:1.07,1,f?0.94:1);
+    k.collarM.visible=!f; k.collarF.visible=f;
+    const skirtOn=f&&OPT.nu.bot[lk.bot]==="Chân váy"; k.skirtOn=skirtOn; k.skirt.visible=skirtOn&&!k.sitting; if(k.lap) k.lap.visible=skirtOn&&!!k.sitting; k.pelvis.visible=!skirtOn;
+    const lm=skirtOn?M.tights:M.pants; [k.legL,k.legR].forEach(L=>L.userData.legM.forEach(m=>m.material=lm));
+    k.expr=""; setExpr(k,"normal");
+  }
+  function setSit2(k,on){ k.sitting=on;
+    // ngồi lên mặt ghế (mặt ghế game cao 0.505, đáy hông cách gốc 0.17); đùi dài ra để thò khỏi thân, cẳng chân buông qua mép ghế
+    k.g.position.y=on?0.335:0; k.shadow.visible=!on;
+    [k.legL,k.legR].forEach(L=>{ const u=L.userData; L.rotation.x=on?-Math.PI/2:0; L.position.z=on?0.04:0; L.position.x=u.sd*(on?0.095:0.085);
+      u.thigh.scale.y=on?1.85:1; u.thigh.position.y=on?-0.12:-0.065; u.knee.position.y=on?-0.24:-0.13; u.knee.rotation.x=on?Math.PI/2-0.12:0;
+      u.shin.scale.y=on?2:1; u.shin.position.y=on?-0.11:-0.055; u.foot.position.y=on?-0.11:0; });
+    if(k.skirt){ k.skirt.visible=!!k.skirtOn&&!on; } if(k.lap) k.lap.visible=on&&!!k.skirtOn; }
+  // ---------- characters ----------
+  const kids=[];
+  // Nhân vật bản chỉnh (Sang duyệt 03/11/2026): khối liền, chi tiết hơn — dựng bởi makeKid2/setLook2/setSit2 ở trên.
+  function makeKid(kind,lk){
+    const k=makeKid2(kind,lk); scene.add(k.g);
     if(kind==="ta"||kind==="key") dress(k,kind);
     kids.push(k); return k;
   }
-  function setLook(k,lk){
-    lk=fixLook(lk)||randLook(); k.lk=lk; k.sex=lk.s; const f=lk.s==="nu";
-    k.lookG.clear(); buildHair(k.lookG,lk);
-    const sm=lam(SKIN_C[lk.sk][1]); k.headM.material=sm; k.ears.forEach(e=>e.material=sm); k.hands.forEach(h=>h.material=sm);
-    k.torso.scale.set(f?0.9:1.08,1,f?0.92:1);
-    k.collarM.visible=!f; k.collarF.visible=f;
-    const skirtOn=f&&OPT.nu.bot[lk.bot]==="Chân váy"; k.skirt.visible=skirtOn;
-    const lm=skirtOn?M.tights:M.pants; k.legL.material=k.legR.material=lm;
-    k.expr=""; setExpr(k,"normal");
-  }
+  function setLook(k,lk){ setLook2(k,lk); }
   function setExpr(k,ex){ if(k.expr===ex) return; k.expr=ex; k.faceM.material=faceMat(k.sex,k.lk.eye,ex); }
   // Trang phục theo vai: học viên áo trắng gile be, bạn áo vàng, Lab Coach áo xanh ngọc + thẻ LAB COACH,
   // Key Coach áo xanh than gile vàng + thẻ KEY COACH. Học viên vẫn giống hệt nhau; chỉ người hướng dẫn khác để dễ nhận ra.
   function dress(k,look){
     const sh=look==="me"?M.me:look==="ta"?M.ta:look==="key"?M.key:M.shirt;
-    k.body.material=sh; k.ar.material=sh; k.al.material=sh;
+    k.body.material=sh; k.sleeves.forEach(m=>m.material=sh);
     k.vest.visible=look!=="ta"; k.vest.material=look==="me"?M.meDark:look==="key"?M.keyVest:M.vest;
     k.badge.visible=look==="ta"||look==="key"; k.badge.material=look==="key"?M.badgeKey:M.badgeLab;
     k.coach=look==="ta"?"lab":look==="key"?"key":"";
   }
   function removeKid(k){ scene.remove(k.g); const i=kids.indexOf(k); if(i>=0) kids.splice(i,1); bubbles.filter(b=>b.k===k).forEach(b=>killBubble(b)); }
-  const SIT_Y=0.24;
   function setSit(k,on){
-    k.sitting=on;
-    if(on){ k.g.position.y=SIT_Y; k.legL.rotation.x=k.legR.rotation.x=-Math.PI/2; k.legL.position.set(-0.09,0.2,0.14); k.legR.position.set(0.09,0.2,0.14); k.shadow.visible=false; const show=k.kind==="me"; k.legL.visible=k.legR.visible=show; }
-    else { k.g.position.y=0; k.legL.rotation.x=k.legR.rotation.x=0; k.legL.position.set(-0.09,0.14,0); k.legR.position.set(0.09,0.14,0); k.legL.visible=k.legR.visible=true; k.shadow.visible=true; }
+    setSit2(k,on);
+    // ngồi: chỉ hiện chân của "bạn" (người khác chân khuất dưới bàn, đỡ lượt vẽ)
+    const show=!on||k.kind==="me"; k.legL.visible=k.legR.visible=show;
   }
   function bow(k){ k.bow=k.bowDur=1.0; }
   function nod(k){ k.nod=0.45; }
@@ -2496,7 +2673,7 @@ body.drawer .rail,body.drawer .kcard{display:none}
     k.hip.rotation.x=0.62*b+(k.sitting&&!k.hand&&k.kind==="other"?0.08+Math.sin(t*0.8+k.ph)*0.03:0);
     k.headG.rotation.x=0.35*nd;
     k.handA+=((k.hand?1:0)-k.handA)*Math.min(1,dt*7);
-    k.armR.rotation.z=0.12+k.handA*2.8; k.armL.rotation.z=-0.12;
+    k.armR.rotation.z=0.1+k.handA*2.4; k.armL.rotation.z=-0.12;
     if(k.alert.visible) k.alert.position.y=1.55+Math.sin(t*4+k.ph)*0.05;
     if(k.smile>0) k.smile=Math.max(0,k.smile-dt);
     let ex="normal"; if(k.hand) ex="worry"; else if(k.bow>0||k.nod>0||k.smile>0) ex="smile";
