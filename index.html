@@ -684,8 +684,8 @@ body.drawer .rail,body.drawer .kcard{display:none}
   // ---------- Phòng thật (Supabase) ----------
   // Dán Project URL và Publishable key (hoặc anon key) của Supabase vào đây để bật phòng thật (xem supabase/HUONG-DAN.md).
   // Để trống thì trang chỉ có phòng mô phỏng như trước. Hai giá trị này công khai được: quyền nằm trong supabase/lop-hoc-lang.sql.
-  const SB_URL="";
-  const SB_KEY="";
+  const SB_URL="https://foqtcjtxiqexfnosqaex.supabase.co";
+  const SB_KEY="sb_publishable_ZGw5KocWEy64_4O1NyWDVg_6nnOKwt2";
   const URLQ=new URLSearchParams(location.search);
   // Chạy thử với Supabase trên máy: ?sbu=http://127.0.0.1:54321&sbk=<key> (chỉ nhận địa chỉ localhost)
   const SB_LOCAL=/^http:\/\/(127\.0\.0\.1|localhost):\d+$/.test(URLQ.get("sbu")||"")?URLQ.get("sbu"):"";
