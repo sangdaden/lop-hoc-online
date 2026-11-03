@@ -838,19 +838,35 @@ body.drawer .rail,body.drawer .kcard{display:none}
     if(KS.brk) return "Đang nghỉ 10 phút · còn "+mmss(KS.left);
     const p=phaseOf(KS.guide); return "Phase "+KS.guide+": "+p.ten+" · còn "+mmss(KS.left);
   }
+  // Chữ trên màn lớn tự co cho vừa: giảm cỡ tới mức tối thiểu, vẫn dài thì xuống 2 dòng (tiêu đề) hoặc cắt "…"
+  function fitText(x,t,px,wt,maxW,minPx){
+    let s=px; const f=n=>wt+' '+n+'px "Be Vietnam Pro", system-ui, sans-serif';
+    x.font=f(s); while(s>minPx&&x.measureText(t).width>maxW){ s-=2; x.font=f(s); }
+    return x.measureText(t).width<=maxW;
+  }
+  function fillFit(x,t,cx,cy,px,wt,maxW,minPx){
+    if(fitText(x,t,px,wt,maxW,minPx)){ x.fillText(t,cx,cy); return; }
+    let s=t; while(s.length>1&&x.measureText(s+"…").width>maxW) s=s.slice(0,-1); x.fillText(s.trimEnd()+"…",cx,cy);
+  }
   function drawTV(){
-    const x=tv.canvas.getContext("2d"), w=1024, h=576;
+    const x=tv.canvas.getContext("2d"), w=1024, h=576, M=w-96;
     x.fillStyle="#0E1726"; x.fillRect(0,0,w,h);
     x.fillStyle="#17233A"; x.fillRect(0,0,w,70);
-    x.textBaseline="middle"; x.textAlign="left"; x.fillStyle="#9FB3D1"; x.font='500 28px "Be Vietnam Pro", system-ui, sans-serif'; x.fillText("AI Thực chiến · VinUni",32,36);
-    x.textAlign="right"; x.fillStyle="#FFFFFF"; x.font='700 30px "Be Vietnam Pro", system-ui, sans-serif'; x.fillText(LIVE.on?"Phòng "+fmtCode(LIVE.code)+(LIVE.pass?" · Mã vào lớp "+LIVE.pass:""):"Mã điểm danh: 4X7Q",w-32,36);
-    x.textAlign="center"; x.fillStyle="#FFFFFF"; x.font='700 62px "Be Vietnam Pro", system-ui, sans-serif'; x.fillText("Ngày "+DAY.so+" · "+DAY.tieuDe,w/2,200);
-    if(MODE==="lop"&&!KS.brk){ const p=phaseOf(KS.guide); x.fillStyle="#F2C14E"; x.font='600 30px "Be Vietnam Pro", system-ui, sans-serif'; x.fillText(MODE_NAME[p.cheDo]+" · "+AI_NAME[p.ai],w/2,262); }
-    x.fillStyle="#C7D2E3"; x.font='400 36px "Be Vietnam Pro", system-ui, sans-serif'; x.fillText(tvLine,w/2,320);
+    x.textBaseline="middle"; x.textAlign="right"; x.fillStyle="#FFFFFF";
+    const code=LIVE.on?"Phòng "+fmtCode(LIVE.code)+(LIVE.pass?" · Mã vào lớp "+LIVE.pass:""):"Phòng mô phỏng";
+    fillFit(x,code,w-40,36,30,700,w*0.56,20); const cw=x.measureText(code).width;
+    x.textAlign="left"; x.fillStyle="#9FB3D1"; fillFit(x,"AI Thực chiến · VinUni",40,36,28,500,Math.max(120,w-80-cw-32),18);
+    x.textAlign="center"; x.fillStyle="#FFFFFF";
+    const title="Ngày "+DAY.so+" · "+DAY.tieuDe;
+    if(fitText(x,title,62,700,M,46)) x.fillText(title,w/2,190);
+    else { const ws=title.split(" "); let a="",b=""; for(const wd of ws){ const t=(a?a+" ":"")+wd; if(!b&&(fitText(x,t,48,700,M,48))) a=t; else b=(b?b+" ":"")+wd; }
+      fillFit(x,a,w/2,148,48,700,M,40); fillFit(x,b,w/2,204,48,700,M,32); }
+    if(MODE==="lop"&&!KS.brk){ const p=phaseOf(KS.guide); x.fillStyle="#F2C14E"; fillFit(x,MODE_NAME[p.cheDo]+" · "+AI_NAME[p.ai],w/2,272,30,600,M,22); }
+    x.fillStyle="#C7D2E3"; fillFit(x,tvLine,w/2,326,36,400,M,24);
     if(tvProg>0){ x.fillStyle="#24324D"; x.fillRect(180,380,w-360,14); x.fillStyle="#23407A"; x.fillRect(180,380,(w-360)*tvProg,14); }
     // dòng Key Coach: bước đang dẫn, hoặc bước đang giảng lại
     x.fillStyle="#17233A"; x.fillRect(0,h-110,w,110);
-    x.fillStyle="#F2C14E"; x.font='600 32px "Be Vietnam Pro", system-ui, sans-serif'; x.fillText(keyLine(),w/2,h-55);
+    x.fillStyle="#F2C14E"; fillFit(x,keyLine(),w/2,h-55,32,600,M,22);
     tv.tex.needsUpdate=true; drawDecor();
   }
   function drawWB(){
