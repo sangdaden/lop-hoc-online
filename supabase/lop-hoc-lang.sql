@@ -10,14 +10,21 @@ create extension if not exists pgcrypto with schema extensions;
 create table if not exists lhl_config (k text primary key, v text not null);
 create table if not exists lhl_key_auth (uid uuid primary key, at timestamptz not null default now());
 create table if not exists lhl_rooms (
-  code text primary key check (code ~ '^[A-Z2-9]{6}$'),
+  code text primary key,
   key_uid uuid not null,
   open boolean not null default true,
   title text,
   lab text not null,
+  pass text not null default '',
   state jsonb not null default '{}'::jsonb,
   created_at timestamptz not null default now()
 );
+-- Tên phòng theo phòng học thật: 1 chữ cái + 3 số (ví dụ H201). Mỗi buổi có mã vào phòng 4 số riêng.
+alter table lhl_rooms add column if not exists pass text not null default '';
+alter table lhl_rooms drop constraint if exists lhl_rooms_code_check;
+alter table lhl_rooms drop constraint if exists lhl_rooms_code_fmt;
+alter table lhl_rooms add constraint lhl_rooms_code_fmt check (code ~ '^[A-Z][0-9]{3}$') not valid;
+
 create table if not exists lhl_members (
   code text not null references lhl_rooms(code) on delete cascade,
   uid uuid not null,
@@ -94,22 +101,43 @@ begin
   return false;
 end $$;
 
-create or replace function lhl_create_room(p_title text) returns json language plpgsql security definer set search_path = public, extensions as $$
-declare c text; lab text; abc text := 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'; i int;
+drop function if exists lhl_create_room(text);
+-- Key Coach mở phòng theo tên phòng học (H201). Phòng đang đóng thì mở buổi mới: mã mới, xóa người và đăng ký demo của buổi trước.
+-- Phòng đang mở do Key Coach khác giữ thì chuyển cho người vừa mở (đổi người dẫn giữa buổi), giữ nguyên dữ liệu.
+create or replace function lhl_create_room(p_code text, p_title text) returns json language plpgsql security definer set search_path = public, extensions as $$
+declare r lhl_rooms; v_lab text; v_pass text;
 begin
   if not exists (select 1 from lhl_key_auth where uid = auth.uid()) then raise exception 'khong phai key coach'; end if;
-  loop
-    c := ''; for i in 1..6 loop c := c || substr(abc, 1 + (get_byte(gen_random_bytes(1), 0) % length(abc)), 1); end loop;
-    exit when not exists (select 1 from lhl_rooms where code = c);
-  end loop;
-  lab := lpad(((get_byte(gen_random_bytes(1),0)*65536 + get_byte(gen_random_bytes(1),0)*256 + get_byte(gen_random_bytes(1),0)) % 900000 + 100000)::text, 6, '0');
-  insert into lhl_rooms(code, key_uid, title, lab) values (c, auth.uid(), left(p_title, 60), lab);
-  return json_build_object('code', c, 'lab', lab);
+  if p_code !~ '^[A-Z][0-9]{3}$' then raise exception 'ten phong khong dung'; end if;
+  v_lab := lpad(((get_byte(gen_random_bytes(1),0)*65536 + get_byte(gen_random_bytes(1),0)*256 + get_byte(gen_random_bytes(1),0)) % 900000 + 100000)::text, 6, '0');
+  v_pass := lpad(((get_byte(gen_random_bytes(1),0)*256 + get_byte(gen_random_bytes(1),0)) % 9000 + 1000)::text, 4, '0');
+  select * into r from lhl_rooms where code = p_code;
+  if not found then
+    insert into lhl_rooms(code, key_uid, title, lab, pass) values (p_code, auth.uid(), left(p_title, 60), v_lab, v_pass);
+    return json_build_object('code', p_code, 'lab', v_lab, 'pass', v_pass, 'fresh', true);
+  end if;
+  if not r.open or r.pass = '' then
+    delete from lhl_members where code = p_code;
+    delete from lhl_demo where code = p_code;
+    delete from lhl_pit where code = p_code;
+    delete from lhl_esc where code = p_code;
+    update lhl_rooms set key_uid = auth.uid(), open = true, title = left(p_title, 60), lab = v_lab, pass = v_pass, state = '{}'::jsonb, created_at = now() where code = p_code;
+    return json_build_object('code', p_code, 'lab', v_lab, 'pass', v_pass, 'fresh', true);
+  end if;
+  update lhl_rooms set key_uid = auth.uid() where code = p_code;
+  return json_build_object('code', p_code, 'lab', r.lab, 'pass', r.pass, 'fresh', false);
 end $$;
+
+-- Danh sách phòng đang mở (theo buổi) để học viên và Lab Coach chọn. Không lộ mã vào phòng.
+create or replace function lhl_open_rooms() returns json language sql stable security definer set search_path = public as $$
+  select coalesce(json_agg(json_build_object('code', r.code, 'title', r.title, 'at', (extract(epoch from r.created_at)*1000)::bigint,
+      'n', (select count(*) from lhl_members m where m.code = r.code and m.online and m.role = 'hv')) order by r.code), '[]'::json)
+  from lhl_rooms r where r.open and r.created_at > now() - interval '18 hours'
+$$;
 
 -- Ai cũng hỏi được: phòng có tồn tại, còn mở không. Key Coach của phòng nhận thêm mã Lab Coach.
 create or replace function lhl_room_info(p_code text) returns json language sql stable security definer set search_path = public as $$
-  select json_build_object('open', open, 'mine', key_uid = auth.uid(), 'lab', case when key_uid = auth.uid() then lab end)
+  select json_build_object('open', open, 'mine', key_uid = auth.uid(), 'lab', case when key_uid = auth.uid() then lab end, 'pass', case when key_uid = auth.uid() then pass end)
   from lhl_rooms where code = p_code
 $$;
 create or replace function lhl_my_rooms() returns json language sql stable security definer set search_path = public as $$
@@ -135,6 +163,10 @@ begin
      and not exists (select 1 from lhl_members where code = p_code and uid = auth.uid() and role = 'lab') then
     perform pg_sleep(0.5); return json_build_object('err', 'labpass');
   end if;
+  if p_role = 'hv' and coalesce(p_pass, '') <> r.pass
+     and not exists (select 1 from lhl_members where code = p_code and uid = auth.uid()) then
+    perform pg_sleep(0.5); return json_build_object('err', 'pass');
+  end if;
   if p_role not in ('hv','lab','key') then return json_build_object('err', 'role'); end if;
   if r.key_uid = auth.uid() and not r.open then update lhl_rooms set open = true where code = p_code; end if;
   select * into old from lhl_members where code = p_code and uid = auth.uid();
@@ -145,7 +177,7 @@ begin
   else
     insert into lhl_members(code, uid, name, role, look, joined, upd, seen) values (p_code, auth.uid(), left(p_name, 24), p_role, p_look, t, t, t);
   end if;
-  return json_build_object('ok', true, 'old', case when old.uid is not null then row_to_json(old) end, 'lab', case when p_role = 'key' then r.lab end);
+  return json_build_object('ok', true, 'old', case when old.uid is not null then row_to_json(old) end, 'lab', case when p_role = 'key' then r.lab end, 'pass', case when p_role = 'key' then r.pass end);
 end $$;
 
 -- Cập nhật bản ghi của chính mình (chỉ các trường cho phép)
