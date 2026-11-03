@@ -321,6 +321,12 @@ body:not([data-role="hv"]) .rail{top:calc(50% + 60px)}
 .game .toast{bottom:calc(max(18px,env(safe-area-inset-bottom,0px)) + 160px);border-radius:999px;background:var(--glass);color:var(--hud-fg);backdrop-filter:blur(8px)}
 .game .toast.undo{bottom:calc(max(18px,env(safe-area-inset-bottom,0px)) + 160px)}
 .game .toast.undo button{color:#c8b6ff}
+.views{position:absolute;left:max(14px,env(safe-area-inset-left,0px));bottom:max(18px,env(safe-area-inset-bottom,0px));z-index:5;display:flex;flex-direction:column;gap:6px;align-items:flex-start}
+.vchip{all:unset;cursor:pointer;padding:6px 12px;border-radius:999px;font-size:12px;font-weight:600;background:var(--glass);color:var(--hud-fg);border:1px solid var(--glass-ln);backdrop-filter:blur(8px)}
+.vchip.on{background:var(--hud-acc);border-color:rgba(255,255,255,.45)}
+.vchip:focus-visible{outline:2px solid #fff;outline-offset:2px}
+@media (max-width:900px){.views{flex-direction:row;flex-wrap:wrap;bottom:auto;top:calc(max(14px,env(safe-area-inset-top,0px)) + 58px);max-width:calc(100% - 250px)}}
+@media (max-width:640px){.views{top:calc(max(14px,env(safe-area-inset-top,0px)) + 112px);max-width:calc(100% - 220px)}}
 .bub.seatp{pointer-events:auto;cursor:pointer;background:#fff;color:#1d1a26;font-weight:600;border-radius:8px}
 .bub.seatp kbd{font:inherit;font-size:11px;border:1px solid #bbb;border-radius:4px;padding:0 4px;margin-right:5px}
 .bub.qn{min-width:24px;height:24px;padding:0;display:grid;place-items:center;border-radius:50%;background:var(--hud-warn);border:2px solid #fff;font-weight:700}
@@ -389,6 +395,7 @@ body.drawer .rail,body.drawer .kcard{display:none}
         <button class="ib glass only-key" id="bPhong" data-tab="phong" title="Thiết lập phòng" aria-label="Thiết lập phòng"><svg viewBox="0 0 24 24"><path d="M4 20V8l8-4 8 4v12M9 20v-6h6v6"/></svg></button>
       </div>
       <div class="kcard glass for-coach" id="kCard"></div>
+      <div class="views for-coach" id="views" role="group" aria-label="Góc nhìn"></div>
       <button class="rail glass" id="rail" aria-label="Tiến độ cả lớp theo phase, bấm để mở bảng"></button>
       <p class="status" id="doorText" role="status">Bạn đang đứng ở cửa sau phòng thực hành. Bấm một ghế tím để đi tới và ngồi.</p>
       <button class="ctxbar" id="aCtx" hidden></button>
@@ -1179,7 +1186,7 @@ body.drawer .rail,body.drawer .kcard{display:none}
     tas=[]; for(let t=ROLE==="lab"?1:0;t<TAS;t++){ const k=makeKid("ta"); k.name="Lab Coach "+(t+1); k.zone=t; k.home=labHome(t); k.g.position.copy(k.home); k.g.rotation.y=0; k.busy=false; k.atHome=true; tas.push(k); }
     keyC=me; if(ROLE!=="key"){ keyC=makeKid("key"); keyC.name="Key Coach"; keyC.home=keyHome.clone(); keyC.g.position.copy(keyHome); keyC.g.rotation.y=0; keyC.busy=false; }
     $("actions").dataset.role=ROLE; document.body.dataset.role=ROLE; $("lFix").disabled=true;
-    $("hint").textContent=ROLE==="hv"?"Kéo để xoay · cuộn để phóng to · bấm sàn để đi · bấm ghế tím (còn trống) để ngồi":"Kéo để xoay · cuộn để phóng to · bấm sàn để đi"+(ROLE==="lab"?" · bấm ghế có dấu “!” để tới giúp":"");
+    $("hint").textContent=ROLE==="hv"?"Kéo để xoay · cuộn để phóng to · bấm sàn để đi · bấm ghế tím (còn trống) để ngồi":"Kéo để xoay · cuộn để phóng to · chuột phải hoặc phím mũi tên để dời góc nhìn · bấm sàn để đi"+(ROLE==="lab"?" · bấm ghế có dấu “!” để tới giúp":"");
     document.querySelectorAll(".role").forEach(b=>{const on=b.dataset.r===ROLE; b.classList.toggle("on",on); b.setAttribute("aria-pressed",on);});
     relabel(); drawTV();
     $("cap").textContent=N;
@@ -1190,7 +1197,7 @@ body.drawer .rail,body.drawer .kcard{display:none}
     $("doorText").textContent=ROLE==="hv"?"Bạn đang đứng ở cửa sau phòng thực hành. Bấm một ghế tím để đi tới và ngồi."
       :ROLE==="lab"?"Bạn là Lab Coach 1, phụ trách khu 1"+(TAS>1?" (bên trái phòng)":"")+". Bấm “Nhận lượt kế” hoặc bấm thẳng vào ghế có dấu “!”."
       :"Bạn là Key Coach, đứng đầu phòng. Bấm “Sang phase tiếp” khi phần lớn lớp đã tick xong, giảng lại khi một phase chuyển cam.";
-    camYaw=ROLE==="hv"?0.25:Math.PI-0.25; camPitch=ROLE==="hv"?0.5:1.0; camDist=ROLE==="hv"?7:6; overview=ROLE==="key"; markCam();
+    camYaw=ROLE==="hv"?0.25:Math.PI-0.25; camPitch=ROLE==="hv"?0.5:1.0; camDist=ROLE==="hv"?7:6; setView(ROLE==="key"?"room":"me");
     if(ROLE==="hv"){ camPos.set(doorPos.x,6,zBack+8); camLook.set(doorPos.x,1,zBack-4); } else { camPos.set(me.g.position.x,6,zFront-4); camLook.set(me.g.position.x,1,zFront+6); }
     render();
   }
@@ -1250,14 +1257,31 @@ body.drawer .rail,body.drawer .kcard{display:none}
 
   // ---------- camera & input ----------
   let camYaw=0.25, camPitch=0.5, camDist=7, overview=false;
+  // Góc nhìn: "me" = sau lưng mình; còn lại (toàn phòng / đầu phòng / khu bàn) là quỹ đạo quanh một điểm, kéo để xoay, cuộn để phóng, chuột phải hoặc Shift+kéo hay phím mũi tên để dời.
+  let view="me"; const vw={yaw:0,pitch:0.9,dist:20,fx:0,fz:0};
+  function setView(v){
+    const D=zBack-zFront, cz=(zBack+zFront)/2; view=v; overview=v!=="me";
+    if(v==="room") Object.assign(vw,{yaw:0,pitch:Math.atan2(6+D*0.5,zBack+3-cz),dist:Math.hypot(6+D*0.5,zBack+3-cz),fx:0,fz:cz+1});
+    else if(v==="front") Object.assign(vw,{yaw:Math.PI,pitch:0.5,dist:Math.max(10,D*0.55),fx:0,fz:zFront+D*0.4});
+    else if(v.startsWith("zone")){ const z=+v.slice(4), ss=seats.filter(x=>x.zone===z); const fx=ss.reduce((a,x)=>a+x.pos.x,0)/(ss.length||1), fz=ss.reduce((a,x)=>a+x.pos.z,0)/(ss.length||1);
+      Object.assign(vw,{yaw:0.35,pitch:0.85,dist:Math.max(9,D*0.45),fx,fz}); }
+    markCam();
+  }
+  function panView(dx,dy){ if(view==="me") return; const c=Math.cos(vw.yaw), sn=Math.sin(vw.yaw), k=vw.dist*0.0016;
+    vw.fx=Math.max(-W/2,Math.min(W/2,vw.fx+(-c*dx-sn*dy)*k)); vw.fz=Math.max(zFront,Math.min(zBack,vw.fz+(sn*dx-c*dy)*k)); }
   const camPos=new T.Vector3(0,6,18), camLook=new T.Vector3();
   const ray=new T.Raycaster(), ndc=new T.Vector2();
   let down=null;
-  cv.addEventListener("pointerdown",e=>{ down={x:e.clientX,y:e.clientY,moved:false}; try{cv.setPointerCapture(e.pointerId);}catch(_){} });
+  cv.addEventListener("contextmenu",e=>e.preventDefault());
+  cv.addEventListener("pointerdown",e=>{ down={x:e.clientX,y:e.clientY,moved:false,pan:e.button===2||e.shiftKey}; try{cv.setPointerCapture(e.pointerId);}catch(_){} });
   cv.addEventListener("pointermove",e=>{
     if(!down) return; const dx=e.clientX-down.x, dy=e.clientY-down.y;
     if(!down.moved&&Math.hypot(dx,dy)>6){ down.moved=true; cv.classList.add("drag"); }
-    if(down.moved){ camYaw-=dx*0.008; camPitch=Math.max(0.12,Math.min(1.25,camPitch+dy*0.005)); down.x=e.clientX; down.y=e.clientY; }
+    if(down.moved){
+      if(view==="me"){ camYaw-=dx*0.008; camPitch=Math.max(0.12,Math.min(1.25,camPitch+dy*0.005)); }
+      else if(down.pan) panView(dx,dy);
+      else { vw.yaw-=dx*0.008; vw.pitch=Math.max(0.15,Math.min(1.5,vw.pitch+dy*0.005)); }
+      down.x=e.clientX; down.y=e.clientY; }
   });
   cv.addEventListener("pointerup",e=>{
     cv.classList.remove("drag"); if(!down) return; const wasDrag=down.moved; down=null; if(wasDrag) return;
@@ -1277,9 +1301,13 @@ body.drawer .rail,body.drawer .kcard{display:none}
     goFloor(h.point.clone());
   });
   cv.addEventListener("pointercancel",()=>{down=null;cv.classList.remove("drag");});
-  cv.addEventListener("wheel",e=>{ e.preventDefault(); camDist=Math.max(3.5,Math.min(16,camDist*(1+e.deltaY*0.0012))); },{passive:false});
-  $("bCam").onclick=()=>{ overview=!overview; markCam(); };
-  function markCam(){ const b=$("bCam"), t=overview?"Về sau lưng bạn":"Nhìn toàn phòng"; b.classList.toggle("on",overview); b.title=t; b.setAttribute("aria-label",t); }
+  cv.addEventListener("wheel",e=>{ e.preventDefault(); const f=1+e.deltaY*0.0012; if(view==="me") camDist=Math.max(3.5,Math.min(16,camDist*f)); else vw.dist=Math.max(4,Math.min((zBack-zFront)*2+30,vw.dist*f)); },{passive:false});
+  $("bCam").onclick=()=>setView(view==="me"?"room":"me");
+  function markCam(){ const b=$("bCam"), t=overview?"Về sau lưng bạn":"Nhìn toàn phòng"; b.classList.toggle("on",overview); b.title=t; b.setAttribute("aria-label",t);
+    const vb=$("views"); if(!vb) return;
+    const list=[["room","Toàn phòng"],["front","Đầu phòng"]].concat([...Array(TAS).keys()].map(z=>["zone"+z,"Khu "+(z+1)]),[["me","Theo tôi"]]);
+    vb.innerHTML=list.map(([v,l])=>'<button class="vchip'+(view===v?' on':'')+'" data-v="'+v+'" aria-pressed="'+(view===v)+'">'+l+'</button>').join("");
+    vb.querySelectorAll(".vchip").forEach(x=>x.onclick=()=>setView(x.dataset.v)); }
 
   // ---------- actions ----------
   $("aGreet").onclick=()=>{
@@ -1447,7 +1475,8 @@ body.drawer .rail,body.drawer .kcard{display:none}
   document.addEventListener("keydown",e=>{
     if(e.target.closest&&e.target.closest("input,textarea,select,.overlay,.wz")) return;
     if(e.key==="Escape"&&!$("side").hidden){ closeDrawer(); return; }
-    if((e.key==="e"||e.key==="E")&&ROLE==="hv"&&!e.metaKey&&!e.ctrlKey){ $("aSit").click(); }
+    if((e.key==="e"||e.key==="E")&&ROLE==="hv"&&!e.metaKey&&!e.ctrlKey){ $("aSit").click(); return; }
+    const P={ArrowLeft:[40,0],ArrowRight:[-40,0],ArrowUp:[0,40],ArrowDown:[0,-40]}[e.key]; if(P&&view!=="me"){ e.preventDefault(); panView(P[0],P[1]); }
   });
 
   // ---------- Key Coach & Lab Coach ----------
@@ -1811,7 +1840,7 @@ body.drawer .rail,body.drawer .kcard{display:none}
     const dt=Math.min(clock.getDelta(),0.05), t=clock.elapsedTime;
     for(const k of kids) animKid(k,dt,t);
     const target=me.g.position; let want, at;
-    if(overview){ const D=zBack-zFront; want=tmp.set(0,6+D*0.5,zBack+4); at=look.set(0,0,(zBack+zFront)/2+1); }
+    if(view!=="me"){ const cp=Math.cos(vw.pitch); want=tmp.set(vw.fx+Math.sin(vw.yaw)*vw.dist*cp, 0.5+vw.dist*Math.sin(vw.pitch), vw.fz+Math.cos(vw.yaw)*vw.dist*cp); at=look.set(vw.fx,0.5,vw.fz); }
     else { const cp=Math.cos(camPitch); want=tmp.set(target.x+Math.sin(camYaw)*camDist*cp, 1+camDist*Math.sin(camPitch), target.z+Math.cos(camYaw)*camDist*cp); at=look.set(target.x-Math.sin(camYaw)*1.2,0.9,target.z-Math.cos(camYaw)*1.2); }
     camPos.lerp(want,0.1); camLook.lerp(at,0.12);
     camera.position.copy(camPos); camera.lookAt(camLook);
