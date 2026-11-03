@@ -109,14 +109,14 @@ declare r lhl_rooms; v_lab text; v_pass text;
 begin
   if not exists (select 1 from lhl_key_auth where uid = auth.uid()) then raise exception 'khong phai key coach'; end if;
   if p_code !~ '^[A-Z][0-9]{3}$' then raise exception 'ten phong khong dung'; end if;
-  -- Mã vào lớp và mã Lab Coach không trùng với lớp nào đang mở, vì người vào chỉ nhập mã.
-  loop
-    v_lab := lpad(((get_byte(gen_random_bytes(1),0)*65536 + get_byte(gen_random_bytes(1),0)*256 + get_byte(gen_random_bytes(1),0)) % 900000 + 100000)::text, 6, '0');
-    exit when not exists (select 1 from lhl_rooms where open and lab = v_lab and code <> p_code);
-  end loop;
+  -- Mã vào lớp và mã Lab Coach đều 4 số, không trùng với mã nào của lớp đang mở, vì người vào chỉ nhập mã.
   loop
     v_pass := lpad(((get_byte(gen_random_bytes(1),0)*256 + get_byte(gen_random_bytes(1),0)) % 9000 + 1000)::text, 4, '0');
-    exit when not exists (select 1 from lhl_rooms where open and pass = v_pass and code <> p_code);
+    exit when not exists (select 1 from lhl_rooms where open and code <> p_code and v_pass in (pass, lab));
+  end loop;
+  loop
+    v_lab := lpad(((get_byte(gen_random_bytes(1),0)*256 + get_byte(gen_random_bytes(1),0)) % 9000 + 1000)::text, 4, '0');
+    exit when v_lab <> v_pass and not exists (select 1 from lhl_rooms where open and code <> p_code and v_lab in (pass, lab));
   end loop;
   select * into r from lhl_rooms where code = p_code;
   if not found then
