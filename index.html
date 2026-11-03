@@ -654,12 +654,12 @@ body.drawer .rail,body.drawer .kcard{display:none}
   scene.background=new T.Color(0x23262b);
   scene.fog=new T.Fog(0x23262b,24,80);
   const camera=new T.PerspectiveCamera(48,1,0.1,200);
-  scene.add(new T.HemisphereLight(0xffffff,0x8a8177,0.95));
+  const hemi=new T.HemisphereLight(0xffffff,0x8a8177,0.95); scene.add(hemi);
   const sun=new T.DirectionalLight(0xffffff,0.55); sun.position.set(5,14,6); scene.add(sun);
   const cool=new T.DirectionalLight(0xdfe8ff,0.25); cool.position.set(-8,6,-6); scene.add(cool);
 
   function canvasTex(w,h,draw){const c=document.createElement("canvas");c.width=w;c.height=h;draw(c.getContext("2d"),w,h);const t=new T.CanvasTexture(c);t.encoding=T.sRGBEncoding;return {tex:t,canvas:c};}
-  const floorTex=canvasTex(256,256,(x,w,h)=>{x.fillStyle="#b9bbb8";x.fillRect(0,0,w,h);for(let i=0;i<5000;i++){const v=170+Math.random()*30|0;x.fillStyle="rgb("+v+","+(v+2)+","+v+")";x.fillRect(Math.random()*w,Math.random()*h,1.5,1.5);}x.fillStyle="rgba(0,0,0,.08)";x.fillRect(0,0,w,1);x.fillRect(0,0,1,h);}).tex;
+  const floorTex=canvasTex(256,256,(x,w,h)=>{let s=7;const r=()=>{s=(s*1664525+1013904223)>>>0;return s/4294967296;};const C=["#d8b98f","#d1b088","#dcc19b","#cfae84"];for(let row=0;row<8;row++){let px=-(row%2)*64;while(px<w){const L=90+r()*80;x.fillStyle=C[(r()*4)|0];x.fillRect(px,row*32,L,32);for(let k=0;k<6;k++){x.fillStyle="rgba(120,80,40,.07)";x.fillRect(px,row*32+4+r()*24,L,1);}x.fillStyle="rgba(90,60,30,.35)";x.fillRect(px+L-1,row*32,1.5,32);px+=L;}x.fillStyle="rgba(90,60,30,.3)";x.fillRect(0,row*32+31,w,1.2);}}).tex; // sàn gỗ sáng
   floorTex.wrapS=floorTex.wrapT=T.RepeatWrapping;
   const slatTex=canvasTex(256,64,(x,w,h)=>{for(let i=0;i<16;i++){x.fillStyle=i%2?"#c79b6c":"#bb8d5e";x.fillRect(i*16,0,14,h);x.fillStyle="#5e4430";x.fillRect(i*16+14,0,2,h);}}).tex;
   slatTex.wrapS=T.RepeatWrapping;
@@ -696,7 +696,7 @@ body.drawer .rail,body.drawer .kcard{display:none}
     // dòng Key Coach: bước đang dẫn, hoặc bước đang giảng lại
     x.fillStyle="#17233A"; x.fillRect(0,h-110,w,110);
     x.fillStyle="#F2C14E"; x.font='600 32px "Be Vietnam Pro", system-ui, sans-serif'; x.fillText(keyLine(),w/2,h-55);
-    tv.tex.needsUpdate=true;
+    tv.tex.needsUpdate=true; drawDecor();
   }
   function drawWB(){
     const x=wb.canvas.getContext("2d"), w=768, h=512;
@@ -998,7 +998,7 @@ body.drawer .rail,body.drawer .kcard{display:none}
     seats.forEach(s=>{minX=Math.min(minX,s.pos.x);maxX=Math.max(maxX,s.pos.x);minZ=Math.min(minZ,s.pos.z);maxZ=Math.max(maxZ,s.pos.z);});
     W=Math.max(16,(maxX-minX)+7); zFront=minZ-5.6; zBack=maxZ+4.2; const D=zBack-zFront, H=4.6, cz=(zBack+zFront)/2;
     doorPos.set(W/2-2.2,0,zBack-1.0);
-    floorTex.repeat.set(W/2,(D+14)/2);
+    floorTex.repeat.set(W/2.4,(D+14)/2.4);
     floorMesh=plane(W,D+14,M.floor,0,0,cz+7,0,-Math.PI/2);
     // walls (inward facing; camera outside sees through)
     plane(W,H,M.wall,0,H/2,zFront,0); plane(W,H,M.wall,0,H/2,zBack,Math.PI);
@@ -1009,16 +1009,16 @@ body.drawer .rail,body.drawer .kcard{display:none}
     wains(W,0,zFront+0.02,0); wains(W,0,zBack-0.02,Math.PI); wains(D,-W/2+0.02,cz,Math.PI/2); wains(D,W/2-0.02,cz,-Math.PI/2);
     // acoustic panels (instanced)
     const P=[]; const gap=1.6;
-    for(let x=-W/2+1;x<=W/2-1;x+=gap){ P.push([x,zFront+0.04,0]); P.push([x,zBack-0.04,Math.PI]); }
+    for(let x=-W/2+1;x<=W/2-1;x+=gap){ P.push([x,zBack-0.04,Math.PI]); } // tường đầu phòng để trắng cho bảng nổi
     for(let z=zFront+1;z<=zBack-1;z+=gap){ P.push([-W/2+0.04,z,Math.PI/2]); P.push([W/2-0.04,z,-Math.PI/2]); }
-    const pan=im(new T.PlaneGeometry(1.45,1.0),M.white,P.length*2);
-    let pi=0; P.forEach(([x,z,ry],k)=>{ [3.05,4.15].forEach((y,row)=>{ place(pan,pi,x,y,z,ry); pan.setColorAt(pi,col.setHex((k+row)%2?0x8e9196:0xb6b9bd)); pi++; }); });
+    const PL=[]; P.forEach(([x,z,ry],k)=>[3.05,4.15].forEach((y,row)=>{ if(ry===Math.PI/2&&row===0) return; PL.push([x,y,z,ry,k,row]); })); // tường trái: hàng dưới nhường chỗ cửa sổ
+    const pan=im(new T.PlaneGeometry(1.45,1.0),M.white,PL.length);
+    PL.forEach(([x,y,z,ry,k,row],pi)=>{ place(pan,pi,x,y,z,ry); pan.setColorAt(pi,col.setHex(((k+row)%3===2)?0xd8cdb4:0x34435f)); }); // tiêu âm hai tông: xanh than + be
     pan.instanceMatrix.needsUpdate=true; pan.instanceColor.needsUpdate=true;
     // front: whiteboard + big display + teacher desk; back: door
     const fz=zFront+0.06;
     box(3.2,2.0,0.05,M.metal,-W*0.18,1.95,fz); plane(3.1,1.9,M.wb,-W*0.18,1.95,fz+0.03,0);
     box(4.5,2.6,0.12,M.black,W*0.14,2.15,fz+0.04); plane(4.3,2.42,M.tv,W*0.14,2.15,fz+0.11,0);
-    box(0.06,1.8,0.06,M.black,W*0.14-1.6,3.9,fz+0.05); box(0.06,1.8,0.06,M.black,W*0.14+1.6,3.9,fz+0.05);
     box(1.8,0.05,0.8,M.tabletop,-W*0.32,0.76,zFront+1.6); box(1.7,0.72,0.06,M.metal,-W*0.32,0.38,zFront+1.95);
     plane(1.4,2.4,M.door,doorPos.x,1.2,zBack-0.05,Math.PI);
     // tables
@@ -1046,7 +1046,192 @@ body.drawer .rail,body.drawer .kcard{display:none}
       place(IM.scr,i,p.x+d.x*(s.lap+0.13),0.9,p.z+d.z*(s.lap+0.13),s.yaw,-0.22);
     });
     Object.values(IM).forEach(m=>{ if(m.parent===room) m.instanceMatrix.needsUpdate=true; });
+    buildDecor();
+    Object.values(room.children).forEach(m=>{ if(m.isInstancedMesh){ m.instanceMatrix.needsUpdate=true; if(m.instanceColor) m.instanceColor.needsUpdate=true; } });
     scene.fog.near=20; scene.fog.far=Math.max(46,D+30);
+  }
+  // ---------- Trang trí phòng (Sang duyệt 03/11/2026) ----------
+  // Mọi thứ tĩnh, không đèn thật, không bóng đổ; đồ lặp theo bàn dùng InstancedMesh.
+  // Ánh sáng đổi theo nhịp buổi: đang làm (trung tính), giờ nghỉ (ấm), phase cuối (màu chiều).
+  var DX=null;
+  const DF='"Be Vietnam Pro", system-ui, sans-serif', DH='"Patrick Hand", "Comic Sans MS", cursive';
+  const KHOA="Khóa 5";
+  function drr(x,X,Y,w,h,r){x.beginPath();x.moveTo(X+r,Y);x.arcTo(X+w,Y,X+w,Y+h,r);x.arcTo(X+w,Y+h,X,Y+h,r);x.arcTo(X,Y+h,X,Y,r);x.arcTo(X,Y,X+w,Y,r);x.closePath();}
+  function drng(seed){let s=seed>>>0;return ()=>{s=(s*1664525+1013904223)>>>0;return s/4294967296;};}
+  const TOD={
+    lam:{hemi:0xffffff,hg:0x8a8177,hi:.95,sun:0xffffff,si:.55,bg:0x23262b,patch:0xfff0cc,po:.30,sky:["#9cc4e8","#e4eff6"],tree:["#6f9a6a","#86ad7a","#5b8a5d"]},
+    nghi:{hemi:0xfff1dc,hg:0x8f7f6c,hi:.97,sun:0xffd9a8,si:.62,bg:0x2a2622,patch:0xffd08a,po:.42,sky:["#b7cde0","#f6e7cf"],tree:["#6f9a6a","#86ad7a","#5b8a5d"]},
+    cuoi:{hemi:0xe7d2c6,hg:0x6a5a66,hi:.78,sun:0xff9a62,si:.70,bg:0x2a2228,patch:0xff9058,po:.50,sky:["#e98b6a","#fbd3a0"],tree:["#4f5a45","#5d6a4c","#455040"]}
+  };
+  let todNow="";
+  function initDecor(){
+    if(DX) return DX;
+    DX={};
+    const mk=(w,h,draw)=>{ const c=canvasTex(w,h,draw); return c; };
+    DX.sky=mk(256,256,()=>{});
+    DX.tvs=mk(512,288,()=>{});
+    DX.clock=mk(256,256,()=>{});
+    DX.timeline=mk(2048,96,()=>{});
+    DX.patch=mk(128,128,(x,w,h)=>{x.fillStyle="#000";x.fillRect(0,0,w,h);x.filter="blur(6px)";x.fillStyle="#fff";x.fillRect(12,12,w-24,h-24);x.filter="none";x.fillStyle="rgba(0,0,0,.75)";x.fillRect(w/2-3,8,6,h-16);x.fillRect(8,h*.5-2,w-16,4);});
+    DX.moss=mk(512,512,(x,w,h)=>{x.fillStyle="#2f4a33";x.fillRect(0,0,w,h);const r=drng(21);const C=["#4f7a4a","#5f8d55","#3e6640","#77a065","#6a9a5c","#8bb276"];for(let i=0;i<900;i++){x.fillStyle=C[(r()*6)|0];x.beginPath();x.ellipse(r()*w,r()*h,6+r()*14,3+r()*7,r()*3,0,7);x.fill();}});
+    DX.cork=mk(768,512,()=>{});
+    DX.letters=mk(2048,160,()=>{});
+    DX.banA=mk(192,640,()=>{}); DX.banB=mk(192,640,()=>{});
+    DX.plaque=mk(512,128,()=>{});
+    DX.posters=[0,1,2,3].map(()=>mk(256,360,()=>{}));
+    DX.numbers=mk(1024,1024,()=>{});
+    DX.rug=mk(256,256,(x,w,h)=>{x.fillStyle="#e7d8c4";x.fillRect(0,0,w,h);const r=drng(5);for(let i=0;i<2500;i++){x.fillStyle="rgba(255,255,255,"+(r()*.08)+")";x.fillRect(r()*w,r()*h,2,1);}x.strokeStyle="rgba(0,0,0,.10)";x.lineWidth=6;x.strokeRect(8,8,w-16,h-16);});
+    const M2=(o)=>new T.MeshBasicMaterial(o);
+    DX.m={
+      sky:M2({map:DX.sky.tex}), tvs:M2({map:DX.tvs.tex}), clock:M2({map:DX.clock.tex,transparent:true}),
+      timeline:M2({map:DX.timeline.tex,transparent:true}), letters:M2({map:DX.letters.tex,transparent:true}),
+      patch:M2({map:DX.patch.tex,transparent:true,blending:T.AdditiveBlending,depthWrite:false,side:T.DoubleSide,opacity:.3}),
+      aisle:M2({color:0x8f73e6,transparent:true,opacity:.5,depthWrite:false}),
+      water:M2({color:0x8fc3e8,transparent:true,opacity:.75}),
+      moss:new T.MeshLambertMaterial({map:DX.moss.tex}), cork:new T.MeshLambertMaterial({map:DX.cork.tex}),
+      banA:new T.MeshLambertMaterial({map:DX.banA.tex}), banB:new T.MeshLambertMaterial({map:DX.banB.tex}),
+      plaque:new T.MeshLambertMaterial({map:DX.plaque.tex}), rug:new T.MeshLambertMaterial({map:DX.rug.tex}),
+      posters:DX.posters.map(p=>new T.MeshLambertMaterial({map:p.tex})), numbers:new T.MeshLambertMaterial({map:DX.numbers.tex,side:T.DoubleSide}),
+      wood:new T.MeshLambertMaterial({color:0x8a6040}), woodL:new T.MeshLambertMaterial({color:0xb98a5c}), frame:new T.MeshLambertMaterial({color:0xe9e6df}),
+      pot:new T.MeshLambertMaterial({color:0xcfc6b8}), potS:new T.MeshLambertMaterial({color:0xd9cfc2}), navy:new T.MeshLambertMaterial({color:0x22324f}),
+      dark:new T.MeshLambertMaterial({color:0x1e2023}), cup:new T.MeshLambertMaterial({color:0xf3eee4}), disp:new T.MeshLambertMaterial({color:0xe8e6e1})
+    };
+    drawStatic(); drawDecor(); setSky("lam");
+    if(document.fonts&&document.fonts.ready) document.fonts.ready.then(()=>{ drawStatic(); drawDecor(); });
+    return DX;
+  }
+  function drawStatic(){
+    let x=DX.letters.canvas.getContext("2d"),w=2048,h=160;
+    x.clearRect(0,0,w,h); x.textBaseline="middle"; x.font="800 112px "+DF; const txt="AI THỰC CHIẾN", sp=10; let tw=0; for(const ch of txt) tw+=x.measureText(ch).width+sp;
+    const px=(w-tw-460)/2; const dr=(c,ox,oy)=>{let p=px;x.fillStyle=c;for(const ch of txt){x.fillText(ch,p+ox,88+oy);p+=x.measureText(ch).width+sp;}}; dr("rgba(0,0,0,.28)",6,7); dr("#22324F",0,0);
+    x.font="600 40px "+DF; x.fillStyle="#7A5BD4"; x.fillText("VinUni · "+KHOA,px+tw+40,92); DX.letters.tex.needsUpdate=true;
+    // bức tường agent: bảng ghim, con số chung (không ghi tên ai)
+    x=DX.cork.canvas.getContext("2d"); w=768; h=512; x.fillStyle="#c89b6a"; x.fillRect(0,0,w,h); let r=drng(31);
+    for(let i=0;i<3000;i++){x.fillStyle="rgba("+(90+r()*60|0)+",60,30,"+(r()*.25)+")";x.fillRect(r()*w,r()*h,2,2);}
+    x.fillStyle="#22324F"; x.fillRect(0,0,w,92); x.fillStyle="#fff"; x.textBaseline="middle"; x.textAlign="left"; x.font="600 34px "+DF; x.fillText("Agent đã chạy được",28,47);
+    const n=Math.min(45,DX.agents||0); x.textAlign="right"; x.fillStyle="#F2C14E"; x.font="800 54px "+DF; x.fillText(String(DX.agents||0),w-28,48); x.textAlign="left";
+    const P=["#fff3a8","#ffd6e0","#d6f0ff","#d9f5d0","#ffe1bf","#e6dcff"]; r=drng(7);
+    for(let i=0;i<n;i++){const c=i%9,rw=(i/9)|0;const X=24+c*82+(r()-.5)*10,Y=112+rw*80+(r()-.5)*8;x.save();x.translate(X+34,Y+34);x.rotate((r()-.5)*.25);x.fillStyle="rgba(0,0,0,.15)";x.fillRect(-30,-28,64,64);x.fillStyle=P[i%6];x.fillRect(-32,-32,64,64);x.strokeStyle="rgba(40,40,60,.45)";x.lineWidth=2.5;for(let l=0;l<3;l++){x.beginPath();x.moveTo(-22,-14+l*13);x.lineTo(-22+18+r()*24,-14+l*13);x.stroke();}x.fillStyle="#c9463d";x.beginPath();x.arc(0,-26,4,0,7);x.fill();x.restore();}
+    DX.cork.tex.needsUpdate=true;
+    [[DX.banA,["Problem","first,","not AI","first"],110],[DX.banB,["Kẹt?","Giơ","tay,","đừng","ngại"],96]].forEach(([c,L,step])=>{ const x=c.canvas.getContext("2d"),w=192,h=640; x.fillStyle="#22324F";x.fillRect(0,0,w,h);x.fillStyle="#F2C14E";x.fillRect(0,0,w,10);x.fillRect(0,h-10,w,10);x.textAlign="center";x.textBaseline="middle";x.fillStyle="#F3EEDF";x.font="700 40px "+DF;const y0=h/2-(L.length-1)*step/2;L.forEach((s,i)=>x.fillText(s,w/2,y0+i*step)); c.tex.needsUpdate=true; });
+    x=DX.plaque.canvas.getContext("2d"); w=512; h=128; x.clearRect(0,0,w,h); x.fillStyle="#22324F"; drr(x,0,0,w,h,24); x.fill(); x.fillStyle="#F3EEDF"; x.font="600 44px "+DF; x.textAlign="center"; x.textBaseline="middle"; x.fillText("Góc nghỉ · trà & nước",w/2,h/2+2); DX.plaque.tex.needsUpdate=true;
+    const PD=[["Token","Mẩu chữ nhỏ nhất","mô hình đọc và trả","#E6DCFF"],["Prompt","Lời dặn cho AI:","vai, việc, khuôn","#D6F0FF"],["RAG","Tra tài liệu","rồi mới trả lời","#D9F5D0"],["Agent","LLM + Tools","+ Memory","#FFE1BF"]];
+    DX.posters.forEach((c,i)=>{ const x=c.canvas.getContext("2d"),w=256,h=360,D=PD[i]; x.textAlign="left"; x.textBaseline="alphabetic"; x.fillStyle=D[3];x.fillRect(0,0,w,h);x.fillStyle="#22324F";x.font="40px "+DH;x.fillText(D[0],22,70);x.fillRect(22,88,60,4);x.font="500 22px "+DF;x.fillText(D[1],22,150);x.fillText(D[2],22,182);x.strokeStyle="rgba(34,50,79,.25)";x.lineWidth=3;x.strokeRect(10,10,w-20,h-20); c.tex.needsUpdate=true; });
+    // số bàn: 8×8 ô, tối đa 64 bàn
+    x=DX.numbers.canvas.getContext("2d"); w=1024; x.textAlign="center"; x.textBaseline="middle";
+    for(let i=0;i<64;i++){const c=i%8,rw=(i/8)|0,X=c*128,Y=rw*128;x.fillStyle="#FBFAF6";x.fillRect(X+1,Y+1,126,126);x.fillStyle="#22324F";x.fillRect(X+1,Y+1,126,20);x.font="600 20px "+DF;x.fillText("Bàn",X+64,Y+46);x.font="800 50px "+DF;x.fillText(String(i+1),X+64,Y+92);}
+    DX.numbers.tex.needsUpdate=true;
+    // dải hành trình khóa: lấy từ lịch DAYS
+    x=DX.timeline.canvas.getContext("2d"); w=2048; h=96; x.clearRect(0,0,w,h); x.fillStyle="#F3F1EA"; drr(x,2,2,w-4,h-4,20); x.fill(); x.textBaseline="middle"; x.textAlign="left"; x.fillStyle="#22324F"; x.font="700 34px "+DF; x.fillText("Hành trình "+KHOA,28,50);
+    const x0=420,x1=w-70,nD=DAYS.length, at=i=>x0+(x1-x0)*(nD>1?i/(nD-1):0), today=Math.max(0,DAYS.findIndex(d=>d.tt==="nay"));
+    x.strokeStyle="#B9BCC6"; x.lineWidth=6; x.beginPath(); x.moveTo(x0,50); x.lineTo(x1,50); x.stroke(); x.strokeStyle="#22324F"; x.beginPath(); x.moveTo(x0,50); x.lineTo(at(today),50); x.stroke();
+    DAYS.forEach((d,i)=>{ const p=at(i), done=d.tt==="qua", now=d.tt==="nay"; x.beginPath(); x.arc(p,50,now?24:18,0,7); x.fillStyle=done?"#22324F":"#F3F1EA"; x.fill(); x.lineWidth=now?7:5; x.strokeStyle=now?"#7A5BD4":done?"#22324F":"#B9BCC6"; x.stroke(); x.fillStyle=done?"#fff":now?"#7A5BD4":"#8A8E9A"; x.font=(now?"800 ":"600 ")+"18px "+DF; x.textAlign="center"; x.fillText(d.so,p,51); x.textAlign="left"; });
+    DX.timeline.tex.needsUpdate=true;
+  }
+  // gọi mỗi giây cùng drawTV: màn phụ + đồng hồ phiên
+  function drawDecor(){
+    if(!DX) return;
+    let x=DX.tvs.canvas.getContext("2d"), w=512, h=288; x.fillStyle="#0E1726"; x.fillRect(0,0,w,h); x.textAlign="center"; x.textBaseline="middle";
+    const lop=MODE==="lop", p=lop?phaseOf(KS.guide):null;
+    x.fillStyle="#9FB3D1"; x.font="500 22px "+DF; x.fillText(lop?"Ngày "+DAY.so+" · "+(KS.brk?"Giờ nghỉ":"Phase "+KS.guide):"Phòng tự học",w/2,60);
+    x.fillStyle="#fff"; x.font="700 64px "+DF; x.fillText(lop?mmss(KS.left):"—",w/2,140);
+    x.fillStyle="#F2C14E"; x.font="600 22px "+DF; x.fillText(lop&&!KS.brk&&p?(MODE_NAME[p.cheDo]+" · "+AI_NAME[p.ai]):"Kẹt thì giơ tay",w/2,214); DX.tvs.tex.needsUpdate=true;
+    x=DX.clock.canvas.getContext("2d"); w=256; x.clearRect(0,0,w,w); x.fillStyle="#22324F"; x.beginPath(); x.arc(128,128,126,0,7); x.fill(); x.fillStyle="#FBFAF6"; x.beginPath(); x.arc(128,128,112,0,7); x.fill();
+    const tot=lop?(KS.brk?(breakAfter(KS.guide)||{phut:10}).phut:p.phut)*60:1, prog=lop?Math.max(0,Math.min(1,1-KS.left/Math.max(1,tot))):0;
+    x.strokeStyle="#E4E0F2"; x.lineWidth=14; x.beginPath(); x.arc(128,128,96,0,7); x.stroke();
+    if(prog>0){ x.strokeStyle=KS.brk?"#D8A93B":"#7A5BD4"; x.lineCap="round"; x.beginPath(); x.arc(128,128,96,-Math.PI/2,-Math.PI/2+Math.PI*2*prog); x.stroke(); x.lineCap="butt"; }
+    x.fillStyle="#22324F"; for(let i=0;i<12;i++){const a=i/12*Math.PI*2;x.save();x.translate(128+Math.sin(a)*72,128-Math.cos(a)*72);x.rotate(a);x.fillRect(-2.5,-7,5,14);x.restore();}
+    x.save(); x.translate(128,128); x.rotate(prog*Math.PI*2); x.fillRect(-3,-70,6,74); x.restore(); x.beginPath(); x.arc(128,128,7,0,7); x.fill();
+    x.font="600 20px "+DF; x.textAlign="center"; x.textBaseline="middle"; x.fillStyle=KS.brk?"#B07F15":"#7A5BD4"; x.fillText(lop?(KS.brk?"nghỉ":"phase "+KS.guide):"tự học",128,172);
+    DX.clock.tex.needsUpdate=true;
+    // số agent chạy được: số người đã qua phase 3 (mô phỏng), chỉ đếm, không tên
+    const ag=seats.filter(s=>s.kid&&s.step>=Math.min(3,NS)).length;
+    if(ag!==DX.agents){ DX.agents=ag; drawStatic(); }
+  }
+  function setSky(t){
+    const S=TOD[t], x=DX.sky.canvas.getContext("2d"), w=256, h=256; const g=x.createLinearGradient(0,0,0,h); g.addColorStop(0,S.sky[0]); g.addColorStop(1,S.sky[1]); x.fillStyle=g; x.fillRect(0,0,w,h);
+    const r=drng(5); for(let i=0;i<26;i++){ x.fillStyle=S.tree[i%3]; x.beginPath(); x.arc(r()*w,h*.72+r()*h*.25,22+r()*30,0,7); x.fill(); }
+    DX.sky.tex.needsUpdate=true;
+  }
+  const todTarget={hemi:new T.Color(),hg:new T.Color(),sun:new T.Color(),bg:new T.Color(),patch:new T.Color()};
+  function decorTick(dt){
+    if(!DX) return;
+    const t=MODE==="lop"&&KS.brk?"nghi":MODE==="lop"&&KS.guide>=NS-1?"cuoi":"lam", S=TOD[t];
+    if(t!==todNow){ todNow=t; setSky(t); todTarget.hemi.setHex(S.hemi); todTarget.hg.setHex(S.hg); todTarget.sun.setHex(S.sun); todTarget.bg.setHex(S.bg); todTarget.patch.setHex(S.patch); sun.position.set(-10,t==="cuoi"?5:9,3); }
+    const k=Math.min(1,dt*0.8);
+    hemi.color.lerp(todTarget.hemi,k); hemi.groundColor.lerp(todTarget.hg,k); hemi.intensity+=(S.hi-hemi.intensity)*k;
+    sun.color.lerp(todTarget.sun,k); sun.intensity+=(S.si-sun.intensity)*k;
+    scene.background.lerp(todTarget.bg,k); scene.fog.color.copy(scene.background);
+    DX.m.patch.color.lerp(todTarget.patch,k); DX.m.patch.opacity+=(S.po-DX.m.patch.opacity)*k;
+  }
+  function buildDecor(){
+    initDecor(); const m=DX.m, H=4.6, D=zBack-zFront, cz=(zBack+zFront)/2, fz=zFront;
+    const box2=(g,mat)=>{ const b=im(new T.BoxGeometry(1,1,1),mat,g); return b; };
+    // --- cửa sổ tường trái + vệt nắng vẽ sẵn ---
+    const z0=zFront+2.2, z1=zBack-3.8, nW=Math.max(2,Math.floor((z1-z0)/3.4)+1), xw=-W/2+0.03, Zc=[];
+    for(let i=0;i<nW;i++) Zc.push(z0+(z1-z0)*i/(nW-1));
+    Zc.forEach(z=>plane(2.2,2.0,m.sky,xw,2.1,z,Math.PI/2));
+    const fr=box2(Zc.length*6,m.frame);
+    Zc.forEach((z,i)=>{const x=xw+.04; place(fr,i*6,x,3.12,z,0,0,.08,.08,2.36); place(fr,i*6+1,x,1.08,z,0,0,.08,.08,2.36); place(fr,i*6+2,x,2.1,z-1.14,0,0,.08,2.08,.08); place(fr,i*6+3,x,2.1,z+1.14,0,0,.08,2.08,.08); place(fr,i*6+4,x,2.1,z,0,0,.06,2.0,.05); place(fr,i*6+5,x+.08,1.03,z,0,0,.22,.05,2.4);});
+    const pos=[],uv=[]; Zc.forEach(zc=>{ const k=1/0.85,q=0.41,P=(y,z)=>[-W/2+y*k,.012,z+q*y]; const A=P(1.1,zc-1.1),B=P(1.1,zc+1.1),C=P(3.1,zc+1.1),E=P(3.1,zc-1.1); pos.push(...A,...B,...C,...A,...C,...E); uv.push(0,0,1,0,1,1,0,0,1,1,0,1); });
+    const pg=new T.BufferGeometry(); pg.setAttribute("position",new T.Float32BufferAttribute(pos,3)); pg.setAttribute("uv",new T.Float32BufferAttribute(uv,2)); const pm=new T.Mesh(pg,m.patch); pm.renderOrder=1; room.add(pm);
+    // --- vạch lối đi trên sàn gỗ ---
+    if(TYPE!=="rows"){
+      const xs=[...new Set(tables.map(t=>Math.round(t.x*100)/100))].sort((a,b)=>a-b), ax=[]; for(let i=0;i<xs.length-1;i++) ax.push((xs[i]+xs[i+1])/2);
+      let tz0=1e9,tz1=-1e9; tables.forEach(t=>{tz0=Math.min(tz0,t.z);tz1=Math.max(tz1,t.z);});
+      const za=tz0-1.8, zb=zBack-1.0, a0=ax.length?ax[0]:0; const ln=im(new T.PlaneGeometry(1,1),m.aisle,ax.length+2);
+      ax.forEach((x,i)=>place(ln,i,x,.007,(za+zb)/2,0,-Math.PI/2,.06,zb-za,1));
+      place(ln,ax.length,(a0+doorPos.x)/2,.007,zb,0,-Math.PI/2,Math.abs(doorPos.x-a0)+.06,.06,1); place(ln,ax.length+1,doorPos.x,.007,(zb+zBack)/2,0,-Math.PI/2,.06,zBack-zb,1);
+    }
+    // --- đầu phòng: chữ tên khóa, băng rôn, mảng tường cây, đồng hồ phiên, bức tường agent ---
+    const wbL=-W*0.18-1.6, tvR=W*0.14+2.25;
+    plane(Math.min(9.6,W*0.55),Math.min(9.6,W*0.55)*0.078,m.letters,0,4.12,fz+.07,0);
+    [[m.banA,-W/2+0.5],[m.banB,W/2-0.5]].forEach(([mt,x])=>{ plane(.7,2.35,mt,x,2.2,fz+.07,0); box(.86,.04,.04,m.wood,x,3.4,fz+.08); });
+    const mL=-W/2+1.1, mR=wbL-0.3, mw=Math.min(3.4,mR-mL), mx=(mL+mR)/2;
+    if(mw>1.2){ plane(mw,2.6,m.moss,mx,1.9,fz+.05,0); const f=box2(4,m.wood); place(f,0,mx,3.22,fz+.07,0,0,mw+.1,.08,.08); place(f,1,mx,.58,fz+.07,0,0,mw+.1,.08,.08); place(f,2,mx-mw/2-.04,1.9,fz+.07,0,0,.08,2.7,.08); place(f,3,mx+mw/2+.04,1.9,fz+.07,0,0,.08,2.7,.08); }
+    plane(.72,.72,m.clock,mw>1.2?mx:-W*0.32,3.78,fz+.07,0);
+    const aL=tvR+0.3, aR=W/2-1.0, aw=Math.min(3.2,aR-aL), ah=Math.min(1.9,aw/1.47);
+    if(aw>1.2){ box(aw+.16,ah+.14,.05,m.wood,(aL+aR)/2,1.95,fz+.05); plane(aw,ah,m.cork,(aL+aR)/2,1.95,fz+.085,0); }
+    // --- màn phụ treo giữa phòng, quay về cuối phòng ---
+    const sz=zFront+D*0.45, sx=Math.max(2.5,W*0.2);
+    [-sx,sx].forEach(x=>{ box(1.75,1.0,.08,m.dark,x,3.3,sz); plane(1.65,.92,m.tvs,x,3.3,sz+.05,0); });
+    const cab=im(new T.CylinderGeometry(.015,.015,1,6),m.dark,4); [-sx,sx].forEach((x,i)=>[-.6,.6].forEach((o,j)=>place(cab,i*2+j,x+o,4.2,sz,0,0,1,.8,1)));
+    // --- dải hành trình khóa trên tường phải ---
+    const tl=Math.min(11.5,D-4); plane(tl,tl*0.047,m.timeline,W/2-.05,2.25,cz,-Math.PI/2);
+    // --- cây: chậu lớn ở góc + cây nhỏ trên bàn ---
+    const greens=[0x5f8f5e,0x78a46f,0x4f7f55,0x6a9a5c];
+    const PL=[[-W/2+.55,zFront+1.7],[W/2-.55,zFront+1.7],[W/2-.5,zBack-.5],[-W/2+.55,cz+.3]];
+    const pot=im(new T.CylinderGeometry(.34,.26,.6,16),m.pot,PL.length), fol=im(new T.IcosahedronGeometry(1,1),M.white,PL.length*4);
+    PL.forEach(([x,z],i)=>{ place(pot,i,x,.3,z); [[0,.95,0,.42],[.12,1.35,.05,.38],[-.1,1.7,-.04,.32],[.05,2.0,.06,.24]].forEach(([ox,y,oz,s],j)=>{ place(fol,i*4+j,x+ox,y,z+oz,j,0,s,s*1.1,s); fol.setColorAt(i*4+j,col.setHex(greens[(i+j)%4])); }); });
+    const TBL=TYPE==="rows"?[]:tables;
+    if(TBL.length){
+      const sp=im(new T.CylinderGeometry(.08,.065,.12,12),m.potS,TBL.length), sf=im(new T.IcosahedronGeometry(1,1),M.white,TBL.length);
+      TBL.forEach((t,i)=>{ place(sp,i,t.x,.825,t.z); place(sf,i,t.x,.96,t.z,i,0,.14,.13,.14); sf.setColorAt(i,col.setHex(greens[i%4])); });
+      // biển số bàn: thẻ gập chữ A, gộp thành một khối hình
+      const bp=[],bu=[],w=.3,h=.3,lean=.32;
+      TBL.forEach((t,i)=>{ const c=i%8, r=(i/8|0)%8, u0=c/8+.003,u1=(c+1)/8-.003,v1=1-r/8-.003,v0=1-(r+1)/8+.003; const cx=t.x+(t.kind==="round"?.34:.62), zc=t.z;
+        [1,-1].forEach(sd=>{ const zb=zc+sd*Math.sin(lean)*h/2, yb=.765, yt=.765+Math.cos(lean)*h; const L=sd>0?[cx-w/2,cx+w/2]:[cx+w/2,cx-w/2];
+          bp.push(L[0],yb,zb, L[1],yb,zb, L[1],yt,zc, L[0],yb,zb, L[1],yt,zc, L[0],yt,zc); bu.push(u0,v0,u1,v0,u1,v1, u0,v0,u1,v1,u0,v1); }); });
+      const bg=new T.BufferGeometry(); bg.setAttribute("position",new T.Float32BufferAttribute(bp,3)); bg.setAttribute("uv",new T.Float32BufferAttribute(bu,2)); bg.computeVertexNormals(); room.add(new T.Mesh(bg,m.numbers));
+    }
+    // --- góc nghỉ (góc sau bên trái) ---
+    const gx=-W/2+2.0, gz=zBack-1.7;
+    const rug=new T.Mesh(new T.CircleGeometry(1.25,40),m.rug); rug.position.set(gx,.006,gz); rug.rotation.x=-Math.PI/2; room.add(rug);
+    const tt=new T.Mesh(new T.CylinderGeometry(.36,.36,.04,28),m.woodL); tt.position.set(gx,.44,gz); room.add(tt);
+    const tl2=new T.Mesh(new T.CylinderGeometry(.05,.05,.42,8),m.wood); tl2.position.set(gx,.21,gz); room.add(tl2);
+    const cup=new T.Mesh(new T.SphereGeometry(.09,14,10),m.cup); cup.position.set(gx,.53,gz); room.add(cup);
+    const bb=im(new T.SphereGeometry(.4,18,12),M.white,3); [[-.85,-.35,0xb9c9a6],[.75,-.5,0xe2cfa8],[.1,.9,0xcbbfe6]].forEach(([ox,oz,c],i)=>{ place(bb,i,gx+ox,.24,gz+oz,0,0,1,.6,1); bb.setColorAt(i,col.setHex(c)); });
+    box(.36,.95,.36,m.disp,-W/2+.45,.475,zBack-.45);
+    const bot=new T.Mesh(new T.CylinderGeometry(.14,.14,.4,16),m.water); bot.position.set(-W/2+.45,1.15,zBack-.45); room.add(bot);
+    plane(1.3,.32,m.plaque,-W/2+.05,1.85,zBack-1.7,Math.PI/2);
+    // --- kệ sách thấp (tường phải, cạnh cửa) ---
+    const kx=W/2-.22, kz=zBack-2.3; box(.36,1.25,2.4,m.woodL,kx,.625,kz);
+    const kr=drng(77), bc=[0x34435f,0xc9463d,0xd8a93b,0x2f7f72,0x8a7a55,0xe6dcc6,0x7a5bd4], bk=im(new T.BoxGeometry(1,1,1),M.white,54);
+    for(let i=0;i<54;i++){ const sh=(i/18)|0, j=i%18, hg=.24+kr()*.1; place(bk,i,kx-.03,.1+sh*.4+hg/2,kz-1.08+j*.125,0,0,.26,hg,.1); bk.setColorAt(i,col.setHex(bc[(kr()*bc.length)|0])); }
+    const shf=im(new T.BoxGeometry(.38,.03,2.36),m.wood,3); for(let i=0;i<3;i++) place(shf,i,kx-.01,.06+i*.4,kz);
+    // --- poster thuật ngữ (tường sau) ---
+    for(let i=0;i<4;i++) plane(.7,.98,m.posters[i],-W/2+4.2+i*1.0,1.95,zBack-.05,Math.PI);
+    drawDecor();
   }
   const SCR=[0x46525f,0x3f6f93,0x4b88b5,0x5aa2d2,0x6ebde9],SCR_DONE=0x5ccf8a,SCR_STUCK=0xff8a3d,SCR_OFF=0x1d2329;
   function paintSeat(i){
@@ -2009,6 +2194,7 @@ body.drawer .rail,body.drawer .kcard{display:none}
   function frame(){
     const dt=Math.min(clock.getDelta(),0.05), t=clock.elapsedTime;
     for(const k of kids) animKid(k,dt,t);
+    decorTick(dt);
     const target=me.g.position; let want, at;
     if(view!=="me"){ const cp=Math.cos(vw.pitch); want=tmp.set(vw.fx+Math.sin(vw.yaw)*vw.dist*cp, 0.5+vw.dist*Math.sin(vw.pitch), vw.fz+Math.cos(vw.yaw)*vw.dist*cp); at=look.set(vw.fx,0.5,vw.fz); }
     else { const cp=Math.cos(camPitch); want=tmp.set(target.x+Math.sin(camYaw)*camDist*cp, 1+camDist*Math.sin(camPitch), target.z+Math.cos(camYaw)*camDist*cp); at=look.set(target.x-Math.sin(camYaw)*1.2,0.9,target.z-Math.cos(camYaw)*1.2); }
