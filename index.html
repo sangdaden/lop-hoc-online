@@ -627,6 +627,116 @@ body.focus .focuschip{display:flex}
   .game .act.more small[hidden]{display:none}
   .game .actions[data-role="key"] .act.xk .al{display:none!important}
 }
+/* ---- Ngăn kéo gọn (G1–G3, S1–S5, L1–L4, K1–K3) ---- */
+/* G1: bỏ khung thẻ, các mục cách nhau bằng một đường mảnh */
+.game .side{gap:0}
+.game .side .dhead{order:-2;margin-bottom:6px}
+.game .side .panel{background:none;border:0;border-radius:0;padding:12px 2px;gap:8px;border-top:1px solid var(--line)}
+.game .side .panel h3{font-size:13px;font-weight:600;color:var(--muted);display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.game .side .panel h3 .demo-state{font-size:11.5px}
+.game .side .panel .whyb{margin-left:2px}
+.game .side .eyebrow{font-size:11px;letter-spacing:.08em;display:flex;align-items:center;gap:4px}
+.game .side .lnk{all:unset;cursor:pointer;margin-left:auto;color:var(--violet);font-size:12.5px;font-weight:600}
+.game .side .lnk:focus-visible{outline:2px solid var(--violet);outline-offset:2px}
+/* S1: ngày + nhóm + vị trí thành một dòng chip */
+.game .side .day{width:28px;height:28px;font-size:12px}
+.game .side .days{gap:6px}
+.game .side .days .dayt{font-size:13.5px;color:var(--ink)}
+.side .chips{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.side .chips .chip{display:inline-flex;align-items:center;gap:5px;padding:2px 10px;font-size:12.5px;font-family:var(--f-num)}
+.side .chips .chip[hidden]{display:none}
+.side .chips svg,.side .chipb svg,.side .cnt svg,.side .fold svg,.side .dlm svg,.side .ibtn svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.side .chipb{all:unset;cursor:pointer;display:inline-grid;place-items:center;width:28px;height:26px;border-radius:8px;border:1px solid var(--line);color:var(--muted);font-weight:700}
+.side .chipb[aria-expanded="true"]{background:var(--violet-soft);color:var(--violet);border-color:var(--violet)}
+.side .chipb:focus-visible{outline:2px solid var(--violet)}
+.game #myFix:not(.open),.game #nFix:not(.open){display:none!important}
+/* S2: nhiệm vụ thành vòng, con số đếm thành ô biểu tượng */
+.side .quests{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.side .quest{display:grid;grid-template-columns:none;justify-items:center;gap:3px;text-align:center;font-size:12px;color:var(--muted);line-height:1.25}
+.side .quest .o{width:46px;height:46px;border-radius:50%;display:grid;place-items:center;font-family:var(--f-num);font-size:12px;font-weight:600;color:var(--ink);background:radial-gradient(closest-side,var(--paper) 78%,transparent 80%),conic-gradient(#F2C14E var(--p,0%),var(--line) 0)}
+.side .quest.done .o{background:radial-gradient(closest-side,var(--paper) 78%,transparent 80%),conic-gradient(var(--ok) 100%,var(--line) 0)}
+.side .quest.done span{text-decoration:none;color:var(--ok)}
+.side .cnt{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px}
+.side .cnt span{display:flex;justify-content:center;align-items:center;gap:5px;padding:5px 0;border-radius:8px;border:1px solid var(--line);color:var(--muted)}
+.side .cnt b{font-family:var(--f-num);font-variant-numeric:tabular-nums;color:var(--ink);font-size:13px}
+/* S3: điểm cộng một dòng */
+.side .fold{all:unset;cursor:pointer;display:flex;align-items:center;gap:6px;flex:1 1 auto;min-width:0;color:var(--muted)}
+#bonusPanel h3{flex-wrap:nowrap}
+.side .fold svg{fill:#F2C14E;stroke:none}
+.side .fold .chev{margin-left:auto;font-style:normal;transition:transform .15s}
+.side .fold[aria-expanded="true"] .chev{transform:rotate(90deg)}
+.side .fold:focus-visible{outline:2px solid var(--violet);outline-offset:2px}
+.game #bonusPanel:not(.open) #bonMine{display:none}
+/* S4: phiên tập trung một hàng */
+.side .trow{display:flex;align-items:center;gap:8px}
+.game .side .timer{font-size:22px;margin-right:auto}
+.side .tseg{display:inline-flex}
+.side .tseg .btn{padding:5px 9px;border-radius:0}
+.side .tseg .btn:first-child{border-radius:8px 0 0 8px}.side .tseg .btn:last-child{border-radius:0 8px 8px 0;margin-left:-1px}
+.side .tseg .btn.on{background:var(--violet-soft);color:var(--violet);border-color:var(--violet);position:relative}
+.side .trow .primary{padding:6px 12px}
+/* S5: tên một hàng */
+.side .nrow{display:flex;align-items:center;gap:8px}
+.side .nrow .name{flex:1;min-width:0;font-size:21px;overflow-wrap:anywhere}
+/* L1: 4 mục có số trong Cả lớp */
+.game .side .subt{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:3px;padding:3px;margin:2px 0 4px;border:1px solid var(--line);border-radius:10px;background:var(--paper-2)}
+.game .side:not([data-tab="lop"]) .subt{display:none}
+.side .sbt{all:unset;cursor:pointer;display:grid;justify-items:center;padding:5px 0;border-radius:7px;font-size:11.5px;color:var(--muted);line-height:1.2;text-align:center}
+.side .sbt b{font-family:var(--f-num);font-size:15px;color:var(--ink)}
+.side .sbt.al b{color:var(--warn)}
+.side .sbt.on{background:var(--violet);color:var(--paper-2)}.side .sbt.on b{color:var(--paper-2)}
+.side .sbt:focus-visible{outline:2px solid var(--violet);outline-offset:1px}
+.side .sbt[data-sub="cho"]{order:3}.side .sbt[data-sub="demo"]{order:4}.side .sbt[data-sub="bon"]{order:2}.side .sbt[data-sub="tien"]{order:1}
+body[data-role="lab"] .side .sbt[data-sub="cho"]{order:0}
+.game .side[data-tab="lop"][data-sub="tien"] .panel[data-sub]:not([data-sub="tien"]),.game .side[data-tab="lop"][data-sub="bon"] .panel[data-sub]:not([data-sub="bon"]),.game .side[data-tab="lop"][data-sub="cho"] .panel[data-sub]:not([data-sub="cho"]),.game .side[data-tab="lop"][data-sub="demo"] .panel[data-sub]:not([data-sub="demo"]){display:none}
+.game .side .subt+.panel,.game .side[data-tab="lop"] #coachPanel{border-top:0}
+.game .side[data-tab="lop"] #coachPanel{padding-top:0}
+/* L2: tiến độ thành biểu đồ cột */
+.side .hist{display:grid;grid-template-columns:none;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:4px}
+.side .hc{all:unset;cursor:pointer;display:grid;grid-template-rows:64px auto auto;justify-items:center;gap:2px;position:relative;font-family:var(--f-num);font-size:10.5px;color:var(--muted);border-radius:4px}
+.side .hc .col{width:100%;display:flex;align-items:flex-end;border-radius:3px;background:color-mix(in srgb,var(--line) 45%,transparent)}
+.side .hc .col i{display:block;width:100%;border-radius:3px 3px 0 0;background:var(--ok);transition:height .5s ease}
+.side .hc.hot .col i{background:var(--warn)}
+.side .hc.now .col{box-shadow:0 0 0 2px #F2C14E}
+.side .hc.now .pk{color:var(--ink);font-weight:700}
+.side .hc.mine .pk{color:var(--violet);font-weight:700}
+.side .hc.sel .col{box-shadow:0 0 0 2px var(--violet)}
+.side .hc.brk::after{content:"";position:absolute;right:-3px;top:4px;height:56px;border-right:1.5px dotted var(--muted)}
+.side .hc .hn{color:var(--ink);white-space:nowrap}.side .hc .sk{font-style:normal;color:var(--warn)}
+.side .hc:focus-visible{outline:2px solid var(--violet);outline-offset:2px}
+.side .hcap{margin:0;font-size:12.5px;color:var(--muted)}.side .hcap b{color:var(--ink)}
+/* L3: điểm cộng chờ xác nhận, dòng gọn */
+.side .bonl li.bq{grid-template-columns:minmax(0,1fr) auto;padding:6px 0;border:0;border-bottom:1px dashed var(--line);border-radius:0}
+.side .bonl li.bq .who small{font-weight:400;color:var(--muted)}
+.side .bonl li.bq .ly{color:var(--muted);font-size:12.5px;grid-column:1/2}
+.side .bonl li.bq .bb{grid-row:1/3;grid-column:2}
+.side .ibtn{all:unset;cursor:pointer;display:grid;place-items:center;width:32px;height:32px;border-radius:8px;border:1px solid var(--line);background:var(--paper-2)}
+.side .ibtn.ok{background:var(--violet);border-color:var(--violet);color:var(--paper-2)}
+.side .ibtn:focus-visible{outline:2px solid var(--violet);outline-offset:1px}
+/* L4: người hướng dẫn thành một dòng */
+.side .line1{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:12.5px;color:var(--muted)}
+.side .line1 b{color:var(--ink);font-family:var(--f-num);font-weight:600}
+/* K1: thẻ phòng thật nằm đầu tab Phòng của Key Coach */
+body[data-auth="key"] .game #livePanel{order:-1}
+.game #livePanel .kv{align-items:center}
+.game #livePanel .kv b{font-size:16px;letter-spacing:.06em}
+/* K2: một nút "Tải về" */
+.side .dlm{position:relative;justify-self:start}
+.side .dlm summary{list-style:none;display:inline-flex;align-items:center;gap:6px}
+.side .dlm summary::-webkit-details-marker{display:none}
+.side .dlmi{position:absolute;left:0;top:calc(100% + 4px);z-index:2;display:grid;gap:4px;padding:6px;border:1px solid var(--line);border-radius:10px;background:var(--paper-2);box-shadow:0 8px 24px rgba(0,0,0,.18);min-width:190px}
+.side .dlmi .btn{border:0;background:none}
+.side .dlmi .btn:hover{background:var(--violet-soft)}
+/* K3: tab Phòng, nút chọn thành dải liền */
+.game .side .panel[data-tab="phong"] .pickers{display:grid;gap:8px}
+.game .side .panel[data-tab="phong"] .sizes{display:flex;flex-wrap:wrap;align-items:center;gap:0}
+.game .side .panel[data-tab="phong"] .sizes .muted{width:64px;font-size:12.5px}
+.game .side .panel[data-tab="phong"] .sizes .btn{border-radius:0;margin-left:-1px;padding:5px 9px;font-size:12.5px}
+.game .side .panel[data-tab="phong"] .sizes .muted+.btn{border-radius:8px 0 0 8px;margin-left:0}
+.game .side .panel[data-tab="phong"] .sizes .btn:last-child{border-radius:0 8px 8px 0}
+.game .side .panel[data-tab="phong"] .sizes .btn.on{position:relative;z-index:1}
+.game .side .panel[data-tab="phong"] .tbi{width:20px;height:20px}
+.game .side .panel[data-tab="phong"] .btn.tbl{padding:4px 9px}
 </style>
 </head>
 <body>
@@ -678,11 +788,11 @@ body.focus .focuschip{display:flex}
       </div>
       <div class="panel" data-tab="phong">
         <h3>Thiết lập phòng</h3>
-        <div class="pickers"><div class="sizes" role="group" aria-label="Sĩ số lớp"><span class="muted">Sĩ số:</span><button class="btn size" data-n="50">50</button><button class="btn size" data-n="100">100</button><button class="btn size" data-n="150">150</button><button class="btn size" data-n="200">200</button><button class="btn size" data-n="250">250</button></div>
-        <div class="sizes" role="group" aria-label="Kiểu bàn"><span class="muted">Kiểu bàn:</span><button class="btn tbl" data-t="island" title="Cụm bàn dài" aria-label="Cụm bàn dài"><svg class="tbi" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="8" height="5" rx="1"/><rect x="13" y="5" width="8" height="5" rx="1"/><rect x="3" y="14" width="8" height="5" rx="1"/><rect x="13" y="14" width="8" height="5" rx="1"/></svg></button><button class="btn tbl" data-t="round" title="Bàn tròn 5 người" aria-label="Bàn tròn 5 người"><svg class="tbi" viewBox="0 0 24 24" aria-hidden="true"><circle cx="7" cy="7.5" r="3.5"/><circle cx="17" cy="7.5" r="3.5"/><circle cx="7" cy="17" r="3.5"/><circle cx="17" cy="17" r="3.5"/></svg></button><button class="btn tbl" data-t="rows" title="Dãy hàng ngang" aria-label="Dãy hàng ngang"><svg class="tbi" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M3 12h18M3 18h18"/></svg></button></div>
-        <div class="sizes sim-only" role="group" aria-label="Xem với vai trò"><span class="muted">Xem như:</span><button class="btn role" data-r="hv">Học viên</button><button class="btn role" data-r="lab">Lab Coach</button><button class="btn role" data-r="key">Key Coach</button></div></div>
-        <div class="sizes" role="group" aria-label="Chế độ phòng"><span class="muted">Chế độ:</span><button class="btn mode" data-m="lop">Trong giờ học</button><button class="btn mode" data-m="tuhoc">Phòng tự học</button></div>
-        <div class="toolbar sim-only"><span class="muted">Đồng hồ demo:</span><button class="btn" id="tFast">Tua ×60</button></div>
+        <div class="pickers"><div class="sizes" role="group" aria-label="Sĩ số lớp"><span class="muted">Sĩ số</span><button class="btn size" data-n="50">50</button><button class="btn size" data-n="100">100</button><button class="btn size" data-n="150">150</button><button class="btn size" data-n="200">200</button><button class="btn size" data-n="250">250</button></div>
+        <div class="sizes" role="group" aria-label="Kiểu bàn"><span class="muted">Bàn</span><button class="btn tbl" data-t="island" title="Cụm bàn dài" aria-label="Cụm bàn dài"><svg class="tbi" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="8" height="5" rx="1"/><rect x="13" y="5" width="8" height="5" rx="1"/><rect x="3" y="14" width="8" height="5" rx="1"/><rect x="13" y="14" width="8" height="5" rx="1"/></svg></button><button class="btn tbl" data-t="round" title="Bàn tròn 5 người" aria-label="Bàn tròn 5 người"><svg class="tbi" viewBox="0 0 24 24" aria-hidden="true"><circle cx="7" cy="7.5" r="3.5"/><circle cx="17" cy="7.5" r="3.5"/><circle cx="7" cy="17" r="3.5"/><circle cx="17" cy="17" r="3.5"/></svg></button><button class="btn tbl" data-t="rows" title="Dãy hàng ngang" aria-label="Dãy hàng ngang"><svg class="tbi" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M3 12h18M3 18h18"/></svg></button></div>
+        <div class="sizes sim-only" role="group" aria-label="Xem với vai trò"><span class="muted">Xem như</span><button class="btn role" data-r="hv">Học viên</button><button class="btn role" data-r="lab">Lab Coach</button><button class="btn role" data-r="key">Key Coach</button></div></div>
+        <div class="sizes" role="group" aria-label="Chế độ phòng"><span class="muted">Chế độ</span><button class="btn mode" data-m="lop" title="Trong giờ học">Giờ học</button><button class="btn mode" data-m="tuhoc" title="Phòng tự học">Tự học</button></div>
+        <div class="sizes sim-only"><span class="muted">Đồng hồ</span><button class="btn" id="tFast">Tua ×60</button></div>
       </div>
       <div class="panel" data-tab="nguoi">
         <h3>Người trong lớp</h3>
@@ -692,93 +802,95 @@ body.focus .focuschip{display:flex}
         <div class="ngcode"><div><span class="muted">Mã vào lớp</span><span class="codew"><b id="ngPass">–</b><button type="button" class="codebig" id="ngZoom" title="Phóng to mã cho cả lớp đọc" aria-label="Phóng to mã vào lớp"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4h6v6M10 20H4v-6M20 4l-7 7M4 20l7-7"/></svg></button></span></div><button class="btn primary" id="ngNew" type="button">Đổi mã vào lớp</button></div>
         <p class="note" style="margin:0">Dùng khi người bị mời ra vào lại bằng máy khác. Ai đang trong lớp vẫn ở lại, màn hình lớn hiện mã mới.</p>
       </div>
-      <div class="panel" data-tab="so">
+      <div class="panel" data-tab="so" id="dayPanel">
         <h3>Ngày lab</h3>
         <div class="days" id="days"></div>
         <p class="note" id="modeNote"></p>
-        <div class="kv for-hv" id="grpKv">
-          <span>Nhóm của bạn</span><b id="grpName">–</b>
-          <span>Vai trong nhóm</span><b id="grpRole">–</b>
-          <span>Bạn đang ở</span><b id="myAt">–</b>
+        <div class="chips for-hv" id="grpKv">
+          <span class="chip" title="Nhóm của bạn"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.6 3.4-5.5 6.5-5.5s5.7 1.9 6.5 5.5"/><circle cx="17" cy="9" r="2.6"/><path d="M16.5 14.6c2.6.1 4.4 1.8 5 4.9"/></svg><span id="grpName">–</span></span>
+          <span class="chip" id="grpRoleC" title="Vai trong nhóm" hidden><span id="grpRole">–</span></span>
+          <span class="chip" title="Bạn đang ở"><span id="myAt">–</span></span>
+          <button class="chipb" type="button" id="fMore" title="Lùi 1 mục · Đổi vai · Hủy nộp" aria-label="Sửa thao tác bấm nhầm" aria-expanded="false">⋯</button>
         </div>
         <div class="toolbar for-hv" id="myFix" aria-label="Sửa thao tác bấm nhầm"><button class="btn" id="fBack">Lùi 1 mục</button><button class="btn" id="fRole">Đổi vai</button><button class="btn" id="fNop">Hủy nộp</button></div>
       </div>
       <div class="panel" data-tab="lop" id="livePanel" hidden>
-        <h3>Phòng <span class="demo-state open" id="liveCode">–</span></h3>
-        <div class="toolbar"><input class="inp" id="liveLink" readonly aria-label="Link mời vào phòng" style="flex:1;min-width:0"><button class="btn" id="liveCopy">Chép link</button></div>
-        <div class="kv" id="liveLabRow"><span>Mã vào lớp (học viên)</span><span class="codew"><b id="livePass">–</b><button type="button" class="codebig" id="liveZoom" title="Phóng to mã cho cả lớp đọc" aria-label="Phóng to mã vào lớp"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4h6v6M10 20H4v-6M20 4l-7 7M4 20l7-7"/></svg></button></span><span>Mã Lab Coach</span><b id="liveLab">–</b></div>
+        <h3>Phòng <span class="demo-state open" id="liveCode">–</span><button class="codebig" type="button" id="liveCopy" title="Chép link mời vào phòng" aria-label="Chép link mời vào phòng"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h8"/></svg></button></h3>
+        <input class="inp sr" id="liveLink" readonly aria-label="Link mời vào phòng" tabindex="-1">
+        <div class="kv" id="liveLabRow"><span>Mã vào lớp</span><span class="codew"><b id="livePass">–</b><button type="button" class="codebig" id="liveZoom" title="Phóng to mã cho cả lớp đọc" aria-label="Phóng to mã vào lớp"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4h6v6M10 20H4v-6M20 4l-7 7M4 20l7-7"/></svg></button></span><span>Mã Lab Coach</span><b id="liveLab">–</b></div>
         <p class="note" id="liveNote"></p>
         <div class="toolbar"><button class="btn" id="liveClose" hidden>Đóng phòng</button></div>
       </div>
-      <div class="panel" data-tab="lop">
+      <div class="subt" id="subt" data-tab="lop" role="tablist" aria-label="Mục trong Cả lớp">
+        <button type="button" class="sbt" data-sub="tien" role="tab"><b id="subTienN">0</b>Tiến độ</button>
+        <button type="button" class="sbt for-coach" data-sub="bon" role="tab"><b id="subBonN">0</b>Điểm cộng</button>
+        <button type="button" class="sbt" data-sub="cho" role="tab"><b id="subChoN">0</b>Hàng chờ</button>
+        <button type="button" class="sbt" data-sub="demo" role="tab"><b id="subDemoN">0</b>Demo</button>
+      </div>
+      <div class="panel" data-tab="lop" data-sub="tien">
         <h3>Tiến độ cả lớp</h3>
         <div class="roombar">
           <span class="rs" title="Trong phòng"><svg viewBox="0 0 24 24"><path d="M9 11.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7zM2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6M16 4.5a3.5 3.5 0 0 1 0 7M18 14c2.2.6 3.5 2.6 3.5 6"/></svg><b id="occ">0</b>/<b id="cap">50</b></span>
           <span class="rs w" title="Đang kẹt"><svg viewBox="0 0 24 24"><path d="M12 4v10M12 19v.5"/></svg><b id="stuckN">0</b></span><span class="rs o" title="Xong cả ngày"><svg viewBox="0 0 24 24"><path d="M5 12.5 10 17l9-10"/></svg><b id="doneN">0</b></span><span class="rs" title="Đã nộp bài"><svg viewBox="0 0 24 24"><path d="M12 19V5M6 11l6-6 6 6"/></svg><b id="nopN">0</b></span>
         </div>
-        <div class="steplist" id="steplist"></div>
+        <div class="steplist hist" id="steplist"></div>
+        <p class="hcap" id="histCap"></p>
         <p class="note" id="hotNote">Chỉ đếm số người, không hiện tên.</p>
       </div>
-      <div class="panel" data-tab="lop">
+      <div class="panel" data-tab="lop" data-sub="demo">
         <h3>Lên demo <span class="demo-state" id="demoState">đang đóng</span></h3>
         <ol class="demoq" id="demoq"></ol>
         <div class="toolbar for-hv"><button class="btn" id="fDemo" disabled>Đăng ký demo cho nhóm</button></div>
         <p class="note" id="demoNote"></p>
       </div>
-      <div class="panel for-coach" data-tab="lop" id="bonusQ">
+      <div class="panel for-coach" data-tab="lop" data-sub="bon" id="bonusQ">
         <h3>Điểm cộng chờ xác nhận <span class="demo-state" id="bonQN">0</span></h3>
         <ul class="bonl" id="bonQ"></ul>
         <p class="note">Học viên tự ghi lý do. Coach xác nhận thì mới tính. Điểm chỉ học viên đó và coach thấy.</p>
-        <div class="toolbar"><button class="btn" id="bonDl" title="Tải về máy danh sách điểm cộng cả buổi (mở được bằng Excel)">Tải danh sách điểm cộng</button><button class="btn only-key" id="progDl" title="Tải về máy tiến độ từng học viên đang trong phòng (mở được bằng Excel)">Tải tiến độ cả lớp</button></div>
+        <details class="dlm" id="dlMenu"><summary class="btn"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>Tải về</summary><div class="dlmi"><button class="btn" id="bonDl" title="Tải về máy danh sách điểm cộng cả buổi (mở được bằng Excel)">Danh sách điểm cộng</button><button class="btn only-key" id="progDl" title="Tải về máy tiến độ từng học viên đang trong phòng (mở được bằng Excel)">Tiến độ cả lớp</button></div></details>
       </div>
-      <div class="panel" data-tab="lop">
+      <div class="panel" data-tab="lop" data-sub="cho">
         <h3>Hàng chờ Lab Coach</h3>
         <ol class="helpq" id="helpq"></ol>
         <p class="note" id="helpNote"></p>
       </div>
-      <div class="panel" data-tab="lop">
-        <h3>Người hướng dẫn buổi này</h3>
-        <div class="kv">
-          <span><i class="coachkey" style="background:#22324f;box-shadow:inset 0 -4px #d8a93b"></i>Key Coach đang dẫn</span><b id="cGuide">phase 1</b>
-          <span>Lần giảng lại cho cả lớp</span><b id="cRe">0</b>
-          <span><i class="coachkey" style="background:#2f7f72"></i>Lab Coach trong phòng</span><b id="cLab">1</b>
-          <span>Lượt coach tới xem</span><b id="cFix">0</b>
-          <span>Chờ trung bình</span><b id="cWait">–</b>
-        </div>
+      <div class="panel" data-tab="lop" data-sub="cho" id="coachPanel">
+        <h3>Người hướng dẫn</h3>
+        <div class="line1"><span title="Lab Coach trong phòng"><i class="coachkey" style="background:#2f7f72"></i>Lab Coach <b id="cLab">1</b></span><span title="Lượt coach tới xem">Tới xem <b id="cFix">0</b></span><span title="Chờ trung bình">Chờ TB <b id="cWait">–</b></span><span title="Lần Key Coach giảng lại cho cả lớp">Giảng lại <b id="cRe">0</b></span><b id="cGuide" hidden>phase 1</b></div>
         <p class="note" id="coachNote">Key Coach đứng đầu phòng, dẫn nhịp cả lớp và giảng lại bước có nhiều người kẹt. Mỗi Lab Coach phụ trách một khu bàn, đi tới ghế người giơ tay.</p>
       </div>
       <div class="panel for-hv" data-tab="so" id="bonusPanel">
-        <h3>Điểm cộng của bạn <span class="demo-state" id="bonusSum">0 điểm</span></h3>
+        <h3><button type="button" class="fold" id="bonFold" aria-expanded="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.8l-5.2 2.8 1-5.8-4.3-4.1 5.9-.9z"/></svg>Điểm cộng của bạn <span class="demo-state" id="bonusSum">0 điểm</span><i class="chev" aria-hidden="true">›</i></button></h3>
         <ul class="bonl" id="bonMine"></ul>
         <p class="note">Chỉ bạn và coach thấy. Không có bảng xếp hạng. Gửi nhầm thì rút lại được khi coach chưa xác nhận.</p>
       </div>
       <div class="panel for-hv" data-tab="so">
-        <h3>Nhiệm vụ buổi này</h3>
-        <div class="quest" id="q1"><span class="box"></span><span>Đi hết các phase của ngày</span><b id="q1n">0/8</b></div>
-        <div class="quest" id="q4"><span class="box"></span><span>Nộp repo bài làm</span><b id="q4n">0/1</b></div>
-        <div class="quest" id="q3"><span class="box"></span><span>Ngồi trọn một phiên</span><b id="q3n">0/1</b></div>
-        <div class="kv" style="margin-top:4px">
-          <span>Lời chào nhận lại</span><b id="sGreet">0</b>
-          <span>Lần giơ tay</span><b id="sHand">0</b>
-          <span>Mục tự kiểm đã tick</span><b id="sChk">0</b>
-          <span>Lượt pitch ở bàn</span><b id="sPitch">0</b>
+        <h3>Nhiệm vụ buổi này <button class="lnk" type="button" id="bToday">Hôm nay của bạn ›</button></h3>
+        <div class="quests">
+          <div class="quest" id="q1"><b class="o" id="q1n">0/8</b><span>Đi hết phase</span></div>
+          <div class="quest" id="q4"><b class="o" id="q4n">0/1</b><span>Nộp repo</span></div>
+          <div class="quest" id="q3"><b class="o" id="q3n">0/1</b><span>Ngồi trọn phiên</span></div>
         </div>
-        <div class="toolbar"><button class="btn" type="button" id="bToday">Hôm nay của bạn</button></div>
+        <div class="cnt">
+          <span title="Lời chào nhận lại" aria-label="Lời chào nhận lại"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 12V6a1.5 1.5 0 0 1 3 0v5M10 11V4.5a1.5 1.5 0 0 1 3 0V11M13 11V5.5a1.5 1.5 0 0 1 3 0V12M16 9.5a1.5 1.5 0 0 1 3 0V14a7 7 0 0 1-12 4.9L4.6 15.6a1.5 1.5 0 0 1 2.3-1.9L7 14"/></svg><b id="sGreet">0</b></span>
+          <span title="Lần giơ tay" aria-label="Lần giơ tay"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v11M8 7l4-4 4 4M6 21h12"/></svg><b id="sHand">0</b></span>
+          <span title="Mục tự kiểm đã tick" aria-label="Mục tự kiểm đã tick"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M8 12l3 3 5-6"/></svg><b id="sChk">0</b></span>
+          <span title="Lượt pitch ở bàn" aria-label="Lượt pitch ở bàn"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg><b id="sPitch">0</b></span>
+        </div>
       </div>
       <div class="panel for-hv" data-tab="so">
         <h3>Phiên tập trung</h3>
-        <div class="timer" id="timer">25:00</div>
-        <div class="toolbar">
-          <button class="btn on" id="t25">25 phút</button>
-          <button class="btn" id="t50">50 phút</button>
-          <button class="btn primary" id="tStart">Bắt đầu phiên</button>
+        <div class="trow">
+          <div class="timer" id="timer">25:00</div>
+          <span class="tseg" role="group" aria-label="Độ dài phiên"><button class="btn on" id="t25" title="25 phút">25′</button><button class="btn" id="t50" title="50 phút">50′</button></span>
+          <button class="btn primary" id="tStart">Bắt đầu</button>
         </div>
         <p class="note">Bản tương đương “108 lạy”: một vòng có đầu có cuối, hết giờ có chuông.</p>
       </div>
       <div class="panel" data-tab="so">
         <p class="eyebrow">Tên của bạn trong phòng</p>
-        <div class="name" id="myName">…</div>
-        <div class="toolbar"><button class="btn" id="bRename">Đổi tên khác</button><button class="btn" id="bEdit">Sửa nhân vật</button></div>
+        <div class="nrow"><div class="name" id="myName">…</div><button class="chipb" type="button" id="nMore" title="Đổi tên · Sửa nhân vật" aria-label="Đổi tên hoặc sửa nhân vật" aria-expanded="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16zM14 6l4 4"/></svg></button></div>
+        <div class="toolbar" id="nFix"><button class="btn" id="bRename">Đổi tên khác</button><button class="btn" id="bEdit">Sửa nhân vật</button></div>
         <p class="note">Bạn cùng lớp chỉ thấy tên này. Giảng viên thấy tên thật để điểm danh.</p>
       </div>
     </aside>
@@ -2414,11 +2526,11 @@ body.focus .focuschip{display:flex}
   function setDur(m){ if(tick) return; dur=m*60; left=dur; $("t25").classList.toggle("on",m===25); $("t50").classList.toggle("on",m===50); drawT(); }
   $("t25").onclick=()=>setDur(25); $("t50").onclick=()=>setDur(50);
   $("tFast").onclick=()=>{speed=speed===1?60:1; $("tFast").classList.toggle("on",speed>1);};
-  function endSession(msg){ clearInterval(tick); tick=null; $("tStart").textContent="Bắt đầu phiên"; left=dur; tvLine=msg; tvProg=0; drawTV(); drawT(); }
+  function endSession(msg){ clearInterval(tick); tick=null; $("tStart").textContent="Bắt đầu"; left=dur; tvLine=msg; tvProg=0; drawTV(); drawT(); }
   $("tStart").onclick=()=>{
     if(tick){ endSession("Làm lặng lẽ · kẹt thì giơ tay"); return; }
     if(ROLE==="hv"&&needSeat()) return;
-    bell(); $("tStart").textContent="Dừng phiên"; tvLine="Phiên tập trung "+Math.round(dur/60)+" phút đang chạy"; drawTV();
+    bell(); $("tStart").textContent="Dừng"; tvLine="Phiên tập trung "+Math.round(dur/60)+" phút đang chạy"; drawTV();
     tick=setInterval(()=>{ left=Math.max(0,left-speed); drawT(); if(left<=0){ bell(); st.sess++; render(); endSession("Hết phiên · đứng dậy vươn vai"); toast("Bạn đã ngồi trọn một phiên."); } },1000);
   };
 
@@ -2430,14 +2542,21 @@ body.focus .focuschip{display:flex}
     $("doneN").textContent=people.filter(s=>s.step>=NS).length; $("nopN").textContent=people.filter(s=>s.nop).length;
     const total=people.length||1;
     const cur=MODE==="lop"?KS.guide:Math.min(myStep,NS-1);
-    $("steplist").innerHTML=STEPS.map((t,k)=>{
-      const done=people.filter(s=>s.step>k).length;
-      const stuckHere=people.filter(s=>s.stuck&&s.step===k).length;
-      const mine=mySeat>=0&&myStep===k, p=phaseOf(k), b=breakAfter(k);
-      const now=k===cur&&!(MODE==="lop"&&KS.brk);
-      return '<div class="srow'+(stuckHere>=HOT?' hot':'')+(now?' now':'')+'" title="Phase '+k+' · '+esc(p.ten||t)+' · '+MODE_NAME[p.cheDo]+' '+p.phut+' phút · '+AI_NAME[p.ai]+'"><span class="lbl'+(mine?' mine':'')+'"><i class="pk">P'+k+'</i>'+phIc(PH_IC[p.cheDo]||"",MODE_NAME[p.cheDo])+'<span class="nm">'+esc(p.ngan||t)+'</span><small>'+p.phut+'′</small></span><b>'+(stuckHere?'<em class="sk" title="'+stuckHere+' người kẹt">!'+stuckHere+'</em>':'')+done+'</b><span class="bar"><i style="width:'+(done/total*100)+'%"></i></span></div>'
-        +(b?'<div class="srow brk'+(MODE==="lop"&&KS.brk&&KS.guide===k?' now':'')+'" title="Nghỉ '+b.phut+' phút"><span>'+phIc(PH_IC.nghi,"Nghỉ")+b.phut+'′</span><span></span></div>':'');
-    }).join("");
+    // L2: tiến độ thành biểu đồ cột (mỗi cột là số người đã qua phase đó); bấm cột xem tên phase
+    { const box=$("steplist"); if(box.children.length!==NS){ box.innerHTML=STEPS.map((t,k)=>'<button type="button" class="hc" data-k="'+k+'"><span class="col"><i></i></span><span class="pk">P'+k+'</span><span class="hn"></span></button>').join(""); }
+      STEPS.forEach((t,k)=>{ const el=box.children[k]; if(!el) return;
+        const done=people.filter(s=>s.step>k).length;
+        const stuckHere=people.filter(s=>s.stuck&&s.step===k).length;
+        const mine=mySeat>=0&&myStep===k, p=phaseOf(k), b=breakAfter(k);
+        const now=k===cur&&!(MODE==="lop"&&KS.brk);
+        const tip="P"+k+" · "+(p.ten||t)+" · "+MODE_NAME[p.cheDo]+" "+p.phut+" phút · "+AI_NAME[p.ai]+" · "+done+" người đã qua"+(stuckHere?" · "+stuckHere+" người kẹt":"")+(b?" · sau đó nghỉ "+b.phut+" phút":"");
+        el.className="hc"+(stuckHere>=HOT?" hot":"")+(now?" now":"")+(mine?" mine":"")+(b?" brk":"")+(HIST.k===k?" sel":"");
+        el.dataset.tip=tip; el.setAttribute("aria-label",tip);
+        el.querySelector("i").style.height=Math.max(3,done/total*100)+"%";
+        const hn=(stuckHere?'<em class="sk">!'+stuckHere+'</em> ':'')+done, h=el.querySelector(".hn"); if(h.__h!==hn){ h.__h=hn; h.innerHTML=hn; } }); }
+    { const k=HIST.k; if(k>=0&&k<NS){ const p=phaseOf(k), b=breakAfter(k); $("histCap").innerHTML='<b>P'+k+' · '+esc(p.ngan||STEPS[k])+'</b> · '+MODE_NAME[p.cheDo]+' '+p.phut+'′ · '+people.filter(s=>s.step>k).length+' đã qua'+(b?' · nghỉ '+b.phut+'′ sau đó':''); $("histCap").hidden=false; } else $("histCap").hidden=true; }
+    $("subTienN").textContent=people.length; $("subChoN").textContent=queue.length; $("subDemoN").textContent=DEMO.list.length;
+    $("subt").querySelector('[data-sub="cho"]').classList.toggle("al",queue.length>0);
     const MAXQ=8, myPos=queue.indexOf(mySeat);
     const items=queue.slice(0,MAXQ).map(i=>'<li class="'+(i===mySeat?'me':'')+'">'+(i===mySeat?'Bạn':esc(seats[i].name))+' · '+esc(phaseOf(seats[i].step).ngan||"")+' · '+grpName(i)+(TAS>1?' · khu '+(seats[i].zone+1):'')+(seats[i].coming?' · '+esc(seats[i].coming)+' đang tới':seats[i].seen?' · đã xem, chờ tự hạ tay':'')+'</li>');
     if(queue.length>MAXQ) items.push('<li>…và '+(queue.length-MAXQ)+' người nữa'+(myPos>=MAXQ?' (bạn đứng thứ '+(myPos+1)+')':'')+'</li>');
@@ -2445,15 +2564,16 @@ body.focus .focuschip{display:flex}
     $("helpq").innerHTML=items.length?items.join(""):'<li>Chưa ai giơ tay.</li>';
     { const g=mySeat>=0?myGate():"", p=phaseOf(myStep), n=(p.tuKiem||[]).length;
       $("stepLabel").textContent=myStep>=NS?"✓":g?"…":myChk+"/"+n; $("aStep").title=myStep>=NS?"Đã xong "+NS+"/"+NS+" phase":g&&!KS.brk?"Chờ Key Coach mở phase tiếp":g?"Đang nghỉ":"Tick mục "+(myChk+1)+"/"+n+" của phase "+myStep; }
-    $("q1n").textContent=myStep+"/"+NS; $("q1").classList.toggle("done",myStep>=NS);
+    $("q1n").textContent=myStep+"/"+NS; $("q1").classList.toggle("done",myStep>=NS); $("q1").style.setProperty("--p",Math.round(Math.min(myStep,NS)/NS*100)+"%");
+    $("q4").style.setProperty("--p",myNop?"100%":"0%");
     $("q4n").textContent=(myNop?1:0)+"/1"; $("q4").classList.toggle("done",!!myNop);
     $("sChk").textContent=st.chk; $("sPitch").textContent=st.pitch;
     $("grpName").textContent=mySeat>=0?grpName(mySeat)+" · "+grpSeats(seats[mySeat].grp).filter(i=>seats[i].kid).length+" người":"chưa ngồi";
-    $("grpRole").textContent=myRole||"–";
+    $("grpRole").textContent=myRole||"–"; $("grpRoleC").hidden=!myRole;
     { const n=(phaseOf(myStep).tuKiem||[]).length; $("myAt").textContent=myStep>=NS?"xong cả ngày":"phase "+myStep+" · mục "+(myChk+1)+"/"+n; }
     $("myFix").hidden=ROLE!=="hv"; $("fBack").disabled=!(myStep>0||myChk>0); $("fRole").hidden=!myRole; $("fNop").hidden=!myNop;
     renderPhase(); renderCtx(); renderDemo(); renderBonus();
-    $("q3n").textContent=Math.min(st.sess,1)+"/1"; $("q3").classList.toggle("done",st.sess>=1);
+    $("q3n").textContent=Math.min(st.sess,1)+"/1"; $("q3").classList.toggle("done",st.sess>=1); $("q3").style.setProperty("--p",st.sess>=1?"100%":"0%");
     $("sGreet").textContent=st.greet; $("sHand").textContent=st.hand;
     $("cGuide").textContent=KS.brk?"đang nghỉ":"phase "+KS.guide+"/"+(NS-1); $("cRe").textContent=KS.re; $("cLab").textContent=TAS;
     if(LIVE.on&&LIVE.hs){ $("cFix").textContent=LIVE.hs.done; $("cWait").textContent=LIVE.hs.n?Math.round(LIVE.hs.wait/LIVE.hs.n)+" giây":"–"; $("cLab").textContent=tas.length+(ROLE==="lab"?1:0); }
@@ -2587,6 +2707,22 @@ body.focus .focuschip{display:flex}
   function closeDrawer(){ $("side").hidden=true; document.body.classList.remove("drawer"); document.querySelectorAll(".topr [data-tab]").forEach(b=>b.classList.remove("on")); }
   document.querySelectorAll(".topr [data-tab],.dtab").forEach(b=>b.addEventListener("click",()=>{ const sd=$("side"); if(b.classList.contains("dtab")&&!sd.hidden&&sd.dataset.tab===b.dataset.tab) return; openDrawer(b.dataset.tab); }));
   $("dClose").onclick=closeDrawer; $("rail").onclick=()=>openDrawer("lop");
+  // L1 + G3: tab Cả lớp chia 4 mục có số, mỗi vai mở sẵn việc chính (Lab Coach: Hàng chờ, còn lại: Tiến độ)
+  const SUB={role:"",v:"tien"};
+  function setSub(v){ SUB.v=v; SUB.role=ROLE; $("side").dataset.sub=v; $("subt").querySelectorAll(".sbt").forEach(b=>{ const on=b.dataset.sub===v; b.classList.toggle("on",on); b.setAttribute("aria-selected",on); }); }
+  function subDefault(){ if(SUB.role!==ROLE) setSub(ROLE==="lab"?"cho":"tien"); }
+  $("subt").addEventListener("click",e=>{ const b=e.target.closest(".sbt"); if(b){ actx(); setSub(b.dataset.sub); } });
+  document.querySelectorAll(".topr [data-tab],.dtab").forEach(b=>b.addEventListener("click",subDefault));
+  subDefault();
+  // L2: bấm cột tiến độ để xem tên phase, bấm lại để ẩn
+  const HIST={k:-1};
+  $("steplist").addEventListener("click",e=>{ const b=e.target.closest(".hc"); if(!b) return; const k=+b.dataset.k; HIST.k=HIST.k===k?-1:k; render(); });
+  // S1, S5: thao tác ít dùng nằm sau nút ⋯ / ✎
+  [["fMore","myFix"],["nMore","nFix"]].forEach(([bn,box])=>{ $(bn).onclick=()=>{ const o=$(box).classList.toggle("open"); $(bn).setAttribute("aria-expanded",o); }; });
+  // S3: điểm cộng của học viên thu thành một dòng, bấm để mở danh sách
+  $("bonFold").onclick=()=>{ const o=$("bonusPanel").classList.toggle("open"); $("bonFold").setAttribute("aria-expanded",o); };
+  // K2: menu "Tải về" tự đóng sau khi chọn
+  $("dlMenu").addEventListener("click",e=>{ if(e.target.closest(".dlmi .btn")) $("dlMenu").open=false; });
   // Dòng trạng thái: hiện vài giây mỗi khi đổi, rồi tự ẩn
   { const el=$("doorText"); let tm=null; const show=()=>{ if(!el.textContent.trim()) return; el.classList.add("show"); clearTimeout(tm); tm=setTimeout(()=>el.classList.remove("show"),4500); };
     if(window.MutationObserver) new MutationObserver(show).observe(el,{childList:true,characterData:true,subtree:true}); }
@@ -3113,15 +3249,19 @@ body.focus .focuschip{display:flex}
     $("aBonus").title="Ghi nhận điểm cộng: ghi lý do, coach xác nhận · bạn có "+ok+" điểm"+(cho?" · "+cho+" đang chờ":"");
     $("bonusSum").textContent=ok+" điểm"; $("bonusSum").classList.toggle("open",ok>0);
     const stT={cho:"chờ coach xác nhận",ok:"đã được xác nhận",bo:"coach chưa tính"};
-    setHTML("bonMine",BON.mine.length?BON.mine.slice().reverse().map(b=>'<li><span class="st'+(b.st==="ok"?' ok':'')+'">+1 · '+stT[b.st]+'</span>'+(b.st==="cho"?'<span class="bb"><button class="btn" data-w="'+b.id+'">Rút lại</button></span>':'<span></span>')+'<span class="ly">'+esc(b.ly)+'</span></li>').join(""):'<li class="empty">Chưa gửi điểm cộng nào. Bấm nút ⭐ để ghi lý do.</li>');
+    setHTML("bonMine",BON.mine.length?BON.mine.slice().reverse().map(b=>'<li><span class="st'+(b.st==="ok"?' ok':'')+'">+1 · '+stT[b.st]+'</span>'+(b.st==="cho"?'<span class="bb"><button class="btn" data-w="'+b.id+'">Rút lại</button></span>':'<span></span>')+'<span class="ly">'+esc(b.ly)+'</span></li>').join(""):'<li class="empty">Chưa có. Bấm nút ⭐ ở dưới màn hình để ghi lý do.</li>');
     const vis=ROLE==="lab"&&TAS>1?BON.q.filter(b=>{ const s=seats[b.seat]; return !s||s.zone===me.zone; }):BON.q;
     $("cBonusN").textContent=vis.length; $("cBonus").classList.toggle("on",vis.length>0); $("bonQN").textContent=vis.length;
-    setHTML("bonQ",vis.length?vis.slice(0,12).map(b=>{ const s=seats[b.seat]; const nb=LIVE.on?LIVE.bonOk[b.uid]||0:s&&s.bon; return '<li><span class="who">'+esc(b.name||"")+' · '+(s?esc(grpName(b.seat)):'')+(nb?' · đã có '+nb+' điểm':'')+'</span><span class="bb"><button class="btn primary" data-ok="'+b.id+'">Xác nhận</button><button class="btn" data-no="'+b.id+'">Bỏ qua</button></span><span class="ly">'+esc(b.ly)+'</span></li>'; }).join("")+(vis.length>12?'<li class="empty">…và '+(vis.length-12)+' lượt nữa</li>':''):'<li class="empty">Chưa có ai gửi điểm cộng.</li>');
+    $("subBonN").textContent=vis.length; $("subt").querySelector('[data-sub="bon"]').classList.toggle("al",vis.length>0);
+    const BQ=BON.more?40:3, ck='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5 10 17l9-10"/></svg>', xk='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>';
+    setHTML("bonQ",vis.length?vis.slice(0,BQ).map(b=>{ const s=seats[b.seat]; const nb=LIVE.on?LIVE.bonOk[b.uid]||0:s&&s.bon; const who=esc(b.name||"")+(s?' · '+esc(grpName(b.seat)):'');
+      return '<li class="bq"><span class="who">'+who+(nb?' <small>· có '+nb+'</small>':'')+'</span><span class="bb"><button class="ibtn ok" data-ok="'+b.id+'" title="Xác nhận" aria-label="Xác nhận điểm cộng của '+esc(b.name||"")+'">'+ck+'</button><button class="ibtn" data-no="'+b.id+'" title="Bỏ qua" aria-label="Bỏ qua điểm cộng của '+esc(b.name||"")+'">'+xk+'</button></span><span class="ly">'+esc(b.ly)+'</span></li>'; }).join("")
+      +(vis.length>3?'<li class="empty"><button type="button" class="lnk" data-all="1">'+(BON.more?'Thu gọn':'Xem cả '+vis.length+' ›')+'</button></li>':''):'<li class="empty">Chưa có ai gửi điểm cộng.</li>');
   }
   // Chỉ vẽ lại khi nội dung đổi, và bắt bấm ở khung ngoài, để nút không bị thay giữa lúc đang bấm.
   function setHTML(id,h){ const el=$(id); if(el.__h!==h){ el.__h=h; el.innerHTML=h; } }
   $("bonMine").onclick=e=>{ const x=e.target.closest("[data-w]"); if(!x) return; if(undoEl){ undoEl.remove(); undoEl=null; } bonusWithdraw(x.dataset.w); };
-  $("bonQ").onclick=e=>{ const x=e.target.closest("[data-ok],[data-no]"); if(!x) return; actx(); bonusDecide(x.dataset.ok||x.dataset.no,!!x.dataset.ok); };
+  $("bonQ").onclick=e=>{ if(e.target.closest("[data-all]")){ BON.more=!BON.more; renderBonus(); return; } const x=e.target.closest("[data-ok],[data-no]"); if(!x) return; actx(); bonusDecide(x.dataset.ok||x.dataset.no,!!x.dataset.ok); };
   // Tải danh sách điểm cộng cả buổi: mỗi học viên một dòng, mở được bằng Excel (CSV có BOM để giữ dấu tiếng Việt).
   async function bonusAll(){
     if(LIVE.on) return await rpc("lhl_bonus_list",{p_code:LIVE.code});
@@ -3156,7 +3296,7 @@ body.focus .focuschip{display:flex}
     a.download="tien-do-"+(LIVE.on?LIVE.code+"-":"")+ds+".csv"; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href),4000);
     toast(ppl.length?"Đã tải tiến độ ("+ppl.length+" học viên).":"Chưa có học viên nào trong phòng."); };
   $("aBonus").onclick=()=>{ actx(); bonusDlg(); };
-  $("cBonus").onclick=()=>{ actx(); openDrawer("lop"); const el=$("bonusQ"); if(el&&el.scrollIntoView) el.scrollIntoView({block:"start",behavior:"smooth"}); };
+  $("cBonus").onclick=()=>{ actx(); const sd=$("side"); if(!(!sd.hidden&&sd.dataset.tab==="lop")) openDrawer("lop"); setSub("bon"); };
   // Mô phỏng: bạn cùng lớp thỉnh thoảng gửi điểm cộng; khi bạn là học viên, coach mô phỏng xác nhận sau vài giây.
   setInterval(()=>{
     if(LIVE.on||NOSIM) return;
@@ -3422,7 +3562,7 @@ body.focus .focuschip{display:flex}
   // Bảng "Phòng": mã phòng, link mời, mã Lab Coach, đóng phòng
   function renderLive(){
     const el=$("livePanel"); if(!el) return;
-    el.hidden=!LIVE.on; if(!LIVE.on) return;
+    el.hidden=!LIVE.on; if(!LIVE.on) return; el.dataset.tab=ROLE==="key"?"phong":"so";
     const link=location.origin+location.pathname+"?p="+LIVE.code+(LIVE.pass?"&c="+LIVE.pass:"");
     $("liveCode").textContent=fmtCode(LIVE.code); $("liveLink").value=link;
     $("liveLab").textContent=LIVE.lab||"–"; $("livePass").textContent=LIVE.pass||"–"; { const z=$("codeOvN"); if(z) z.textContent=LIVE.pass||"–"; } $("liveLabRow").hidden=ROLE!=="key";
