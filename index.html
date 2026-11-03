@@ -187,6 +187,11 @@ a:focus-visible,button:focus-visible,select:focus-visible{outline:2px solid var(
 .phasebar .tag{padding:1px 8px;border-radius:10px;border:1px solid var(--line);background:var(--paper-2);font-size:12px}
 .ctxbar{all:unset;cursor:pointer;display:block;text-align:center;padding:10px;border-radius:10px;background:var(--violet);color:var(--paper-2);font-weight:600;font-size:14px}
 .ctxbar[hidden]{display:none}
+/* Phân quyền: AUTH = vai đã vào phòng (có mật mã), ROLE = vai đang xem.
+   Phần quản lý phòng chỉ Key Coach thấy; phần cá nhân của học viên chỉ hiện khi đang ở vai Học viên. */
+body:not([data-auth="key"]) .only-key{display:none!important}
+body:not([data-role="hv"]) .for-hv{display:none!important}
+body[data-role="hv"] .for-coach{display:none!important}
 .ctxbar:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
 .days{display:grid;gap:4px;font-size:13px}
 .day{all:unset;cursor:pointer;display:grid;grid-template-columns:auto 1fr auto;gap:8px;align-items:center;padding:6px 8px;border-radius:8px;border:1px solid var(--line);background:var(--paper-2)}
@@ -274,7 +279,7 @@ body{overflow:hidden}
 <main class="game">
   <div class="proto">
     <div class="scene" id="scene">
-      <div class="pickers"><div class="sizes" role="group" aria-label="Sĩ số lớp"><span class="muted">Sĩ số:</span><button class="btn size" data-n="50">50</button><button class="btn size" data-n="100">100</button><button class="btn size" data-n="150">150</button><button class="btn size" data-n="200">200</button><button class="btn size" data-n="250">250</button></div>
+      <div class="pickers only-key"><div class="sizes" role="group" aria-label="Sĩ số lớp"><span class="muted">Sĩ số:</span><button class="btn size" data-n="50">50</button><button class="btn size" data-n="100">100</button><button class="btn size" data-n="150">150</button><button class="btn size" data-n="200">200</button><button class="btn size" data-n="250">250</button></div>
       <div class="sizes" role="group" aria-label="Kiểu bàn"><span class="muted">Kiểu bàn:</span><button class="btn tbl" data-t="island">Cụm bàn dài</button><button class="btn tbl" data-t="round">Bàn tròn 5 người</button><button class="btn tbl" data-t="rows">Dãy hàng ngang</button></div>
       <div class="sizes" role="group" aria-label="Xem với vai trò"><span class="muted">Xem như:</span><button class="btn role" data-r="hv">Học viên</button><button class="btn role" data-r="lab">Lab Coach</button><button class="btn role" data-r="key">Key Coach</button></div></div>
       <div class="roombar">
@@ -285,7 +290,7 @@ body{overflow:hidden}
       <div class="stage" id="stage">
         <canvas id="cv" aria-label="Giảng đường 3D: kéo để xoay, bấm sàn để đi, bấm bàn trống để ngồi"></canvas>
         <div class="hud" id="hud"></div>
-        <p class="hint">Kéo để xoay · cuộn để phóng to · bấm sàn để đi · bấm ghế tím (còn trống) để ngồi</p>
+        <p class="hint" id="hint">Kéo để xoay · cuộn để phóng to · bấm sàn để đi · bấm ghế tím (còn trống) để ngồi</p>
         <button class="btn camb" id="bCam">Nhìn toàn phòng</button>
       </div>
       <p class="status" id="doorText">Bạn đang đứng ở cửa sau phòng thực hành. Bấm một ghế tím để đi tới và ngồi.</p>
@@ -308,10 +313,10 @@ body{overflow:hidden}
     <aside class="side">
       <div class="panel">
         <h3>Ngày lab</h3>
-        <div class="sizes" role="group" aria-label="Chế độ phòng"><button class="btn mode" data-m="lop">Trong giờ học</button><button class="btn mode" data-m="tuhoc">Phòng tự học</button></div>
+        <div class="sizes only-key" role="group" aria-label="Chế độ phòng"><button class="btn mode" data-m="lop">Trong giờ học</button><button class="btn mode" data-m="tuhoc">Phòng tự học</button></div>
         <div class="days" id="days"></div>
         <p class="note" id="modeNote"></p>
-        <div class="kv" id="grpKv">
+        <div class="kv for-hv" id="grpKv">
           <span>Nhóm của bạn</span><b id="grpName">–</b>
           <span>Vai trong nhóm</span><b id="grpRole">–</b>
         </div>
@@ -344,18 +349,18 @@ body{overflow:hidden}
         <button class="btn" id="bEdit" style="justify-self:start">Sửa nhân vật</button>
         <p class="note">Bạn cùng lớp chỉ thấy tên này. Giảng viên thấy tên thật để điểm danh.</p>
       </div>
-      <div class="panel">
+      <div class="panel for-hv">
         <h3>Phiên tập trung</h3>
         <div class="timer" id="timer">25:00</div>
         <div class="toolbar">
           <button class="btn on" id="t25">25 phút</button>
           <button class="btn" id="t50">50 phút</button>
-          <button class="btn" id="tFast">Tua ×60</button>
+          <button class="btn only-key" id="tFast">Tua ×60</button>
         </div>
         <button class="btn primary" id="tStart" style="justify-self:start">Bắt đầu phiên</button>
         <p class="note">Bản tương đương “108 lạy”: một vòng có đầu có cuối, hết giờ có chuông.</p>
       </div>
-      <div class="panel">
+      <div class="panel for-hv">
         <h3>Nhiệm vụ buổi này</h3>
         <div class="quest" id="q1"><span class="box"></span><span>Đi hết các phase của ngày</span><b id="q1n">0/8</b></div>
         <div class="quest" id="q4"><span class="box"></span><span>Nộp repo bài làm</span><b id="q4n">0/1</b></div>
@@ -501,7 +506,8 @@ body{overflow:hidden}
   let tvLine="Làm lặng lẽ · kẹt thì giơ tay", tvProg=0;
   // ---------- Key Coach / Lab Coach: trạng thái chung ----------
   const ROLE_NAME={hv:"Học viên",lab:"Lab Coach",key:"Key Coach"};
-  let ROLE="hv";
+  let ROLE="hv", AUTH="hv"; // AUTH: vai đã vào phòng; chỉ AUTH="key" mới thấy phần quản lý phòng
+  document.body.dataset.auth=AUTH; document.body.dataset.role=ROLE;
   const KS={guide:0,re:0,call:0,over:"",lastRe:{},brk:false,left:0,openAt:0}; // guide: chỉ số phase (không tính nghỉ) Key Coach đang dẫn; brk: đang nghỉ sau phase guide; left: giây còn lại
   const HS={n:0,wait:0,done:0,esc:0,mine:0};          // thống kê gỡ kẹt, chỉ cộng dồn, không xếp hạng
   const qAt={};                                      // thời điểm mỗi ghế vào hàng chờ
@@ -985,7 +991,7 @@ body{overflow:hidden}
     ov.querySelector("form").onsubmit=async e=>{ e.preventDefault();
       if(first&&!unlocked[role]&&!(await checkCode(role,codeInp.value))){ ov.querySelector("#eErr").textContent="Sai mật mã. Học viên thì chọn “Học viên”, không cần mật mã."; codeInp.select(); return; }
       const nm=inp.value.replace(/\s+/g," ").trim().slice(0,24);
-      setMyName(nm||rname()); chooseLook(cur); ov.remove(); if(first) setRole(role); me.smile=1.5; render(); };
+      setMyName(nm||rname()); chooseLook(cur); ov.remove(); if(first){ AUTH=role; document.body.dataset.auth=AUTH; setRole(role); render(); } me.smile=1.5; render(); };
     draw();
     if(has3d){ let last=performance.now();
       const loop=now=>{ if(!ov.isConnected) return; const dt=Math.min((now-last)/1000,0.05); last=now;
@@ -1028,7 +1034,8 @@ body{overflow:hidden}
     else { me.home=ROLE==="lab"?labHome(0):keyHome.clone(); me.g.position.copy(me.home); me.g.rotation.y=0; me.busy=false; }
     tas=[]; for(let t=ROLE==="lab"?1:0;t<TAS;t++){ const k=makeKid("ta"); k.name="Lab Coach "+(t+1); k.zone=t; k.home=labHome(t); k.g.position.copy(k.home); k.g.rotation.y=0; k.busy=false; k.atHome=true; tas.push(k); }
     keyC=me; if(ROLE!=="key"){ keyC=makeKid("key"); keyC.name="Key Coach"; keyC.home=keyHome.clone(); keyC.g.position.copy(keyHome); keyC.g.rotation.y=0; keyC.busy=false; }
-    $("actions").dataset.role=ROLE; $("lFix").disabled=true;
+    $("actions").dataset.role=ROLE; document.body.dataset.role=ROLE; $("lFix").disabled=true;
+    $("hint").textContent=ROLE==="hv"?"Kéo để xoay · cuộn để phóng to · bấm sàn để đi · bấm ghế tím (còn trống) để ngồi":"Kéo để xoay · cuộn để phóng to · bấm sàn để đi"+(ROLE==="lab"?" · bấm ghế có dấu “!” để tới giúp":"");
     document.querySelectorAll(".role").forEach(b=>{const on=b.dataset.r===ROLE; b.classList.toggle("on",on); b.setAttribute("aria-pressed",on);});
     relabel(); drawTV();
     $("cap").textContent=N;
@@ -1233,6 +1240,7 @@ body{overflow:hidden}
     const MAXQ=8, myPos=queue.indexOf(mySeat);
     const items=queue.slice(0,MAXQ).map(i=>'<li class="'+(i===mySeat?'me':'')+'">'+(i===mySeat?'Bạn':esc(seats[i].name))+' · '+esc(phaseOf(seats[i].step).ngan||"")+' · '+grpName(i)+(TAS>1?' · khu '+(seats[i].zone+1):'')+'</li>');
     if(queue.length>MAXQ) items.push('<li>…và '+(queue.length-MAXQ)+' người nữa'+(myPos>=MAXQ?' (bạn đứng thứ '+(myPos+1)+')':'')+'</li>');
+    if(ROLE==="hv"){ items.length=0; items.push(myPos>=0?'<li class="me">Bạn đứng thứ '+(myPos+1)+' / '+queue.length+' người đang chờ</li>':'<li>'+(queue.length?queue.length+' người đang chờ Lab Coach':'Chưa ai giơ tay')+'</li>'); }
     $("helpq").innerHTML=items.length?items.join(""):'<li>Chưa ai giơ tay.</li>';
     { const g=mySeat>=0?myGate():"", p=phaseOf(myStep), n=(p.tuKiem||[]).length;
       $("stepLabel").textContent=myStep>=NS?"đã xong "+NS+"/"+NS+" phase":g&&!KS.brk?"chờ phase tiếp":g?"đang nghỉ":"mục "+(myChk+1)+"/"+n+" · phase "+myStep; }
@@ -1524,7 +1532,7 @@ body{overflow:hidden}
       const sub=d.tt==="nay"?"hôm nay":d.tt==="qua"?(ok?"đã qua · tự học":"đã qua · chưa nạp gói"):"sắp tới";
       return '<button class="day'+(on?' on':'')+(ok?'':' off')+'" data-k="'+k+'"'+(ok?'':' aria-disabled="true"')+'><span class="no">Ngày '+d.so+'</span><span>'+(d.pack?esc(d.pack.tieuDe):'')+'</span><small>'+sub+'</small></button>';
     }).join("");
-    $("days").querySelectorAll(".day").forEach(b=>b.onclick=()=>{ const d=DAYS[+b.dataset.k]; if(!d.pack){ toast(d.tt==="toi"?"Ngày "+d.so+" chưa mở.":"Ngày "+d.so+" chưa có gói lab."); return; } if(d.pack!==DAY){ loadDay(d.pack); myNop=(()=>{try{return localStorage.getItem("lhl-nop-"+DAY.id)||"";}catch(e){return "";}})(); ci=0; drawWB(); buildRoom(N,TYPE); renderDays(); } });
+    $("days").querySelectorAll(".day").forEach(b=>b.onclick=()=>{ const d=DAYS[+b.dataset.k]; if(!d.pack){ toast(d.tt==="toi"?"Ngày "+d.so+" chưa mở.":"Ngày "+d.so+" chưa có gói lab."); return; } if(d.pack!==DAY){ if(AUTH!=="key"&&MODE==="lop"){ toast("Trong giờ học, Key Coach chọn ngày lab cho cả phòng."); return; } loadDay(d.pack); myNop=(()=>{try{return localStorage.getItem("lhl-nop-"+DAY.id)||"";}catch(e){return "";}})(); ci=0; drawWB(); buildRoom(N,TYPE); renderDays(); } });
     document.querySelectorAll(".mode").forEach(b=>{ const on=b.dataset.m===MODE; b.classList.toggle("on",on); b.setAttribute("aria-pressed",on); });
     $("modeNote").textContent=MODE==="lop"?"Trong giờ học: Key Coach chuyển phase cho cả phòng, có giờ nghỉ chung. Nhóm là bàn bạn ngồi.":"Phòng tự học: mỗi người tự đi qua các phase theo nhịp riêng, dùng phiên 25/50 phút.";
   }
