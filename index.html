@@ -1130,7 +1130,7 @@ body.drawer .rail,body.drawer .kcard{display:none}
   function setSit2(k,on){ k.sitting=on;
     // ngồi lên mặt ghế (mặt ghế game cao 0.505, đáy hông cách gốc 0.17); đùi dài ra để thò khỏi thân, cẳng chân buông qua mép ghế
     k.g.position.y=on?0.335:0; k.shadow.visible=!on;
-    [k.legL,k.legR].forEach(L=>{ const u=L.userData; L.rotation.x=on?-Math.PI/2:0; L.position.z=on?0.04:0; L.position.x=u.sd*(on?0.095:0.085);
+    [k.legL,k.legR].forEach(L=>{ const u=L.userData; L.rotation.x=on?-Math.PI/2:0; L.position.z=on?0.11:0; L.position.x=u.sd*(on?0.095:0.085);
       u.thigh.scale.y=on?1.85:1; u.thigh.position.y=on?-0.12:-0.065; u.knee.position.y=on?-0.24:-0.13; u.knee.rotation.x=on?Math.PI/2-0.12:0;
       u.shin.scale.y=on?2:1; u.shin.position.y=on?-0.11:-0.055; u.foot.position.y=on?-0.11:0; });
     if(k.skirt){ k.skirt.visible=!!k.skirtOn&&!on; } if(k.lap) k.lap.visible=on&&!!k.skirtOn; }
@@ -1156,6 +1156,7 @@ body.drawer .rail,body.drawer .kcard{display:none}
   function removeKid(k){ scene.remove(k.g); const i=kids.indexOf(k); if(i>=0) kids.splice(i,1); bubbles.filter(b=>b.k===k).forEach(b=>killBubble(b)); }
   function setSit(k,on){
     setSit2(k,on);
+    k.hip.position.z=on?0.07:0; // ngồi nhích ra mép ghế, người hơi đổ về laptop
     // ngồi: chỉ hiện chân của "bạn" (người khác chân khuất dưới bàn, đỡ lượt vẽ)
     const show=!on||k.kind==="me"; k.legL.visible=k.legR.visible=show;
   }
@@ -2699,10 +2700,16 @@ body.drawer .rail,body.drawer .kcard{display:none}
     const b=k.bow>0?Math.sin((1-k.bow/k.bowDur)*Math.PI):0;
     if(k.nod>0) k.nod=Math.max(0,k.nod-dt);
     const nd=k.nod>0?Math.sin((1-k.nod/0.45)*Math.PI):0;
-    k.hip.rotation.x=0.62*b+(k.sitting&&!k.hand&&k.kind==="other"?0.08+Math.sin(t*0.8+k.ph)*0.03:0);
-    k.headG.rotation.x=0.35*nd;
+    // tư thế làm việc với máy tính: ngồi, không giơ tay → hai tay đặt lên bàn phím laptop, gõ nhẹ, đầu hơi cúi nhìn màn hình
+    k.typeA=(k.typeA||0)+(((k.sitting&&!k.hand&&!k.walk)?1:0)-(k.typeA||0))*Math.min(1,dt*6);
+    const ty=k.typeA;
+    k.hip.rotation.x=0.62*b+ty*0.1+(k.sitting&&!k.hand&&k.kind==="other"?Math.sin(t*0.8+k.ph)*0.02:0);
+    k.headG.rotation.x=0.35*nd+ty*0.14;
     k.handA+=((k.hand?1:0)-k.handA)*Math.min(1,dt*7);
-    k.armR.rotation.z=0.1+k.handA*2.4; k.armL.rotation.z=-0.12;
+    const busy=k.kind==="me"||Math.sin(t*0.37+k.ph*3)>-0.3; // người khác thỉnh thoảng dừng gõ
+    const tapR=busy?Math.max(0,Math.sin(t*13+k.ph))*0.07:0, tapL=busy?Math.max(0,Math.sin(t*13+k.ph+2.1))*0.07:0;
+    k.armR.rotation.x=ty*(-1.05+tapR); k.armL.rotation.x=ty*(-1.05+tapL);
+    k.armR.rotation.z=0.1-ty*0.32+k.handA*2.4; k.armL.rotation.z=-0.12+ty*0.34;
     if(k.alert.visible) k.alert.position.y=1.55+Math.sin(t*4+k.ph)*0.05;
     if(k.smile>0) k.smile=Math.max(0,k.smile-dt);
     let ex="normal"; if(k.hand) ex="worry"; else if(k.bow>0||k.nod>0||k.smile>0) ex="smile";
