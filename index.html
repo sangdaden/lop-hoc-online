@@ -1310,16 +1310,16 @@ body.drawer .rail,body.drawer .kcard{display:none}
     k.badge.visible=look==="ta"||look==="key"; k.badge.material=look==="key"?M.badgeKey:M.badgeLab;
     k.coach=look==="ta"?"lab":look==="key"?"key":"";
   }
-  function removeKid(k){ scene.remove(k.g); const i=kids.indexOf(k); if(i>=0) kids.splice(i,1); bubbles.filter(b=>b.k===k).forEach(b=>killBubble(b)); }
+  function removeKid(k){ freeRest(k); scene.remove(k.g); const i=kids.indexOf(k); if(i>=0) kids.splice(i,1); bubbles.filter(b=>b.k===k).forEach(b=>killBubble(b)); }
   function setSit(k,on){
     setSit2(k,on);
     k.hip.position.z=on?0.07:0; // ngồi nhích ra mép ghế, người hơi đổ về laptop
     // ngồi: chỉ hiện chân của "bạn" (người khác chân khuất dưới bàn, đỡ lượt vẽ)
-    const show=!on||k.kind==="me"; k.legL.visible=k.legR.visible=show;
+    const show=!on||k.kind==="me"||k.rest!=null; k.legL.visible=k.legR.visible=show;
   }
   function bow(k){ k.bow=k.bowDur=1.0; }
   function nod(k){ k.nod=0.45; }
-  function walkTo(k,to,speed,done){ setSit(k,false); to=to.clone(); to.y=0;
+  function walkTo(k,to,speed,done){ freeRest(k); setSit(k,false); to=to.clone(); to.y=0;
     if(!done&&!navFree(to.x,to.z)){ const f=navNearest(to.x,to.z); if(f) to=f; } // bấm vào bàn/đồ vật: dừng ở chỗ trống gần nhất
     k.walk={to,path:navPath(k.g.position,to)||[],speed:speed||2.2,done}; }
 
@@ -1345,7 +1345,7 @@ body.drawer .rail,body.drawer .kcard{display:none}
 
   // ---------- room ----------
   let fogFar=46;
-  let room=null, IM={}, floorMesh=null, zBack=10, zFront=-6, W=20, doorPos=new T.Vector3();
+  let room=null, IM={}, RS=[], floorMesh=null, zBack=10, zFront=-6, W=20, doorPos=new T.Vector3();
   const dummy=new T.Object3D(); dummy.rotation.order="YXZ"; const col=new T.Color();
   function im(geo,mat,count){const m=new T.InstancedMesh(geo,mat,Math.max(1,count));m.count=count;room.add(m);return m;}
   function place(m,i,x,y,z,ry,rx,sx,sy,sz){dummy.position.set(x,y,z);dummy.rotation.set(rx||0,ry||0,0);dummy.scale.set(sx||1,sy||1,sz||1);dummy.updateMatrix();m.setMatrixAt(i,dummy.matrix);}
@@ -1642,6 +1642,17 @@ body.drawer .rail,body.drawer .kcard{display:none}
     const shf=im(new T.BoxGeometry(.38,.03,2.36),m.wood,3); for(let i=0;i<3;i++) place(shf,i,kx-.01,.06+i*.4,kz);
     // --- poster thuật ngữ (tường sau) ---
     for(let i=0;i<4;i++) plane(.7,.98,m.posters[i],-W/2+4.2+i*1.0,1.95,zBack-.05,Math.PI);
+    // --- chỗ ngồi ngoài bàn học: 3 ghế lười góc nghỉ, ghế bục giảng (ai cũng ngồi được), ghế dọc tường (cho Lab Coach) ---
+    RS.length=0; kids.forEach(k=>{ k.rest=null; });
+    [[-.85,-.35],[.75,-.5],[.1,.9]].forEach(([ox,oz],i)=>{ const x=gx+ox, z=gz+oz; RS.push({kind:"bean",name:"Góc nghỉ",mesh:bb,inst:i,pos:new T.Vector3(x,0,z),yaw:Math.atan2(gx-x,gz-z),y:.3,by:null}); });
+    const CH=[[-W*0.32,zFront+0.9,0,"pod"]];
+    [D*0.24,D*0.62].forEach(t=>[0,.75].forEach(o=>{ const z=zFront+t+o; if(z>zBack-3.8) return; CH.push([-W/2+.42,z,Math.PI/2,"wall"],[W/2-.42,z,-Math.PI/2,"wall"]); }));
+    const chS=im(new T.BoxGeometry(.48,.06,.46),M.white,CH.length), chB=im(new T.BoxGeometry(.46,.5,.05),M.white,CH.length), chL=im(new T.BoxGeometry(.04,.45,.04),M.black,CH.length*4);
+    CH.forEach(([x,z,ry,kind],i)=>{ const dx=Math.sin(ry), dz=Math.cos(ry), c=kind==="pod"?0x22324f:0x34435f;
+      place(chS,i,x,.475,z,ry); place(chB,i,x-dx*.23,.78,z-dz*.23,ry); chS.setColorAt(i,col.setHex(c)); chB.setColorAt(i,col.setHex(c));
+      [[-1,-1],[1,-1],[-1,1],[1,1]].forEach(([a,b],j)=>place(chL,i*4+j,x+a*.2*dz+b*.19*dx,.225,z-a*.2*dx+b*.19*dz,ry));
+      obsBox(x,z,.46,.46);
+      RS.push({kind,name:kind==="pod"?"Ghế bục giảng":"Ghế dọc tường",mesh:chS,mesh2:chB,inst:i,pos:new T.Vector3(x,0,z),yaw:ry,y:.335,by:null}); });
     drawDecor();
   }
   const SCR=[0x46525f,0x3f6f93,0x4b88b5,0x5aa2d2,0x6ebde9],SCR_DONE=0x5ccf8a,SCR_STUCK=0xff8a3d,SCR_OFF=0x1d2329;
@@ -1947,6 +1958,20 @@ body.drawer .rail,body.drawer .kcard{display:none}
   }
   let myGrp=-1;
   function needSeat(){ if(mySeat<0){toast("Ngồi vào một ghế trước đã.");return true;} return false; }
+  // Chỗ ngồi ngoài bàn học (góc nghỉ, bục giảng, dọc tường): chỉ ngồi, không gắn tiến độ phase.
+  function freeRest(k){ if(k.rest==null) return; const r=RS[k.rest]; if(r&&r.by===k) r.by=null; k.rest=null; }
+  function restHit(h){ return h.instanceId==null?-1:RS.findIndex(r=>(r.mesh===h.object||r.mesh2===h.object)&&r.inst===h.instanceId); }
+  function restAt(p){ return RS.findIndex(r=>Math.hypot(r.pos.x-p.x,r.pos.z-p.z)<0.08); }
+  function toRest(k,j,speed,done){ const r=RS[j]; if(!r) return;
+    if(r.by&&r.by!==k){ walkTo(k,r.pos,speed,null); return; }
+    walkTo(k,r.pos,speed,()=>{ if(r.by!==k) return; k.g.position.copy(r.pos); k.g.rotation.y=r.yaw; setSit(k,true); k.g.position.y=r.y; if(done) done(); });
+    r.by=k; k.rest=j; }
+  function goRest(j){ const r=RS[j]; if(!r) return;
+    if(r.by&&r.by!==me){ toast("Chỗ này đã có người."); return; }
+    standUpMe(); seats.forEach((o,i)=>{ if(o.reserved==="me"){ o.reserved=false; paintSeat(i);} });
+    const gen=GEN; say("walk",r.name);
+    toRest(me,j,2.4,()=>{ if(gen!==GEN) return; say("seat",r.name); knock(.4); render(); });
+    render(); }
   function nearestFreeSeat(pt,filter){ let best=-1,bd=1e9; seats.forEach((s,i)=>{ if(!s.kid&&!s.reserved&&(!filter||filter(s))){ const d=s.pos.distanceTo(pt); if(d<bd){bd=d;best=i;} } }); return best; }
 
   // ---------- camera & input ----------
@@ -1983,11 +2008,19 @@ body.drawer .rail,body.drawer .kcard{display:none}
     const r=cv.getBoundingClientRect(); ndc.set(((e.clientX-r.left)/r.width)*2-1,-((e.clientY-r.top)/r.height)*2+1);
     ray.setFromCamera(ndc,camera);
     const seatMeshes=[IM.cseat,IM.cback,IM.lap,IM.scr], tableMeshes=[IM.btop,IM.rtop];
-    const hits=ray.intersectObjects(seatMeshes.concat(tableMeshes,[floorMesh]),false);
+    const restMeshes=[...new Set(RS.flatMap(r=>[r.mesh,r.mesh2]).filter(Boolean))];
+    const hits=ray.intersectObjects(seatMeshes.concat(tableMeshes,restMeshes,[floorMesh]),false);
     if(!hits.length) return; const h=hits[0];
-    if(ROLE!=="hv"){ coachClick(h,seatMeshes.indexOf(h.object)>=0); return; }
+    const ri=restHit(h);
+    if(ri>=0){ const r=RS[ri];
+      if(me.rest===ri&&!me.walk){ closeLeave(); return; }
+      if(r.by&&r.by!==me){ toast("Chỗ này đã có người."); return; }
+      if(r.kind==="wall"&&ROLE==="hv"){ toast("Ghế dọc tường dành cho Lab Coach."); return; }
+      if(ROLE!=="hv"&&me.busy){ toast(ROLE==="lab"?"Bấm “Xem xong” cho người đang xem trước đã.":"Đợi xong việc đang làm đã."); return; } }
+    if(ROLE!=="hv"){ if(ri>=0) goRest(ri); else coachClick(h,seatMeshes.indexOf(h.object)>=0); return; }
     // Đang ngồi mà bấm đi chỗ khác: hỏi lại trước khi đứng dậy (bấm nhầm không mất chỗ)
     const go=fn=>{ if(mySeat>=0&&!me.walk) askLeave(fn); else { closeLeave(); fn(); } };
+    if(ri>=0){ go(()=>goRest(ri)); return; }
     if(seatMeshes.indexOf(h.object)>=0&&h.instanceId!=null){ const j=h.instanceId; if(j===mySeat){ closeLeave(); return; } if(seats[j]&&(seats[j].kid||seats[j].reserved)){ toast("Ghế này đã có người."); return; } go(()=>goSeat(j)); return; }
     if(tableMeshes.indexOf(h.object)>=0&&h.instanceId!=null){
       const kind=h.object===IM.btop?"box":"round"; const tb=tables.find(t=>t.kind===kind&&t.inst===h.instanceId);
@@ -2254,7 +2287,7 @@ body.drawer .rail,body.drawer .kcard{display:none}
     qBubs.forEach(killBubble); qBubs=[];
     if(ROLE!=="hv"){ queue.slice(0,12).forEach((i,n)=>{ const s=seats[i]; if(!s||!s.kid) return; const b=bubble(s.kid,String(n+1),0,"qn"+(ROLE==="lab"&&s.zone!==me.zone?" far":"")); b.h=2.25; qBubs.push(b); }); }
     // Học viên chưa ngồi: nhắc nổi trên ghế trống gần nhất
-    const j=ROLE==="hv"&&mySeat<0&&!me.walk?nearestFreeSeat(me.g.position):-1;
+    const j=ROLE==="hv"&&mySeat<0&&!me.walk&&me.rest==null?nearestFreeSeat(me.g.position):-1;
     if(j!==seatBubJ||(seatBub&&bubbles.indexOf(seatBub)<0)){ killBubble(seatBub); seatBub=null; seatBubJ=j;
       if(j>=0){ seatBub=bubble({g:{position:seats[j].pos}},'<kbd>E</kbd>'+esc(seatShort(j)),0,"seatp"); seatBub.h=1.2; seatBub.el.onclick=()=>{ actx(); goSeat(j); }; } }
   }
@@ -2944,11 +2977,11 @@ body.drawer .rail,body.drawer .kcard{display:none}
       const i=d.role==="hv"&&d.seat>=0&&seats[d.seat]&&!seats[d.seat].kid?d.seat:-1;
       if(i>=0){ const s=seats[i]; s.kid=k; s.uid=u; s.name=k.name; s.step=d.step||0; s.stuck=!!d.hand; s.nop=!!d.nop; s.coming=d.help&&d.help.by&&!d.help.seen?d.help.by:null; s.seen=!!(d.help&&d.help.seen);
         if(s.reserved&&s.reserved!=="me") s.reserved=false;
-        if(R.seat!==i){ k.walk=null; k.g.position.copy(s.pos); k.g.rotation.y=s.yaw; setSit(k,true); }
+        if(R.seat!==i){ k.walk=null; freeRest(k); k.g.position.copy(s.pos); k.g.rotation.y=s.yaw; setSit(k,true); }
         if(s.stuck&&!LIVE.stuck.has(u)&&LIVE.joined) notifyHand(i);
         if(s.stuck) LIVE.stuck.add(u); else LIVE.stuck.delete(u); }
       else { LIVE.stuck.delete(u); if(R.seat>=0) setSit(k,false);
-        const to=d.x!=null?(+d.x).toFixed(2)+","+(+d.z).toFixed(2):""; if(to&&(to!==R.to||R.seat>=0)) walkTo(k,new T.Vector3(+d.x,0,+d.z),2.4,null); R.to=to; }
+        const to=d.x!=null?(+d.x).toFixed(2)+","+(+d.z).toFixed(2):""; if(to&&(to!==R.to||R.seat>=0)){ const p=new T.Vector3(+d.x,0,+d.z), ri=restAt(p); if(ri>=0) toRest(k,ri,2.4); else walkTo(k,p,2.4,null); } R.to=to; }
       R.seat=i; k.seat=i; k.hand=i>=0&&!!d.hand; k.alert.visible=k.hand; k.zone=d.zone||0;
       if((d.bowN||0)>R.bowN){ bow(k); if(k.g.position.distanceTo(me.g.position)<3.2){ st.greet++; bubble(k,esc(k.name)+" cúi chào",2200,k.coach?"ta":""); } }
       R.bowN=d.bowN||0;
@@ -3012,7 +3045,7 @@ body.drawer .rail,body.drawer .kcard{display:none}
     if(k.nod>0) k.nod=Math.max(0,k.nod-dt);
     const nd=k.nod>0?Math.sin((1-k.nod/0.45)*Math.PI):0;
     // tư thế làm việc với máy tính: ngồi, không giơ tay → hai tay đặt lên bàn phím laptop, gõ nhẹ, đầu hơi cúi nhìn màn hình
-    k.typeA=(k.typeA||0)+(((k.sitting&&!k.hand&&!k.walk)?1:0)-(k.typeA||0))*Math.min(1,dt*6);
+    k.typeA=(k.typeA||0)+(((k.sitting&&!k.hand&&!k.walk&&k.rest==null)?1:0)-(k.typeA||0))*Math.min(1,dt*6);
     const ty=k.typeA;
     k.hip.rotation.x=0.62*b+ty*0.1+(k.sitting&&!k.hand&&k.kind==="other"?Math.sin(t*0.8+k.ph)*0.02:0);
     k.headG.rotation.x=0.35*nd+ty*0.14;
