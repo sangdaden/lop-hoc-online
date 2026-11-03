@@ -378,6 +378,14 @@ body:not([data-role="hv"]) .rail{top:calc(50% + 60px)}
 @media (max-width:640px){.views{top:calc(max(14px,env(safe-area-inset-top,0px)) + 112px);max-width:calc(100% - 220px)}}
 .bub.seatp{pointer-events:auto;cursor:pointer;background:#fff;color:#1a1d22;font-weight:600;border-radius:8px}
 .bub.seatp kbd{font:inherit;font-size:11px;border:1px solid #bbb;border-radius:4px;padding:0 4px;margin-right:5px}
+.bub.leavep{pointer-events:auto;display:flex;gap:4px;padding:4px;border-radius:999px;background:var(--glass,rgba(20,28,48,.85));border:1px solid rgba(255,255,255,.35);backdrop-filter:blur(8px);animation:lvIn .18s ease-out}
+.bub.leavep button{all:unset;cursor:pointer;display:flex;align-items:center;gap:5px;padding:6px 12px;border-radius:999px;font-size:13px;font-weight:700;line-height:1}
+.bub.leavep .lv-go{background:#F2C14E;color:#1a1d22}
+.bub.leavep .lv-go svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}
+.bub.leavep .lv-x{padding:6px 10px;color:#fff;opacity:.8}
+.bub.leavep button:hover{filter:brightness(1.08)}.bub.leavep .lv-x:hover{opacity:1}
+.bub.leavep button:focus-visible{outline:2px solid #fff;outline-offset:1px}
+@keyframes lvIn{from{opacity:0;margin-top:6px}to{opacity:1;margin-top:0}}
 .bub.qn{min-width:24px;height:24px;padding:0;display:grid;place-items:center;border-radius:50%;background:var(--hud-warn);border:2px solid #fff;font-weight:700}
 .bub.qn.far{background:#8b8b93}
 /* Ngăn kéo bên phải: Sổ lab · Cả lớp · Phòng */
@@ -1902,7 +1910,7 @@ body.drawer .rail,body.drawer .kcard{display:none}
 
   // ---------- my movement ----------
   function standUpMe(){
-    if(mySeat<0) return; const i=mySeat; const s=seats[i];
+    if(mySeat<0) return; const i=mySeat; const s=seats[i]; closeLeave();
     if(myHand) lowerHand(false);
     s.kid=null; s.name=""; s.step=0; s.stuck=false; paintSeat(i); mySeat=-1; me.seat=-1; setSit(me,false);
     if(LIVE.on){ LIVE.me.seat=-1; rpcQ("lhl_seat",{p_code:LIVE.code,p_seat:-1}); }
@@ -1978,14 +1986,28 @@ body.drawer .rail,body.drawer .kcard{display:none}
     const hits=ray.intersectObjects(seatMeshes.concat(tableMeshes,[floorMesh]),false);
     if(!hits.length) return; const h=hits[0];
     if(ROLE!=="hv"){ coachClick(h,seatMeshes.indexOf(h.object)>=0); return; }
-    if(seatMeshes.indexOf(h.object)>=0&&h.instanceId!=null){ goSeat(h.instanceId); return; }
+    // Đang ngồi mà bấm đi chỗ khác: hỏi lại trước khi đứng dậy (bấm nhầm không mất chỗ)
+    const go=fn=>{ if(mySeat>=0&&!me.walk) askLeave(fn); else { closeLeave(); fn(); } };
+    if(seatMeshes.indexOf(h.object)>=0&&h.instanceId!=null){ const j=h.instanceId; if(j===mySeat){ closeLeave(); return; } if(seats[j]&&(seats[j].kid||seats[j].reserved)){ toast("Ghế này đã có người."); return; } go(()=>goSeat(j)); return; }
     if(tableMeshes.indexOf(h.object)>=0&&h.instanceId!=null){
       const kind=h.object===IM.btop?"box":"round"; const tb=tables.find(t=>t.kind===kind&&t.inst===h.instanceId);
       const j=tb?nearestFreeSeat(h.point,s=>s.table===tables.indexOf(tb)):-1;
-      if(j>=0) goSeat(j); else toast("Bàn này đã kín chỗ."); return;
+      if(j>=0) go(()=>goSeat(j)); else toast("Bàn này đã kín chỗ."); return;
     }
-    goFloor(h.point.clone());
+    const p=h.point.clone(); go(()=>goFloor(p));
   });
+  // Ô xác nhận "Rời chỗ" nổi trên đầu mình
+  let leaveB=null, leaveFn=null, leaveT=0;
+  function closeLeave(){ clearTimeout(leaveT); killBubble(leaveB); leaveB=null; leaveFn=null; }
+  function askLeave(fn){
+    leaveFn=fn; clearTimeout(leaveT); leaveT=setTimeout(closeLeave,6000);
+    if(leaveB&&bubbles.indexOf(leaveB)>=0) return;
+    leaveB=bubble(me,'<button class="lv-go" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V6M6 11l6-6 6 6"/></svg>Rời chỗ</button><button class="lv-x" type="button" aria-label="Ở lại">✕</button>',0,"leavep"); leaveB.h=2.2;
+    leaveB.el.querySelector(".lv-go").onclick=e=>{ e.stopPropagation(); okLeave(); };
+    leaveB.el.querySelector(".lv-x").onclick=e=>{ e.stopPropagation(); closeLeave(); };
+    knock(.3);
+  }
+  function okLeave(){ const fn=leaveFn; closeLeave(); if(fn&&mySeat>=0){ actx(); fn(); } }
   cv.addEventListener("pointercancel",()=>{down=null;cv.classList.remove("drag");});
   cv.addEventListener("wheel",e=>{ e.preventDefault(); const f=1+e.deltaY*0.0012; if(view==="me") camDist=Math.max(3.5,Math.min(16,camDist*f)); else vw.dist=Math.max(6,Math.min(orbitMax(),vw.dist*f)); },{passive:false});
   // Giới hạn phóng: xa nhất chỉ hơn góc "Toàn phòng" một chút, để cả phòng không chìm vào sương mù
@@ -2292,6 +2314,7 @@ body.drawer .rail,body.drawer .kcard{display:none}
   });
   document.addEventListener("keydown",e=>{
     if(e.target.closest&&e.target.closest("input,textarea,select,.overlay,.wz")) return;
+    if(leaveB&&leaveFn){ if(e.key==="Escape"){ closeLeave(); return; } if(e.key==="Enter"||e.key==="e"||e.key==="E"){ e.preventDefault(); okLeave(); return; } }
     if(e.key==="Escape"&&!$("side").hidden){ closeDrawer(); return; }
     if((e.key==="e"||e.key==="E")&&ROLE==="hv"&&!e.metaKey&&!e.ctrlKey){ $("aSit").click(); return; }
     const P={ArrowLeft:[40,0],ArrowRight:[-40,0],ArrowUp:[0,40],ArrowDown:[0,-40]}[e.key]; if(P&&view!=="me"){ e.preventDefault(); panView(P[0],P[1]); }
