@@ -128,6 +128,13 @@ begin
   return json_build_object('code', p_code, 'lab', r.lab, 'pass', r.pass, 'fresh', false);
 end $$;
 
+-- Danh sách phòng đang mở (theo buổi) để học viên và Lab Coach chọn. Không lộ mã vào phòng.
+create or replace function lhl_open_rooms() returns json language sql stable security definer set search_path = public as $$
+  select coalesce(json_agg(json_build_object('code', r.code, 'title', r.title, 'at', (extract(epoch from r.created_at)*1000)::bigint,
+      'n', (select count(*) from lhl_members m where m.code = r.code and m.online and m.role = 'hv')) order by r.code), '[]'::json)
+  from lhl_rooms r where r.open and r.created_at > now() - interval '18 hours'
+$$;
+
 -- Ai cũng hỏi được: phòng có tồn tại, còn mở không. Key Coach của phòng nhận thêm mã Lab Coach.
 create or replace function lhl_room_info(p_code text) returns json language sql stable security definer set search_path = public as $$
   select json_build_object('open', open, 'mine', key_uid = auth.uid(), 'lab', case when key_uid = auth.uid() then lab end, 'pass', case when key_uid = auth.uid() then pass end)

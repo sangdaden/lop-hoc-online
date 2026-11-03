@@ -37,9 +37,9 @@ Gửi hai giá trị này để dán vào `SB_URL` và `SB_KEY` ở đầu đo�
 
 ## 5. Chạy thử
 
-1. Mở https://sangdaden.github.io/lop-hoc-online/, chọn **Key Coach**, nhập **tên phòng học** (1 chữ cái + 3 số, ví dụ `H201`) và mật mã Key Coach, bấm Tiếp.
+1. Mở https://sangdaden.github.io/lop-hoc-online/, chọn **Key Coach**, nhập **tên phòng học** (1 chữ cái + 3 số, ví dụ `H201`), chọn **buổi** (ví dụ Ngày 02 · Sáng; buổi quyết định nội dung ngày lab) và mật mã Key Coach, bấm Tiếp.
 2. Mở ngăn **Cả lớp** (biểu tượng cột), mục **Phòng** có link mời, **mã vào phòng** (4 số, cho học viên) và **mã Lab Coach** (6 số).
-3. Gửi link cho học viên (link đã kèm mã vào phòng), hoặc đọc tên phòng + mã vào phòng. Lab Coach chọn vai Lab Coach, nhập tên phòng và mã Lab Coach.
+3. Gửi link cho học viên (link đã kèm mã vào phòng), hoặc đọc mã vào phòng. Học viên và Lab Coach **chọn phòng trong danh sách** các phòng đang mở, xếp theo buổi (phòng nào không có trong danh sách thì chọn "Phòng khác" để tự gõ). Học viên nhập mã vào phòng, Lab Coach nhập mã Lab Coach.
 4. Hết buổi bấm **Đóng phòng**. Buổi sau Key Coach mở lại cùng tên phòng: trang mở **buổi mới** với mã vào phòng và mã Lab Coach mới, người và đăng ký demo của buổi trước được xóa (điểm cộng vẫn giữ).
 5. Phòng đang mở mà Key Coach khác mở cùng tên phòng thì người đó nhận quyền dẫn, dữ liệu giữ nguyên.
 

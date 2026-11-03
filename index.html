@@ -1338,6 +1338,8 @@ body.drawer .rail,body.drawer .kcard{display:none}
         '<div id="eCodeRow" hidden><input id="eCode" type="password" autocomplete="off" placeholder="Mật mã do Key Coach của khóa cấp" style="width:100%;box-sizing:border-box;font:inherit;font-size:16px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--paper);color:inherit"><p class="note" id="eErr" style="margin:4px 0 0;color:var(--warn)"></p></div></div>':'')+
       (first&&HAS_NET?'<div data-step="5"><h3 class="q" id="pQ">Vào phòng nào?</h3>'+
         '<input id="pCode" class="inp" maxlength="8" autocomplete="off" autocapitalize="characters" spellcheck="false" style="font-size:20px;letter-spacing:.12em;text-transform:uppercase;padding:10px 12px">'+
+        '<select id="pRoom" class="inp" aria-label="Chọn phòng đang mở" style="font-size:16px;padding:10px 12px" hidden></select>'+
+        '<select id="pBuoi" class="inp" aria-label="Buổi học" style="font-size:16px;padding:10px 12px" hidden></select>'+
         '<input id="pPass" class="inp" type="password" autocomplete="off" style="font-size:16px;padding:10px 12px">'+
         '<p class="note" id="pNote" style="margin:0"></p><p class="note" id="pErr" style="margin:0;color:var(--warn)"></p>'+
         '<button type="button" class="btn" id="pSim" style="justify-self:start">Thử phòng mô phỏng (không có người thật)</button></div>':'')+
@@ -1377,14 +1379,34 @@ body.drawer .rail,body.drawer .kcard{display:none}
     const pCode=ov.querySelector("#pCode"), pPass=ov.querySelector("#pPass");
     const keyOk=(()=>{ try{ return !!localStorage.getItem("lhl-keyok"); }catch(e){ return false; } })();
     const lastKey=(()=>{ try{ return localStorage.getItem("lhl-keyroom")||""; }catch(e){ return ""; } })();
+    const pRoom=ov.querySelector("#pRoom"), pBuoi=ov.querySelector("#pBuoi");
+    // Học viên / Lab Coach: chọn phòng đang mở trong danh sách, nhóm theo buổi. Key Coach: gõ tên phòng và chọn buổi.
+    const CA=["Sáng","Chiều","Tối"];
+    const fillBuoi=()=>{ const h=new Date().getHours(), ca=h<12?0:h<17?1:2;
+      pBuoi.innerHTML=DAYS.filter(d=>d.pack).map(d=>CA.map((c,k)=>{ const v="Ngày "+d.so+" · "+c; return '<option value="'+v+'"'+(d.pack===DAY&&k===ca?' selected':'')+'>Buổi '+esc(v)+' · '+esc(d.pack.tieuDe)+'</option>'; }).join("")).join(""); };
+    const loadRooms=async()=>{
+      const want=pCode.value; pRoom.innerHTML='<option value="">Đang tải danh sách phòng…</option>'; pRoom.disabled=true;
+      let list=[]; try{ await netInit(); list=await rpc("lhl_open_rooms",{})||[]; }catch(e){}
+      const byBuoi={}; list.forEach(r=>{ (byBuoi[r.title||"Buổi khác"]=byBuoi[r.title||"Buổi khác"]||[]).push(r); });
+      pRoom.innerHTML='<option value="">'+(list.length?'Chọn phòng ('+list.length+' phòng đang mở)':'Chưa có phòng nào đang mở')+'</option>'+
+        Object.keys(byBuoi).sort().map(b=>'<optgroup label="Buổi '+esc(b)+'">'+byBuoi[b].map(r=>'<option value="'+esc(r.code)+'">'+esc(r.code)+' · '+r.n+' học viên trong phòng</option>').join("")+'</optgroup>').join("")+
+        '<option value="__khac">Phòng khác: tự nhập tên phòng…</option>';
+      pRoom.disabled=false;
+      if(want&&list.some(r=>r.code===want)) pRoom.value=want; else if(want){ pRoom.value="__khac"; } else if(list.length===1){ pRoom.value=list[0].code; }
+      pRoomSync(); };
+    const pRoomSync=()=>{ const v=pRoom.value; const other=v==="__khac"; pCode.hidden=!other; if(!other) pCode.value=v;
+      if(v==="") pCode.value=""; if(other&&!normCode(pCode.value)) setTimeout(()=>pCode.focus(),30); };
+    if(pRoom) pRoom.onchange=()=>{ ov.querySelector("#pErr").textContent=""; pRoomSync(); };
     const fillRoom=()=>{ if(!pCode) return; ov.querySelector("#pErr").textContent="";
       const urlP=normCode(URLQ.get("p")||""); pCode.value=urlP||(role==="key"?lastKey:"");
+      pRoom.hidden=role==="key"; pBuoi.hidden=role!=="key"; pCode.hidden=role!=="key";
+      if(role==="key") fillBuoi(); else loadRooms();
       ov.querySelector("#pQ").textContent=role==="key"?"Mở phòng học":role==="lab"?"Vào phòng với vai Lab Coach":"Vào phòng học";
       pCode.placeholder="Tên phòng, ví dụ H201";
       pPass.hidden=role==="key"&&keyOk; pPass.value=role==="hv"?String(URQ_C()):"";
       pPass.type=role==="hv"?"text":"password"; pPass.inputMode=role==="key"?"text":"numeric";
       pPass.placeholder=role==="key"?"Mật mã Key Coach":role==="lab"?"Mã Lab Coach (6 số) do Key Coach gửi":"Mã vào phòng (4 số) Key Coach đọc cho lớp";
-      ov.querySelector("#pNote").textContent=role==="key"?"Nhập tên phòng học (1 chữ cái + 3 số). Phòng đang đóng thì mở buổi mới với mã vào phòng và mã Lab Coach mới.":role==="lab"?"Phòng phải được Key Coach mở trước.":"Tên phòng và mã vào phòng ở trên màn hình lớn hoặc trong link Key Coach gửi. Mã vào phòng giúp bạn không vào nhầm phòng khác."; };
+      ov.querySelector("#pNote").textContent=role==="key"?"Nhập tên phòng học (1 chữ cái + 3 số) và chọn buổi. Phòng đang đóng thì mở buổi mới với mã vào phòng và mã Lab Coach mới.":role==="lab"?"Chọn phòng Key Coach đã mở, rồi nhập mã Lab Coach.":"Chọn phòng của bạn trong danh sách, rồi nhập mã vào phòng Key Coach đọc cho lớp. Mã giúp bạn không vào nhầm phòng khác."; };
     function URQ_C(){ const c=(URLQ.get("c")||"").replace(/\D/g,"").slice(0,6); if(c) return c; try{ return localStorage.getItem("lhl-pass-"+normCode(URLQ.get("p")||""))||""; }catch(e){ return ""; } }
     if(pCode) ov.querySelector("#pSim").onclick=async()=>{
       if(role!=="hv"&&!unlocked[role]&&!(await checkCode(role,pPass.value))){ ov.querySelector("#pErr").textContent="Phòng mô phỏng của vai "+ROLE_NAME[role]+" cần mật mã mô phỏng."; pPass.hidden=false; pPass.focus(); return; }
@@ -1395,15 +1417,16 @@ body.drawer .rail,body.drawer .kcard{display:none}
       ov.querySelector("#wDots").innerHTML=ORDER.map((_,k)=>'<i class="'+(k<=at?'on':'')+'"></i>').join("");
       const back=ov.querySelector("#eBack"); back.textContent=at>0?"Quay lại":"Hủy"; back.hidden=first&&at===0;
       ov.querySelector("#eGo").textContent=at<ORDER.length-1?"Tiếp":first?"Vào phòng":"Lưu";
-      const f=stp===5?(pCode.value&&!pPass.hidden?pPass:pCode):stp===4?inp:stp===1?(codeRow&&!codeRow.hidden?codeInp:ov.querySelector(".rolec.on")):ov.querySelector('[data-step="'+stp+'"] .on, [data-step="'+stp+'"] button');
+      const f=stp===5?(role!=="key"&&!pCode.value?pRoom:pCode.value&&!pPass.hidden?pPass:pCode):stp===4?inp:stp===1?(codeRow&&!codeRow.hidden?codeInp:ov.querySelector(".rolec.on")):ov.querySelector('[data-step="'+stp+'"] .on, [data-step="'+stp+'"] button');
       if(f) setTimeout(()=>{ f.focus(); if(f===inp) inp.select(); },30);
     };
     ov.querySelector("#eBack").onclick=()=>{ if(at>0){ at--; show(); } else ov.remove(); };
     const relook=ov.querySelector("#eRelook"); if(relook) relook.onclick=()=>{ ORDER=HAS_NET?[1,5,2,3,4]:[1,2,3,4]; at=ORDER.indexOf(2); show(); };
     ov.querySelector("form").onsubmit=async e=>{ e.preventDefault();
       if(ORDER[at]===5){ const go=ov.querySelector("#eGo"), err=ov.querySelector("#pErr"); go.disabled=true; err.textContent="Đang kết nối…";
-        let r; try{ r=await netPrepare(role,pCode.value,pPass.value); }catch(x){ r="Không vào được phòng: "+(x.message||x); }
-        go.disabled=false; if(typeof r==="string"){ err.textContent=r; if(/mật mã|mã Lab/.test(r)){ pPass.hidden=false; pPass.select(); } else pCode.select(); return; }
+        if(role!=="key"&&!normCode(pCode.value)){ go.disabled=false; err.textContent="Chọn phòng trong danh sách trước."; pRoom.focus(); return; }
+        let r; try{ r=await netPrepare(role,pCode.value,pPass.value,pBuoi.value); }catch(x){ r="Không vào được phòng: "+(x.message||x); }
+        go.disabled=false; if(typeof r==="string"){ err.textContent=r; if(/mật mã|mã Lab|mã vào phòng/.test(r)){ pPass.hidden=false; pPass.select(); } else pCode.select(); return; }
         err.textContent=""; pending=r; at++; show(); return; }
       if(!HAS_NET&&ORDER[at]===1&&!unlocked[role]&&!(await checkCode(role,codeInp.value))){ ov.querySelector("#eErr").textContent=codeInp.value?"Sai mật mã. Học viên thì chọn “Học viên”, không cần mật mã.":"Nhập mật mã cho vai này."; codeInp.select(); return; }
       if(at<ORDER.length-1){ at++; show(); return; }
@@ -2265,13 +2288,14 @@ body.drawer .rail,body.drawer .kcard{display:none}
   async function rpc(f,args){ const {data,error}=await NET.sb.rpc(f,args); if(error) throw error; return data; }
   const rpcQ=(f,args)=>rpc(f,args).catch(e=>{ console.warn(f,e); if(/dong/.test(e.message||"")) toast("Phòng đã đóng."); });
   // Bước "Vào phòng" của màn vào: kiểm mã và vào phòng ở máy chủ. Trả về {code,role,...} nếu được, hoặc câu báo lỗi.
-  async function netPrepare(role,codeIn,pass){
+  async function netPrepare(role,codeIn,pass,buoi){
     try{ await netInit(); }catch(e){ return "Không kết nối được máy chủ phòng. Kiểm tra mạng rồi thử lại."; }
     let code=normCode(codeIn), lab="", jpass="", fresh=false;
     if(!ROOM_RE.test(code)) return "Tên phòng gồm 1 chữ cái và 3 số, ví dụ H201.";
     if(role==="key"){
       if(!(await rpc("lhl_key_login",{p_pass:pass?String(pass).trim():null}))) return pass?"Sai mật mã Key Coach.":"Nhập mật mã Key Coach.";
-      const r=await rpc("lhl_create_room",{p_code:code,p_title:"Ngày "+DAY.so}); lab=r.lab; jpass=r.pass; fresh=r.fresh;
+      const d=DAYS.find(x=>x.pack&&buoi&&buoi.indexOf("Ngày "+x.so+" ")===0); if(d&&d.pack!==DAY){ loadDay(d.pack); drawWB(); renderDays(); }
+      const r=await rpc("lhl_create_room",{p_code:code,p_title:buoi||"Ngày "+DAY.so}); lab=r.lab; jpass=r.pass; fresh=r.fresh;
     } else if(!String(pass||"").trim()) return role==="lab"?"Nhập mã Lab Coach do Key Coach gửi.":"Nhập mã vào phòng (4 số) Key Coach đọc cho lớp.";
     const j=await rpc("lhl_join",{p_code:code,p_role:role,p_pass:role==="key"?"":String(pass||"").trim(),p_name:myName,p_look:myLook});
     if(j.err) return {none:"Phòng "+code+" chưa mở. Key Coach phải mở phòng trước, kiểm tra lại tên phòng.",closed:"Phòng "+code+" đã đóng.",pass:"Sai mã vào phòng "+code+". Kiểm tra tên phòng và mã trên màn hình lớn.",labpass:"Sai mã Lab Coach của phòng "+code+".",notkey:"Phòng này do Key Coach khác giữ."}[j.err]||"Không vào được phòng ("+j.err+").";
