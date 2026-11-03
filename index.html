@@ -984,7 +984,9 @@ body.drawer .rail,body.drawer .kcard{display:none}
   }
   function bow(k){ k.bow=k.bowDur=1.0; }
   function nod(k){ k.nod=0.45; }
-  function walkTo(k,to,speed,done){ setSit(k,false); k.walk={to:to.clone(),speed:speed||2.2,done}; }
+  function walkTo(k,to,speed,done){ setSit(k,false); to=to.clone(); to.y=0;
+    if(!done&&!navFree(to.x,to.z)){ const f=navNearest(to.x,to.z); if(f) to=f; } // bấm vào bàn/đồ vật: dừng ở chỗ trống gần nhất
+    k.walk={to,path:navPath(k.g.position,to)||[],speed:speed||2.2,done}; }
 
   // ---------- layouts ----------
   // seat: {pos, yaw (facing), dir (unit facing), table, lap (laptop distance)}
@@ -1013,9 +1015,59 @@ body.drawer .rail,body.drawer .kcard{display:none}
   function place(m,i,x,y,z,ry,rx,sx,sy,sz){dummy.position.set(x,y,z);dummy.rotation.set(rx||0,ry||0,0);dummy.scale.set(sx||1,sy||1,sz||1);dummy.updateMatrix();m.setMatrixAt(i,dummy.matrix);}
   function box(w,h,d,mat,x,y,z,ry){const m=new T.Mesh(new T.BoxGeometry(w,h,d),mat);m.position.set(x,y,z);if(ry)m.rotation.y=ry;room.add(m);return m;}
   function plane(w,h,mat,x,y,z,ry,rx){const m=new T.Mesh(new T.PlaneGeometry(w,h),mat);m.position.set(x,y,z);m.rotation.order="YXZ";m.rotation.set(rx||0,ry||0,0);room.add(m);return m;}
+  // ---------- va chạm: bàn, ghế, tường, đồ trang trí là vật cản; người đi vòng theo lưới (A*) ----------
+  const NAV={c:0.2,R:0.22,x0:0,z0:0,nx:0,nz:0,b:null,g:null,p:null,st:null,cl:null,stamp:0}, OBS=[];
+  function obsBox(x,z,w,d){ OBS.push([0,x,z,w/2,d/2]); }
+  function obsCirc(x,z,r){ OBS.push([1,x,z,r]); }
+  function buildNav(){
+    const c=NAV.c, R=NAV.R, m=R+0.1; NAV.x0=-W/2; NAV.z0=zFront; const nx=NAV.nx=Math.ceil(W/c), nz=NAV.nz=Math.ceil((zBack-zFront)/c), n=nx*nz;
+    const b=NAV.b=new Uint8Array(n); NAV.g=new Float32Array(n); NAV.p=new Int32Array(n); NAV.st=new Uint32Array(n); NAV.cl=new Uint32Array(n); NAV.stamp=0;
+    for(let j=0;j<nz;j++) for(let i=0;i<nx;i++){ const x=NAV.x0+(i+.5)*c, z=NAV.z0+(j+.5)*c; if(x<-W/2+m||x>W/2-m||z<zFront+m||z>zBack-m) b[j*nx+i]=1; }
+    OBS.forEach(o=>{ const hx=o[3]+R, hz=(o[0]?o[3]:o[4])+R;
+      const i0=Math.max(0,Math.floor((o[1]-hx-NAV.x0)/c)), i1=Math.min(nx-1,Math.floor((o[1]+hx-NAV.x0)/c)), j0=Math.max(0,Math.floor((o[2]-hz-NAV.z0)/c)), j1=Math.min(nz-1,Math.floor((o[2]+hz-NAV.z0)/c));
+      for(let j=j0;j<=j1;j++) for(let i=i0;i<=i1;i++){ const dx=NAV.x0+(i+.5)*c-o[1], dz=NAV.z0+(j+.5)*c-o[2];
+        if(o[0]){ if(dx*dx+dz*dz<=hx*hx) b[j*nx+i]=1; }
+        else { const ex=Math.max(0,Math.abs(dx)-o[3]), ez=Math.max(0,Math.abs(dz)-o[4]); if(ex*ex+ez*ez<=R*R) b[j*nx+i]=1; } } });
+  }
+  function navCell(x,z){ const i=Math.floor((x-NAV.x0)/NAV.c), j=Math.floor((z-NAV.z0)/NAV.c); return i<0||j<0||i>=NAV.nx||j>=NAV.nz?-1:j*NAV.nx+i; }
+  function navFree(x,z){ if(!NAV.b) return true; const k=navCell(x,z); return k>=0&&!NAV.b[k]; }
+  function navPt(k){ return new T.Vector3(NAV.x0+(k%NAV.nx+.5)*NAV.c,0,NAV.z0+((k/NAV.nx|0)+.5)*NAV.c); }
+  function navNearest(x,z){ if(!NAV.b) return null; const nx=NAV.nx, nz=NAV.nz, ci=Math.floor((x-NAV.x0)/NAV.c), cj=Math.floor((z-NAV.z0)/NAV.c);
+    for(let r=0;r<Math.max(nx,nz);r++){ let best=-1, bd=1e9;
+      for(let j=cj-r;j<=cj+r;j++) for(let i=ci-r;i<=ci+r;i++){ if(Math.max(Math.abs(i-ci),Math.abs(j-cj))!==r||i<0||j<0||i>=nx||j>=nz||NAV.b[j*nx+i]) continue;
+        const p=navPt(j*nx+i), d=(p.x-x)**2+(p.z-z)**2; if(d<bd){bd=d;best=j*nx+i;} }
+      if(best>=0) return navPt(best); }
+    return null; }
+  function navLos(a,b){ const dx=b.x-a.x, dz=b.z-a.z, n=Math.ceil(Math.hypot(dx,dz)/(NAV.c*0.4)); for(let s=0;s<=n;s++){ if(!navFree(a.x+dx*s/n,a.z+dz*s/n)) return false; } return true; }
+  // Trả về các điểm cần đi qua (điểm cuối là đích). null = không có đường, khi đó đi thẳng như cũ.
+  function navPath(from,to){
+    if(!NAV.b) return null;
+    const out=[]; let a=from;
+    if(!navFree(from.x,from.z)){ a=navNearest(from.x,from.z); if(!a) return null; out.push(a); } // đang đứng lẫn trong ghế/bàn: bước ra chỗ trống trước
+    let g=to, gIn=!navFree(to.x,to.z); if(gIn){ g=navNearest(to.x,to.z); if(!g) return null; } // đích là ghế: tới chỗ trống sát ghế rồi mới vào
+    if(navLos(a,g)){ out.push(g); if(gIn) out.push(to); return out; }
+    const nx=NAV.nx, b=NAV.b, G=NAV.g, P=NAV.p, ST=NAV.st, CL=NAV.cl, st=++NAV.stamp, s=navCell(a.x,a.z), e=navCell(g.x,g.z);
+    if(s<0||e<0) return null;
+    const ei=e%nx, ej=e/nx|0, h=k=>{ const dx=Math.abs(k%nx-ei), dz=Math.abs((k/nx|0)-ej); return Math.max(dx,dz)+0.414*Math.min(dx,dz); };
+    const H=[], push=(f,k)=>{ H.push([f,k]); let i=H.length-1; while(i>0){ const q=(i-1)>>1; if(H[q][0]<=H[i][0]) break; [H[q],H[i]]=[H[i],H[q]]; i=q; } };
+    const pop=()=>{ const top=H[0], last=H.pop(); if(H.length){ H[0]=last; let i=0; for(;;){ const l=2*i+1, r=l+1; let m=i; if(l<H.length&&H[l][0]<H[m][0]) m=l; if(r<H.length&&H[r][0]<H[m][0]) m=r; if(m===i) break; [H[m],H[i]]=[H[i],H[m]]; i=m; } } return top; };
+    G[s]=0; P[s]=-1; ST[s]=st; push(h(s),s); let found=false;
+    const D=[[1,0,1],[-1,0,1],[0,1,1],[0,-1,1],[1,1,1.414],[1,-1,1.414],[-1,1,1.414],[-1,-1,1.414]];
+    while(H.length){ const [,k]=pop(); if(CL[k]===st) continue; CL[k]=st; if(k===e){found=true;break;}
+      const ki=k%nx, kj=k/nx|0;
+      for(const [di,dj,w] of D){ const i=ki+di, j=kj+dj; if(i<0||j<0||i>=nx||j>=NAV.nz) continue; const q=j*nx+i; if(b[q]||CL[q]===st) continue;
+        if(di&&dj&&(b[kj*nx+i]||b[j*nx+ki])) continue; // không lách qua góc
+        const ng=G[k]+w; if(ST[q]!==st||ng<G[q]){ ST[q]=st; G[q]=ng; P[q]=k; push(ng+h(q),q); } } }
+    if(!found) return null;
+    const cells=[]; for(let k=P[e];k>=0&&k!==s;k=P[k]) cells.push(navPt(k)); cells.reverse(); cells.push(g);
+    // kéo thẳng đường: bỏ các điểm giữa khi nhìn thấy nhau
+    let cur=a, i=0; while(i<cells.length){ let j=cells.length-1; while(j>i&&!navLos(cur,cells[j])) j--; out.push(cells[j]); cur=cells[j]; i=j+1; }
+    if(gIn) out.push(to);
+    return out;
+  }
   function buildHall(){
     if(room){ scene.remove(room); room.traverse(o=>{ if(o.geometry) o.geometry.dispose(); if(o.material&&o.material.map&&o.material.userData.own){o.material.map.dispose();o.material.dispose();} }); }
-    room=new T.Group(); scene.add(room);
+    room=new T.Group(); scene.add(room); OBS.length=0;
     let minX=1e9,maxX=-1e9,minZ=1e9,maxZ=-1e9;
     seats.forEach(s=>{minX=Math.min(minX,s.pos.x);maxX=Math.max(maxX,s.pos.x);minZ=Math.min(minZ,s.pos.z);maxZ=Math.max(maxZ,s.pos.z);});
     W=Math.max(16,(maxX-minX)+7); zFront=minZ-5.6; zBack=maxZ+4.2; const D=zBack-zFront, H=4.6, cz=(zBack+zFront)/2;
@@ -1041,7 +1093,7 @@ body.drawer .rail,body.drawer .kcard{display:none}
     const fz=zFront+0.06;
     box(3.2,2.0,0.05,M.metal,-W*0.18,1.95,fz); plane(3.1,1.9,M.wb,-W*0.18,1.95,fz+0.03,0);
     box(4.5,2.6,0.12,M.black,W*0.14,2.15,fz+0.04); plane(4.3,2.42,M.tv,W*0.14,2.15,fz+0.11,0);
-    box(1.8,0.05,0.8,M.tabletop,-W*0.32,0.76,zFront+1.6); box(1.7,0.72,0.06,M.metal,-W*0.32,0.38,zFront+1.95);
+    box(1.8,0.05,0.8,M.tabletop,-W*0.32,0.76,zFront+1.6); box(1.7,0.72,0.06,M.metal,-W*0.32,0.38,zFront+1.95); obsBox(-W*0.32,zFront+1.6,1.8,0.8);
     plane(1.4,2.4,M.door,doorPos.x,1.2,zBack-0.05,Math.PI);
     // tables
     const boxes=tables.filter(t=>t.kind==="box"), rounds=tables.filter(t=>t.kind==="round");
@@ -1051,6 +1103,7 @@ body.drawer .rail,body.drawer .kcard{display:none}
     IM.rtop=im(new T.CylinderGeometry(1,1,1,40),M.tabletop,rounds.length);
     IM.rped=im(new T.CylinderGeometry(0.07,0.07,0.72,10),M.metal,rounds.length);
     IM.rbase=im(new T.CylinderGeometry(0.4,0.42,0.04,24),M.metal,rounds.length);
+    boxes.forEach(t=>obsBox(t.x,t.z,t.w,t.d)); rounds.forEach(t=>obsCirc(t.x,t.z,t.r));
     rounds.forEach((t,i)=>{ t.inst=i; place(IM.rtop,i,t.x,0.74,t.z,0,0,t.r,0.05,t.r); place(IM.rped,i,t.x,0.36,t.z); place(IM.rbase,i,t.x,0.02,t.z); });
     // chairs + laptops per seat
     const n=seats.length;
@@ -1063,12 +1116,12 @@ body.drawer .rail,body.drawer .kcard{display:none}
     seats.forEach((s,i)=>{
       const p=s.pos, d=s.dir;
       place(IM.cseat,i,p.x,0.47,p.z,s.yaw); place(IM.cback,i,p.x-d.x*0.25,0.8,p.z-d.z*0.25,s.yaw,-0.08);
-      place(IM.cpole,i,p.x,0.23,p.z); place(IM.cfoot,i,p.x,0.03,p.z,s.yaw);
+      place(IM.cpole,i,p.x,0.23,p.z); place(IM.cfoot,i,p.x,0.03,p.z,s.yaw); obsCirc(p.x-d.x*0.05,p.z-d.z*0.05,0.26);
       place(IM.lap,i,p.x+d.x*s.lap,0.775,p.z+d.z*s.lap,s.yaw);
       place(IM.scr,i,p.x+d.x*(s.lap+0.13),0.9,p.z+d.z*(s.lap+0.13),s.yaw,-0.22);
     });
     Object.values(IM).forEach(m=>{ if(m.parent===room) m.instanceMatrix.needsUpdate=true; });
-    buildDecor();
+    buildDecor(); buildNav();
     Object.values(room.children).forEach(m=>{ if(m.isInstancedMesh){ m.instanceMatrix.needsUpdate=true; if(m.instanceColor) m.instanceColor.needsUpdate=true; } });
     scene.fog.near=20; scene.fog.far=Math.max(46,D+30);
   }
@@ -1224,7 +1277,7 @@ body.drawer .rail,body.drawer .kcard{display:none}
     const greens=[0x5f8f5e,0x78a46f,0x4f7f55,0x6a9a5c];
     const PL=[[-W/2+.55,zFront+1.7],[W/2-.55,zFront+1.7],[W/2-.5,zBack-.5],[-W/2+.55,cz+.3]];
     const pot=im(new T.CylinderGeometry(.34,.26,.6,16),m.pot,PL.length), fol=im(new T.IcosahedronGeometry(1,1),M.white,PL.length*4);
-    PL.forEach(([x,z],i)=>{ place(pot,i,x,.3,z); [[0,.95,0,.42],[.12,1.35,.05,.38],[-.1,1.7,-.04,.32],[.05,2.0,.06,.24]].forEach(([ox,y,oz,s],j)=>{ place(fol,i*4+j,x+ox,y,z+oz,j,0,s,s*1.1,s); fol.setColorAt(i*4+j,col.setHex(greens[(i+j)%4])); }); });
+    PL.forEach(([x,z],i)=>{ place(pot,i,x,.3,z); obsCirc(x,z,.38); [[0,.95,0,.42],[.12,1.35,.05,.38],[-.1,1.7,-.04,.32],[.05,2.0,.06,.24]].forEach(([ox,y,oz,s],j)=>{ place(fol,i*4+j,x+ox,y,z+oz,j,0,s,s*1.1,s); fol.setColorAt(i*4+j,col.setHex(greens[(i+j)%4])); }); });
     const TBL=TYPE==="rows"?[]:tables;
     if(TBL.length){
       const sp=im(new T.CylinderGeometry(.08,.065,.12,12),m.potS,TBL.length), sf=im(new T.IcosahedronGeometry(1,1),M.white,TBL.length);
@@ -1239,15 +1292,15 @@ body.drawer .rail,body.drawer .kcard{display:none}
     // --- góc nghỉ (góc sau bên trái) ---
     const gx=-W/2+2.0, gz=zBack-1.7;
     const rug=new T.Mesh(new T.CircleGeometry(1.25,40),m.rug); rug.position.set(gx,.006,gz); rug.rotation.x=-Math.PI/2; room.add(rug);
-    const tt=new T.Mesh(new T.CylinderGeometry(.36,.36,.04,28),m.woodL); tt.position.set(gx,.44,gz); room.add(tt);
+    const tt=new T.Mesh(new T.CylinderGeometry(.36,.36,.04,28),m.woodL); tt.position.set(gx,.44,gz); room.add(tt); obsCirc(gx,gz,.36);
     const tl2=new T.Mesh(new T.CylinderGeometry(.05,.05,.42,8),m.wood); tl2.position.set(gx,.21,gz); room.add(tl2);
     const cup=new T.Mesh(new T.SphereGeometry(.09,14,10),m.cup); cup.position.set(gx,.53,gz); room.add(cup);
-    const bb=im(new T.SphereGeometry(.4,18,12),M.white,3); [[-.85,-.35,0xb9c9a6],[.75,-.5,0xe2cfa8],[.1,.9,0xcbbfe6]].forEach(([ox,oz,c],i)=>{ place(bb,i,gx+ox,.24,gz+oz,0,0,1,.6,1); bb.setColorAt(i,col.setHex(c)); });
-    box(.36,.95,.36,m.disp,-W/2+.45,.475,zBack-.45);
+    const bb=im(new T.SphereGeometry(.4,18,12),M.white,3); [[-.85,-.35,0xb9c9a6],[.75,-.5,0xe2cfa8],[.1,.9,0xcbbfe6]].forEach(([ox,oz,c],i)=>{ place(bb,i,gx+ox,.24,gz+oz,0,0,1,.6,1); bb.setColorAt(i,col.setHex(c)); obsCirc(gx+ox,gz+oz,.4); });
+    box(.36,.95,.36,m.disp,-W/2+.45,.475,zBack-.45); obsBox(-W/2+.45,zBack-.45,.36,.36);
     const bot=new T.Mesh(new T.CylinderGeometry(.14,.14,.4,16),m.water); bot.position.set(-W/2+.45,1.15,zBack-.45); room.add(bot);
     plane(1.3,.32,m.plaque,-W/2+.05,1.85,zBack-1.7,Math.PI/2);
     // --- kệ sách thấp (tường phải, cạnh cửa) ---
-    const kx=W/2-.22, kz=zBack-2.3; box(.36,1.25,2.4,m.woodL,kx,.625,kz);
+    const kx=W/2-.22, kz=zBack-2.3; box(.36,1.25,2.4,m.woodL,kx,.625,kz); obsBox(kx,kz,.4,2.4);
     const kr=drng(77), bc=[0x34435f,0xc9463d,0xd8a93b,0x2f7f72,0x8a7a55,0xe6dcc6,0x7a5bd4], bk=im(new T.BoxGeometry(1,1,1),M.white,54);
     for(let i=0;i<54;i++){ const sh=(i/18)|0, j=i%18, hg=.24+kr()*.1; place(bk,i,kx-.03,.1+sh*.4+hg/2,kz-1.08+j*.125,0,0,.26,hg,.1); bk.setColorAt(i,col.setHex(bc[(kr()*bc.length)|0])); }
     const shf=im(new T.BoxGeometry(.38,.03,2.36),m.wood,3); for(let i=0;i<3;i++) place(shf,i,kx-.01,.06+i*.4,kz);
@@ -2430,7 +2483,9 @@ body.drawer .rail,body.drawer .kcard{display:none}
   resize();
   function animKid(k,dt,t){
     if(k.walk){
-      tmp.subVectors(k.walk.to,k.g.position); tmp.y=0; const d=tmp.length();
+      let wp=k.walk.path&&k.walk.path.length?k.walk.path[0]:k.walk.to;
+      tmp.subVectors(wp,k.g.position); tmp.y=0; let d=tmp.length();
+      while(d<0.04&&k.walk.path&&k.walk.path.length){ k.walk.path.shift(); wp=k.walk.path.length?k.walk.path[0]:k.walk.to; tmp.subVectors(wp,k.g.position); tmp.y=0; d=tmp.length(); }
       if(d<0.04){ k.g.position.x=k.walk.to.x; k.g.position.z=k.walk.to.z; k.g.position.y=0; const done=k.walk.done; k.walk=null; k.legL.rotation.x=k.legR.rotation.x=0; if(done) done(); }
       else { const step=Math.min(d,k.walk.speed*dt); tmp.multiplyScalar(step/d); k.g.position.add(tmp); k.g.rotation.y=Math.atan2(tmp.x,tmp.z); const sw=Math.sin(t*11+k.ph)*0.55; k.legL.rotation.x=sw; k.legR.rotation.x=-sw; k.g.position.y=Math.abs(Math.sin(t*11+k.ph))*0.04; }
     }
