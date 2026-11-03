@@ -630,6 +630,7 @@ body.drawer .rail,body.drawer .kcard{display:none}
         <h3>Điểm cộng chờ xác nhận <span class="demo-state" id="bonQN">0</span></h3>
         <ul class="bonl" id="bonQ"></ul>
         <p class="note">Học viên tự ghi lý do. Coach xác nhận thì mới tính. Điểm chỉ học viên đó và coach thấy.</p>
+        <div class="toolbar"><button class="btn" id="bonDl" title="Tải về máy danh sách điểm cộng cả buổi (mở được bằng Excel)">Tải danh sách điểm cộng</button></div>
       </div>
       <div class="panel" data-tab="lop">
         <h3>Hàng chờ Lab Coach</h3>
@@ -2737,7 +2738,7 @@ body.drawer .rail,body.drawer .kcard{display:none}
   },2500);
 
   // Điểm cộng: học viên ghi lý do, Lab/Key Coach xác nhận. Chỉ học viên đó và coach thấy, không xếp hạng.
-  const BON={mine:[],q:[],id:0};
+  const BON={mine:[],q:[],id:0,all:[]};
   const BON_LY=["Giúp bạn cùng bàn gỡ lỗi","Chia sẻ prompt hay cho nhóm","Góp ý phản biện cho nhóm khác","Tóm tắt ý cả nhóm khi pitch","Tìm ra nguồn kiểm chứng cho nhóm"];
   const bonOk=()=>BON.mine.filter(b=>b.st==="ok").length;
   function bonusDlg(){
@@ -2753,7 +2754,7 @@ body.drawer .rail,body.drawer .kcard{display:none}
       e.preventDefault(); const v=ta.value.trim().replace(/\s+/g," ");
       if(v.length<5){ toast("Ghi lý do rõ hơn một chút (ít nhất 5 ký tự)."); return; }
       const b={id:++BON.id,ly:v,st:"cho",at:performance.now(),seat:mySeat,me:true};
-      BON.mine.push(b); if(!LIVE.on) BON.q.push(b); knock(.5); ov.remove();
+      BON.mine.push(b); if(!LIVE.on){ BON.q.push(b); BON.all.push(b); } knock(.5); ov.remove();
       if(LIVE.on) rpc("lhl_bonus_add",{p_code:LIVE.code,p_ly:v}).then(id=>{ b.id=id; render(); }).catch(()=>{ toast("Không gửi được điểm cộng."); BON.mine.splice(BON.mine.indexOf(b),1); render(); });
       undoToast("Đã gửi điểm cộng, chờ coach xác nhận.",()=>bonusWithdraw(b.id)); render();
     };
@@ -2762,7 +2763,7 @@ body.drawer .rail,body.drawer .kcard{display:none}
   function bonusWithdraw(id){
     const b=BON.mine.find(x=>String(x.id)===String(id)); if(!b||b.st!=="cho"){ toast("Coach đã xác nhận rồi, không rút lại được."); render(); return; }
     if(LIVE.on) rpc("lhl_bonus_del",{p_code:LIVE.code,p_id:b.id}).then(ok=>{ if(!ok) toast("Coach vừa xác nhận, không rút lại được nữa."); }).catch(()=>{});
-    BON.mine.splice(BON.mine.indexOf(b),1); const q=BON.q.indexOf(b); if(q>=0) BON.q.splice(q,1);
+    BON.mine.splice(BON.mine.indexOf(b),1); const q=BON.q.indexOf(b); if(q>=0) BON.q.splice(q,1); const a=BON.all.indexOf(b); if(a>=0) BON.all.splice(a,1);
     toast("Đã rút lại điểm cộng."); render();
   }
   function bonusDecide(id,ok){
@@ -2787,6 +2788,29 @@ body.drawer .rail,body.drawer .kcard{display:none}
   function setHTML(id,h){ const el=$(id); if(el.__h!==h){ el.__h=h; el.innerHTML=h; } }
   $("bonMine").onclick=e=>{ const x=e.target.closest("[data-w]"); if(!x) return; if(undoEl){ undoEl.remove(); undoEl=null; } bonusWithdraw(x.dataset.w); };
   $("bonQ").onclick=e=>{ const x=e.target.closest("[data-ok],[data-no]"); if(!x) return; actx(); bonusDecide(x.dataset.ok||x.dataset.no,!!x.dataset.ok); };
+  // Tải danh sách điểm cộng cả buổi: mỗi học viên một dòng, mở được bằng Excel (CSV có BOM để giữ dấu tiếng Việt).
+  async function bonusAll(){
+    if(LIVE.on) return await rpc("lhl_bonus_list",{p_code:LIVE.code});
+    return BON.all.map(b=>({uid:b.me?"me":"s"+b.seat,name:b.me?(me.name||"Bạn"):b.name,seat:b.seat,ly:b.ly,st:b.st,at:b.at}));
+  }
+  function bonusSum(rows){
+    const by={}, out=[];
+    rows.forEach(b=>{ if(b.st==="bo") return; const k=b.uid||b.name; let p=by[k]; if(!p){ p=by[k]={name:b.name||"(đã rời phòng)",seat:b.seat,ok:0,cho:0,ly:[]}; out.push(p); }
+      if(b.name) p.name=b.name; if(b.seat>=0) p.seat=b.seat; if(b.st==="ok"){ p.ok++; p.ly.push(b.ly); } else p.cho++; });
+    return out.sort((a,b)=>a.name.localeCompare(b.name,"vi"));
+  }
+  async function bonusDownload(){
+    let rows; try{ rows=await bonusAll(); }catch(e){ toast("Không tải được danh sách điểm cộng."); return false; }
+    const ppl=bonusSum(rows||[]), q=v=>'"'+String(v==null?"":v).replace(/"/g,'""')+'"';
+    const lines=[["STT","Họ tên","Nhóm/bàn","Điểm cộng đã xác nhận","Đang chờ xác nhận","Lý do đã xác nhận"].map(q).join(",")];
+    ppl.forEach((p,i)=>lines.push([i+1,p.name,p.seat>=0?grpName(p.seat):"",p.ok,p.cho,p.ly.join(" | ")].map(q).join(",")));
+    const d=new Date(), ds=d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+    const a=document.createElement("a"); a.href=URL.createObjectURL(new Blob(["\ufeff"+lines.join("\r\n")],{type:"text/csv;charset=utf-8"}));
+    a.download="diem-cong-"+(LIVE.on?LIVE.code+"-":"")+ds+".csv"; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href),4000);
+    toast(ppl.length?"Đã tải danh sách điểm cộng ("+ppl.length+" học viên).":"Đã tải danh sách (chưa có ai có điểm cộng).");
+    return {ppl:ppl.length,ok:ppl.reduce((n,p)=>n+p.ok,0),cho:ppl.reduce((n,p)=>n+p.cho,0)};
+  }
+  $("bonDl").onclick=()=>{ actx(); bonusDownload(); };
   $("aBonus").onclick=()=>{ actx(); bonusDlg(); };
   $("cBonus").onclick=()=>{ actx(); openDrawer("lop"); const el=$("bonusQ"); if(el&&el.scrollIntoView) el.scrollIntoView({block:"start",behavior:"smooth"}); };
   // Mô phỏng: bạn cùng lớp thỉnh thoảng gửi điểm cộng; khi bạn là học viên, coach mô phỏng xác nhận sau vài giây.
@@ -2797,7 +2821,7 @@ body.drawer .rail,body.drawer .kcard{display:none}
       BON.q.slice().forEach(b=>{ if(now-b.at<(b.me?7000:4000)) return; if(b.me){ bonusDecide(b.id,true); const s=seats[b.seat]; const ta=tas.find(t=>s&&t.zone===s.zone)||tas[0]; if(ta) bubble(ta,"Đã xác nhận điểm cộng của bạn",2200,"ta"); toast("Coach đã xác nhận điểm cộng: "+b.ly); } else bonusDecide(b.id,true); });
     }
     const occ=seats.map((s,i)=>s.kid&&s.kid!==me?i:-1).filter(i=>i>=0);
-    if(occ.length&&Math.random()<.3&&BON.q.filter(b=>!b.me).length<10){ const i=pick(occ); BON.q.push({id:++BON.id,ly:pick(BON_LY),st:"cho",at:now,seat:i,name:seats[i].name}); }
+    if(occ.length&&Math.random()<.3&&BON.q.filter(b=>!b.me).length<10){ const i=pick(occ); { const nb={id:++BON.id,ly:pick(BON_LY),st:"cho",at:now,seat:i,name:seats[i].name}; BON.q.push(nb); BON.all.push(nb); } }
     render();
   },3000);
 
@@ -3055,9 +3079,28 @@ body.drawer .rail,body.drawer .kcard{display:none}
     drawTV();
   }
   $("liveCopy").onclick=()=>{ const v=$("liveLink").value; (navigator.clipboard?navigator.clipboard.writeText(v):Promise.reject()).then(()=>toast("Đã chép link mời."),()=>{ $("liveLink").select(); toast("Đã chọn sẵn link, bấm Ctrl+C để chép."); }); };
-  $("liveClose").onclick=async()=>{ if(ROLE!=="key") return; const open=LIVE.closed;
-    if(!open&&!confirm("Đóng phòng "+fmtCode(LIVE.code)+"? Mọi người sẽ không thao tác được nữa.")) return;
-    try{ await rpc("lhl_open",{p_code:LIVE.code,p_open:open}); LIVE.closed=!open; renderLive(); toast(open?"Đã mở lại phòng.":"Đã đóng phòng."); }catch(e){ toast("Không đổi được trạng thái phòng."); } };
+  async function setOpen(open){
+    try{ await rpc("lhl_open",{p_code:LIVE.code,p_open:open}); LIVE.closed=!open; renderLive(); toast(open?"Đã mở lại phòng.":"Đã đóng phòng."); }catch(e){ toast("Không đổi được trạng thái phòng."); } }
+  $("liveClose").onclick=()=>{ if(ROLE!=="key") return; if(LIVE.closed){ setOpen(true); return; } closeDlg(); };
+  // Trước khi đóng phòng: nhắc Key Coach tải danh sách điểm cộng về máy
+  async function closeDlg(){
+    const ov=document.createElement("div"); ov.className="overlay";
+    ov.innerHTML='<div class="card" role="dialog" aria-label="Đóng phòng"><h3>Đóng phòng '+esc(fmtCode(LIVE.code))+'?</h3>'+
+      '<p style="margin:0">Trước khi đóng, hãy tải danh sách điểm cộng về máy. Đóng rồi thì không ai thao tác được nữa, và mở lại phòng là bắt đầu buổi mới.</p>'+
+      '<p class="note" id="clSum" style="margin:0">Đang đếm điểm cộng…</p>'+
+      '<div class="row"><button class="btn primary" type="button" id="clDl">Tải danh sách điểm cộng</button><button class="btn" type="button" id="clGo">Đóng phòng</button><button class="btn" type="button" id="clNo">Để sau</button></div></div>';
+    sceneEl.appendChild(ov);
+    const sum=ov.querySelector("#clSum"), dl=ov.querySelector("#clDl"), go=ov.querySelector("#clGo"); dl.focus();
+    const done=()=>{ ov.remove(); document.removeEventListener("keydown",onKey); };
+    const onKey=e=>{ if(e.key==="Escape") done(); }; document.addEventListener("keydown",onKey);
+    bonusAll().then(rows=>{ const p=bonusSum(rows||[]), ok=p.reduce((n,x)=>n+x.ok,0), cho=p.reduce((n,x)=>n+x.cho,0);
+      sum.textContent=p.length?p.length+" học viên có "+ok+" điểm đã xác nhận"+(cho?". Còn "+cho+" điểm đang chờ xác nhận, đóng phòng thì không xác nhận được nữa.":"."):"Buổi này chưa có ai gửi điểm cộng."; },
+      ()=>{ sum.textContent="Chưa đếm được điểm cộng. Bạn vẫn bấm tải được."; });
+    dl.onclick=async()=>{ dl.disabled=true; const r=await bonusDownload(); dl.disabled=false;
+      if(r){ dl.textContent="✓ Đã tải, tải lại"; dl.classList.remove("primary"); go.classList.add("primary"); go.focus(); } };
+    go.onclick=()=>{ done(); setOpen(false); };
+    ov.querySelector("#clNo").onclick=done;
+  }
 
   // ---------- frame loop ----------
   const tmp=new T.Vector3(), look=new T.Vector3();

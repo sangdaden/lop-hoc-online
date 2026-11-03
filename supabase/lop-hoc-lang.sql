@@ -283,6 +283,19 @@ begin
   update lhl_bonus set st = p_st where id = p_id and code = p_code;
 end $$;
 
+-- Danh sách điểm cộng của buổi này để coach tải về (cả khi phòng đã đóng, để Key Coach lỡ quên vẫn tải được)
+create or replace function lhl_bonus_list(p_code text) returns json language plpgsql stable security definer set search_path = public as $$
+declare r lhl_rooms;
+begin
+  if auth.uid() is null then raise exception 'chua dang nhap'; end if;
+  select * into r from lhl_rooms where code = p_code;
+  if not found then raise exception 'khong co phong'; end if;
+  if r.key_uid <> auth.uid() and coalesce(lhl_role(p_code), '') not in ('lab','key') then raise exception 'khong du quyen'; end if;
+  return (select coalesce(json_agg(json_build_object('uid', b.uid, 'name', m.name, 'seat', m.seat, 'ly', b.ly, 'st', b.st, 'at', b.at) order by b.at), '[]'::json)
+    from lhl_bonus b left join lhl_members m on m.code = b.code and m.uid = b.uid
+    where b.code = p_code and b.at >= (extract(epoch from r.created_at)*1000)::bigint);
+end $$;
+
 -- Lab Coach báo Key Coach một phase kẹt nhiều
 create or replace function lhl_esc_add(p_code text, p_k int, p_by text) returns void language plpgsql security definer set search_path = public as $$
 begin
