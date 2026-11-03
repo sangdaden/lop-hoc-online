@@ -1707,7 +1707,7 @@ body.focus .focuschip{display:flex}
     x.fillStyle="#F2C14E"; x.font="700 28px "+DF; x.fillText("GÓC XEM DEMO",w/2,62);
     x.fillStyle="#F3EEDF"; x.font="800 72px "+DF; x.fillText(dOpen?dN+" lượt":"Demo",w/2,150);
     x.fillStyle="#9FB3D1"; x.font="500 24px "+DF; x.fillText(dOpen?"đã đăng ký demo":"mở khi Key Coach bật demo",w/2,222); DX.demo.tex.needsUpdate=true;
-    x=DX.map.canvas.getContext("2d"); w=400; h=520; x.fillStyle="#F3EEDF"; x.fillRect(0,0,w,h); x.fillStyle="#22324F"; x.fillRect(0,0,w,86);
+    x=DX.map.canvas.getContext("2d"); w=400; h=520; x.textAlign="center"; x.textBaseline="middle"; x.fillStyle="#F3EEDF"; x.fillRect(0,0,w,h); x.fillStyle="#22324F"; x.fillRect(0,0,w,86);
     x.fillStyle="#fff"; x.font="700 32px "+DF; x.fillText("Bạn đang ở đây",w/2,46);
     // sơ đồ nhìn từ cửa vào: tường sau ở dưới, bên phải người đứng ở cửa là x âm
     const X0=24,X1=w-24,Y0=104,Y1=372, sx=(X1-X0)/W, sz=(Y1-Y0)/(zBack-zFront), k=Math.min(sx,sz), ox=(X0+X1)/2, oy=(Y0+Y1)/2, cz=(zBack+zFront)/2;
