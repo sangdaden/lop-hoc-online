@@ -2608,8 +2608,10 @@ body.drawer .rail,body.drawer .kcard{display:none}
   },1000);
 
   // ---------- Đăng ký lên demo ----------
-  // Đăng ký theo nhóm (nhóm = bàn). Chỉ bấm được khi Key Coach mở đăng ký; thứ tự lên demo = thứ tự đăng ký.
-  // Danh sách chỉ hiện tên nhóm, không hiện tên người, không xếp hạng.
+  // Chỉ bấm được khi Key Coach mở đăng ký; thứ tự lên demo = thứ tự đăng ký, không xếp hạng.
+  // Phase làm theo nhóm: đăng ký cho cả nhóm (nhóm = bàn), danh sách hiện tên nhóm.
+  // Phase cá nhân: mỗi người tự đăng ký, danh sách hiện tên người đó.
+  // Một mục trong DEMO.list: số ≥ 0 = mã nhóm; số âm -(ghế+1) = một người (ghi lên server ở cột grp như cũ).
   const DEMO={open:false,list:[]};
   const demoCan=()=>DEMO.open&&MODE==="lop"&&ROLE==="hv"&&mySeat>=0;
   function setDemoOpen(on){
@@ -2618,33 +2620,38 @@ body.drawer .rail,body.drawer .kcard{display:none}
     if(ROLE==="hv") toast(on?"Key Coach đã mở đăng ký demo. Nhóm nào muốn lên thì đăng ký.":"Key Coach đã đóng đăng ký demo.");
     render();
   }
+  // Phase có thể ghi rõ demo:"nhom"|"canhan"; không ghi thì theo kiểu làm của phase đang chạy.
+  const demoKind=()=>{ const p=phaseOf(KS.guide)||{}; return p.demo||(p.cheDo==="canhan"?"canhan":"nhom"); };
+  const myDemoKey=()=>mySeat<0?null:demoKind()==="canhan"?-(mySeat+1):seats[mySeat].grp;
+  const demoWho=()=>demoKind()==="canhan"?"Bạn":"Nhóm "+grpName(mySeat);
+  function demoLabel(e){ if(e>=0) return grpLabel(e); const s=seats[-e-1]; return s&&s.name?s.name:"Ghế "+(-e); }
   function demoToggle(){
     if(!DEMO.open){ toast("Key Coach chưa mở đăng ký demo."); return; }
     if(needSeat()) return;
-    const g=seats[mySeat].grp, i=DEMO.list.indexOf(g);
+    const g=myDemoKey(), i=DEMO.list.indexOf(g), who=demoWho();
     const sync=on=>{ if(LIVE.on) rpc("lhl_demo_set",{p_code:LIVE.code,p_grp:g,p_on:on}).then(ok=>{ if(!ok) toast("Key Coach đã đóng đăng ký demo."); }).catch(()=>toast("Không gửi được đăng ký demo.")); };
-    if(i<0){ DEMO.list.push(g); sync(true); knock(.6); bow(me); undoToast("Nhóm "+grpName(mySeat)+" đã đăng ký demo, thứ "+DEMO.list.length+".",()=>{ const k=DEMO.list.indexOf(g); if(k>=0) DEMO.list.splice(k,1); sync(false); render(); }); }
-    else { DEMO.list.splice(i,1); sync(false); undoToast("Đã hủy đăng ký demo của nhóm "+grpName(mySeat)+".",()=>{ if(DEMO.list.indexOf(g)<0) DEMO.list.splice(Math.min(i,DEMO.list.length),0,g); sync(true); render(); }); }
+    if(i<0){ DEMO.list.push(g); sync(true); knock(.6); bow(me); undoToast(who+" đã đăng ký demo, thứ "+DEMO.list.length+".",()=>{ const k=DEMO.list.indexOf(g); if(k>=0) DEMO.list.splice(k,1); sync(false); render(); }); }
+    else { DEMO.list.splice(i,1); sync(false); undoToast("Đã hủy đăng ký demo"+(demoKind()==="canhan"?"":" của nhóm "+grpName(mySeat))+".",()=>{ if(DEMO.list.indexOf(g)<0) DEMO.list.splice(Math.min(i,DEMO.list.length),0,g); sync(true); render(); }); }
     render();
   }
   const grpLabel=g=>{ const i=grpSeats(g)[0]; return i!=null?grpName(i):"nhóm "+(g+1); };
   function renderDemo(){
-    const open=DEMO.open&&MODE==="lop", myG=mySeat>=0?seats[mySeat].grp:-1, mine=DEMO.list.indexOf(myG);
+    const open=DEMO.open&&MODE==="lop", cn=demoKind()==="canhan", myG=mySeat>=0?seats[mySeat].grp:null, myP=mySeat>=0?-(mySeat+1):null, myK=myDemoKey(), mine=DEMO.list.indexOf(myK);
     $("demoState").textContent=open?"đang mở":"đang đóng"; $("demoState").classList.toggle("open",open);
-    $("demoq").innerHTML=DEMO.list.length?DEMO.list.map(g=>'<li class="'+(g===myG?'me':'')+'">'+esc(grpLabel(g))+(g===myG?' · nhóm bạn':'')+'</li>').join(""):'<li>Chưa nhóm nào đăng ký.</li>';
-    const b=$("fDemo"); b.disabled=!open||mySeat<0; b.textContent=mine>=0?"Hủy đăng ký demo":"Đăng ký demo cho nhóm";
-    $("demoNote").textContent=MODE!=="lop"?"Đăng ký demo chỉ có trong giờ học.":!open?"Nút đăng ký chỉ bấm được khi Key Coach mở đăng ký.":mySeat<0?"Ngồi vào bàn nhóm để đăng ký.":mine>=0?"Nhóm bạn lên demo thứ "+(mine+1)+". Bấm nhầm thì hủy được.":"Một người đăng ký là tính cho cả nhóm.";
-    $("kDemoL").textContent=DEMO.open?"Đóng demo":"Mở demo"; $("kDemoN").textContent=DEMO.list.length; $("kDemo").classList.toggle("open",DEMO.open); $("kDemo").title=(DEMO.open?"Đang mở đăng ký demo · bấm để đóng":"Đang đóng · bấm để mở đăng ký demo")+" · "+DEMO.list.length+" nhóm đã đăng ký";
+    $("demoq").innerHTML=DEMO.list.length?DEMO.list.map(g=>{ const m=g===myG||g===myP; return '<li class="'+(m?'me':'')+'">'+esc(demoLabel(g))+(g===myP?' · bạn':g===myG?' · nhóm bạn':'')+'</li>'; }).join(""):'<li>Chưa ai đăng ký.</li>';
+    const b=$("fDemo"); b.disabled=!open||mySeat<0; b.textContent=mine>=0?"Hủy đăng ký demo":cn?"Đăng ký demo cá nhân":"Đăng ký demo cho nhóm";
+    $("demoNote").textContent=MODE!=="lop"?"Đăng ký demo chỉ có trong giờ học.":!open?"Nút đăng ký chỉ bấm được khi Key Coach mở đăng ký.":mySeat<0?"Ngồi vào bàn nhóm để đăng ký.":mine>=0?(cn?"Bạn":"Nhóm bạn")+" lên demo thứ "+(mine+1)+". Bấm nhầm thì hủy được.":cn?"Phase cá nhân: mỗi người tự đăng ký, danh sách hiện tên bạn.":"Phase nhóm: một người đăng ký là tính cho cả nhóm.";
+    $("kDemoL").textContent=DEMO.open?"Đóng demo":"Mở demo"; $("kDemoN").textContent=DEMO.list.length; $("kDemo").classList.toggle("open",DEMO.open); $("kDemo").title=(DEMO.open?"Đang mở đăng ký demo · bấm để đóng":"Đang đóng · bấm để mở đăng ký demo")+" · "+DEMO.list.length+" lượt đã đăng ký ("+(cn?"cá nhân":"theo nhóm")+")";
   }
   $("fDemo").onclick=()=>{ actx(); demoToggle(); };
-  $("kDemo").onclick=()=>{ actx(); if(MODE!=="lop"){ toast("Đăng ký demo chỉ có trong giờ học."); return; } keyOp(()=>{ setDemoOpen(!DEMO.open); return DEMO.open?"Đã mở đăng ký demo":"Đã đóng đăng ký demo (còn "+DEMO.list.length+" nhóm)"; }); };
+  $("kDemo").onclick=()=>{ actx(); if(MODE!=="lop"){ toast("Đăng ký demo chỉ có trong giờ học."); return; } keyOp(()=>{ setDemoOpen(!DEMO.open); return DEMO.open?"Đã mở đăng ký demo":"Đã đóng đăng ký demo (còn "+DEMO.list.length+" lượt)"; }); };
   // Mô phỏng: khi đang mở, thỉnh thoảng một nhóm khác đăng ký; Key Coach mô phỏng mở đăng ký ở phase có moDemo.
   setInterval(()=>{
     if(MODE!=="lop"||LIVE.on) return;
     if(ROLE!=="key"&&!DEMO.open&&!KS.brk&&phaseOf(KS.guide).moDemo&&performance.now()-KS.openAt>4000) setDemoOpen(true);
     if(!DEMO.open||Math.random()>.35) return;
-    const myG=mySeat>=0?seats[mySeat].grp:-1;
-    const gs=[...new Set(seats.filter(x=>x.kid&&x.kid!==me).map(x=>x.grp))].filter(g=>g!==myG&&DEMO.list.indexOf(g)<0);
+    const myG=mySeat>=0?seats[mySeat].grp:-1, cn=demoKind()==="canhan";
+    const gs=cn?seats.map((x,i)=>x.kid&&x.kid!==me?-(i+1):null).filter(g=>g!=null&&DEMO.list.indexOf(g)<0):[...new Set(seats.filter(x=>x.kid&&x.kid!==me).map(x=>x.grp))].filter(g=>g!==myG&&DEMO.list.indexOf(g)<0);
     if(gs.length&&DEMO.list.length<Math.max(3,Math.round(gs.length*0.4))){ DEMO.list.push(pick(gs)); render(); }
   },2500);
 
@@ -2721,7 +2728,7 @@ body.drawer .rail,body.drawer .kcard{display:none}
       const p=MODE==="lop"&&!KS.brk?phaseOf(KS.guide):null, P=pitchState();
       if(p&&p.cheDo==="nhom"&&!myRole){ t="Nhận vai trong nhóm "+grpName(mySeat); f=pickRole; }
       else if(P&&holder(P)===mySeat){ t="Xong lượt pitch · chuyền que cho người kế bên"; f=()=>{ st.pitch++; bow(me); const at=P.at; passStick(P); undoToast("Đã chuyền que nói.",()=>takeStickBack(P,at)); }; }
-      else if(demoCan()&&DEMO.list.indexOf(seats[mySeat].grp)<0){ t="Đăng ký lên demo cho nhóm "+grpName(mySeat); f=demoToggle; }
+      else if(demoCan()&&DEMO.list.indexOf(myDemoKey())<0){ t=demoKind()==="canhan"?"Đăng ký lên demo cá nhân":"Đăng ký lên demo cho nhóm "+grpName(mySeat); f=demoToggle; }
       else if(!myNop&&(myStep>=NS||(MODE==="lop"&&!KS.brk&&phaseOf(KS.guide).nopBai))){ t="Nộp bài Ngày "+DAY.so+" · dán link repo"; f=submitDlg; }
     }
     ctxDo=f; b.hidden=!f; if(f) b.textContent=t;
