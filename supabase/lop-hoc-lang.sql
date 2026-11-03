@@ -19,7 +19,7 @@ create table if not exists lhl_rooms (
   state jsonb not null default '{}'::jsonb,
   created_at timestamptz not null default now()
 );
--- Tên phòng theo phòng học thật: 1 chữ cái + 3 số (ví dụ H201). Mỗi buổi có mã vào phòng 4 số riêng.
+-- Tên phòng theo phòng học thật: 1 chữ cái + 3 số (ví dụ H201). Mỗi buổi có mã vào lớp 4 số riêng, không trùng giữa các lớp đang mở.
 alter table lhl_rooms add column if not exists pass text not null default '';
 alter table lhl_rooms drop constraint if exists lhl_rooms_code_check;
 alter table lhl_rooms drop constraint if exists lhl_rooms_code_fmt;
@@ -109,8 +109,15 @@ declare r lhl_rooms; v_lab text; v_pass text;
 begin
   if not exists (select 1 from lhl_key_auth where uid = auth.uid()) then raise exception 'khong phai key coach'; end if;
   if p_code !~ '^[A-Z][0-9]{3}$' then raise exception 'ten phong khong dung'; end if;
-  v_lab := lpad(((get_byte(gen_random_bytes(1),0)*65536 + get_byte(gen_random_bytes(1),0)*256 + get_byte(gen_random_bytes(1),0)) % 900000 + 100000)::text, 6, '0');
-  v_pass := lpad(((get_byte(gen_random_bytes(1),0)*256 + get_byte(gen_random_bytes(1),0)) % 9000 + 1000)::text, 4, '0');
+  -- Mã vào lớp và mã Lab Coach không trùng với lớp nào đang mở, vì người vào chỉ nhập mã.
+  loop
+    v_lab := lpad(((get_byte(gen_random_bytes(1),0)*65536 + get_byte(gen_random_bytes(1),0)*256 + get_byte(gen_random_bytes(1),0)) % 900000 + 100000)::text, 6, '0');
+    exit when not exists (select 1 from lhl_rooms where open and lab = v_lab and code <> p_code);
+  end loop;
+  loop
+    v_pass := lpad(((get_byte(gen_random_bytes(1),0)*256 + get_byte(gen_random_bytes(1),0)) % 9000 + 1000)::text, 4, '0');
+    exit when not exists (select 1 from lhl_rooms where open and pass = v_pass and code <> p_code);
+  end loop;
   select * into r from lhl_rooms where code = p_code;
   if not found then
     insert into lhl_rooms(code, key_uid, title, lab, pass) values (p_code, auth.uid(), left(p_title, 60), v_lab, v_pass);
@@ -128,11 +135,13 @@ begin
   return json_build_object('code', p_code, 'lab', r.lab, 'pass', r.pass, 'fresh', false);
 end $$;
 
--- Danh sách phòng đang mở (theo buổi) để học viên và Lab Coach chọn. Không lộ mã vào phòng.
-create or replace function lhl_open_rooms() returns json language sql stable security definer set search_path = public as $$
-  select coalesce(json_agg(json_build_object('code', r.code, 'title', r.title, 'at', (extract(epoch from r.created_at)*1000)::bigint,
-      'n', (select count(*) from lhl_members m where m.code = r.code and m.online and m.role = 'hv')) order by r.code), '[]'::json)
-  from lhl_rooms r where r.open and r.created_at > now() - interval '18 hours'
+drop function if exists lhl_open_rooms();
+-- Học viên nhập mã vào lớp (Lab Coach nhập mã Lab Coach) là ra đúng lớp đang mở.
+create or replace function lhl_find(p_role text, p_pass text) returns text language sql stable security definer set search_path = public as $$
+  select code from lhl_rooms
+  where open and created_at > now() - interval '18 hours'
+    and case when p_role = 'lab' then lab = trim(p_pass) else pass = trim(p_pass) end
+  order by created_at desc limit 1
 $$;
 
 -- Ai cũng hỏi được: phòng có tồn tại, còn mở không. Key Coach của phòng nhận thêm mã Lab Coach.
