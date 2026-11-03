@@ -37,10 +37,13 @@ Gửi hai giá trị này để dán vào `SB_URL` và `SB_KEY` ở đầu đo�
 
 ## 5. Chạy thử
 
-1. Mở https://sangdaden.github.io/lop-hoc-online/, chọn **Key Coach**, nhập mật mã, để trống ô mã phòng, bấm Tiếp. Trang tạo phòng mới.
-2. Mở ngăn **Cả lớp** (biểu tượng cột), mục **Phòng** có mã phòng, link mời và mã Lab Coach.
-3. Gửi link cho học viên. Lab Coach dùng cùng link, chọn vai Lab Coach và nhập mã Lab Coach.
-4. Hết buổi bấm **Đóng phòng**. Lần sau Key Coach nhập lại mã cũ để mở lại, hoặc để trống để tạo phòng mới.
+1. Mở https://sangdaden.github.io/lop-hoc-online/, chọn **Key Coach**, nhập **tên phòng học** (1 chữ cái + 3 số, ví dụ `H201`) và mật mã Key Coach, bấm Tiếp.
+2. Mở ngăn **Cả lớp** (biểu tượng cột), mục **Phòng** có link mời, **mã vào phòng** (4 số, cho học viên) và **mã Lab Coach** (6 số).
+3. Gửi link cho học viên (link đã kèm mã vào phòng), hoặc đọc tên phòng + mã vào phòng. Lab Coach chọn vai Lab Coach, nhập tên phòng và mã Lab Coach.
+4. Hết buổi bấm **Đóng phòng**. Buổi sau Key Coach mở lại cùng tên phòng: trang mở **buổi mới** với mã vào phòng và mã Lab Coach mới, người và đăng ký demo của buổi trước được xóa (điểm cộng vẫn giữ).
+5. Phòng đang mở mà Key Coach khác mở cùng tên phòng thì người đó nhận quyền dẫn, dữ liệu giữ nguyên.
+
+**Đã chạy file SQL bản cũ?** Chạy lại toàn bộ file mới một lần (dữ liệu không mất), rồi chạy lại dòng mật mã Key Coach nếu bạn đã đổi.
 
 ## Cách hoạt động (tóm tắt)
 
