@@ -648,8 +648,8 @@ body.drawer .rail,body.drawer .kcard{display:none}
 
   let ac=null;
   function actx(){try{ if(!ac) ac=new (window.AudioContext||window.webkitAudioContext)(); if(ac.state==="suspended") ac.resume(); return ac;}catch(e){return null;}}
-  function knock(v){const a=actx(); if(!a) return; const o=a.createOscillator(), g=a.createGain(); o.type="triangle"; o.frequency.setValueAtTime(900,a.currentTime); o.frequency.exponentialRampToValueAtTime(380,a.currentTime+.08); g.gain.setValueAtTime((v||1)*.35,a.currentTime); g.gain.exponentialRampToValueAtTime(.001,a.currentTime+.14); o.connect(g).connect(a.destination); o.start(); o.stop(a.currentTime+.16);}
-  function bell(){const a=actx(); if(!a) return; [660,990,1320].forEach((f,n)=>{const o=a.createOscillator(), g=a.createGain(); const t=a.currentTime; o.type="sine"; o.frequency.value=f; g.gain.setValueAtTime(.25/(n+1),t); g.gain.exponentialRampToValueAtTime(.001,t+2.2); o.connect(g).connect(a.destination); o.start(t); o.stop(t+2.3);});}
+  function knock(v){if(window.LHLSound) return LHLSound.knock(v); const a=actx(); if(!a) return; const o=a.createOscillator(), g=a.createGain(); o.type="triangle"; o.frequency.setValueAtTime(900,a.currentTime); o.frequency.exponentialRampToValueAtTime(380,a.currentTime+.08); g.gain.setValueAtTime((v||1)*.35,a.currentTime); g.gain.exponentialRampToValueAtTime(.001,a.currentTime+.14); o.connect(g).connect(a.destination); o.start(); o.stop(a.currentTime+.16);}
+  function bell(){if(window.LHLSound) return LHLSound.bell(); const a=actx(); if(!a) return; [660,990,1320].forEach((f,n)=>{const o=a.createOscillator(), g=a.createGain(); const t=a.currentTime; o.type="sine"; o.frequency.value=f; g.gain.setValueAtTime(.25/(n+1),t); g.gain.exponentialRampToValueAtTime(.001,t+2.2); o.connect(g).connect(a.destination); o.start(t); o.stop(t+2.3);});}
 
   if(!window.THREE){ stage.insertAdjacentHTML("beforeend",'<div class="nogl">Không tải được thư viện 3D. Tải lại trang để thử lại.</div>'); return; }
   const T=THREE;
@@ -1410,7 +1410,7 @@ body.drawer .rail,body.drawer .kcard{display:none}
   function decorTick(dt){
     if(!DX) return;
     const t=MODE==="lop"&&KS.brk?"nghi":MODE==="lop"&&KS.guide>=NS-1?"cuoi":"lam", S=TOD[t];
-    if(t!==todNow){ todNow=t; setSky(t); todTarget.hemi.setHex(S.hemi); todTarget.hg.setHex(S.hg); todTarget.sun.setHex(S.sun); todTarget.bg.setHex(S.bg); todTarget.patch.setHex(S.patch); sun.position.set(-10,t==="cuoi"?5:9,3); }
+    if(t!==todNow){ todNow=t; document.documentElement.dataset.tod=t; setSky(t); todTarget.hemi.setHex(S.hemi); todTarget.hg.setHex(S.hg); todTarget.sun.setHex(S.sun); todTarget.bg.setHex(S.bg); todTarget.patch.setHex(S.patch); sun.position.set(-10,t==="cuoi"?5:9,3); }
     const k=Math.min(1,dt*0.8);
     hemi.color.lerp(todTarget.hemi,k); hemi.groundColor.lerp(todTarget.hg,k); hemi.intensity+=(S.hi-hemi.intensity)*k;
     sun.color.lerp(todTarget.sun,k); sun.intensity+=(S.si-sun.intensity)*k;
@@ -2806,6 +2806,242 @@ body.drawer .rail,body.drawer .kcard{display:none}
   check(); setInterval(check,EVERY);
   document.addEventListener("visibilitychange",()=>{ if(!document.hidden) check(); });
   window.__lhlNewVer=show; // để thử: gọi __lhlNewVer() trong console
+})();
+</script>
+
+<!-- ===== Âm thanh cozy (Sang duyệt 03/11/2026): tự tổng hợp bằng Web Audio, không file, không bản quyền.
+     3 hướng: Mưa chiều (mặc định) / Nắng sớm / Thư viện ấm. Nhạc nền + tiếng phòng chỉ phát khi người dùng bật trong nút loa.
+     knock()/bell() của game đi qua đây (LHLSound) nên theo âm sắc + âm lượng + tắt tiếng. Nhịp buổi lấy từ #phaseBar và html[data-tod]. ===== -->
+<style>
+.snd-b svg .w{transition:opacity .2s}
+.snd-b.off svg .w{opacity:0}
+.snd-b.mute svg .x{opacity:1}
+.snd-b svg .x{opacity:0}
+.snd-b.snd-new::after{content:"";position:absolute;inset:-4px;border-radius:50%;border:2px solid #F2C14E;animation:sndPulse 1.8s ease-out 3}
+@keyframes sndPulse{from{opacity:.9;transform:scale(.9)}to{opacity:0;transform:scale(1.25)}}
+.snd-pop{position:absolute;right:max(14px,env(safe-area-inset-right,0px));top:calc(max(14px,env(safe-area-inset-top,0px)) + 52px);z-index:30;width:min(300px,calc(100% - 28px));padding:14px;border-radius:16px;display:grid;gap:12px;font:13px/1.4 "Be Vietnam Pro",system-ui,sans-serif}
+.snd-pop[hidden]{display:none}
+@media (max-width:640px){.snd-pop{top:calc(max(14px,env(safe-area-inset-top,0px)) + 110px)}}
+.snd-pop h4{margin:0;font-size:11px;letter-spacing:.08em;text-transform:uppercase;font-weight:600;opacity:.75}
+.snd-row{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.snd-sw{all:unset;box-sizing:border-box;cursor:pointer;flex:none;width:40px;height:22px;border-radius:999px;background:rgba(255,255,255,.22);position:relative;transition:background .2s}
+.snd-sw::after{content:"";position:absolute;left:3px;top:3px;width:16px;height:16px;border-radius:50%;background:#fff;transition:transform .2s}
+.snd-sw[aria-checked="true"]{background:#F2C14E}
+.snd-sw[aria-checked="true"]::after{transform:translateX(18px)}
+.snd-sty{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.snd-sty button{all:unset;box-sizing:border-box;cursor:pointer;text-align:center;padding:7px 4px;border-radius:10px;border:1px solid var(--glass-ln);font-size:12px;line-height:1.25}
+.snd-sty button small{display:block;opacity:.7;font-size:11px}
+.snd-sty button[aria-pressed="true"]{border-color:#F2C14E;box-shadow:inset 0 -2px #F2C14E}
+.snd-sl{display:grid;grid-template-columns:78px 1fr 30px;align-items:center;gap:8px}
+.snd-sl input{width:100%;accent-color:#F2C14E;margin:0}
+.snd-sl output{text-align:right;font-variant-numeric:tabular-nums;opacity:.75}
+.snd-pop .snd-sw:focus-visible,.snd-sty button:focus-visible,.snd-sl input:focus-visible{outline:2px solid #fff;outline-offset:2px}
+@media (prefers-reduced-motion:reduce){.snd-b.snd-new::after{animation:none}.snd-sw,.snd-sw::after{transition:none}}
+</style>
+<script>
+(()=>{
+  const AC=window.AudioContext||window.webkitAudioContext; if(!AC) return;
+  const KEY="lhl-sound-v1";
+  const S={amb:false,sfx:true,mute:false,style:"mua",master:.35,music:.7,room:.7,fx:.8,seen:false};
+  try{ Object.assign(S,JSON.parse(localStorage.getItem(KEY)||"{}")); }catch(e){}
+  const save=()=>{ try{ localStorage.setItem(KEY,JSON.stringify(S)); }catch(e){} };
+
+  // ---------- máy âm thanh ----------
+  let ctx=null,master,bus={},rev,musicLP,noiseBuf,crackBuf,timer=0;
+  const R=Math.random, pick=a=>a[Math.floor(R()*a.length)], mtof=m=>440*Math.pow(2,(m-69)/12);
+  function init(){
+    if(ctx) return ctx;
+    try{ ctx=new AC(); }catch(e){ return null; }
+    master=ctx.createGain(); master.gain.value=S.mute?0:S.master;
+    const comp=ctx.createDynamicsCompressor(); comp.threshold.value=-20; comp.ratio.value=3; comp.attack.value=.01; comp.release.value=.3;
+    master.connect(comp); comp.connect(ctx.destination);
+    for(const k of ["music","room","sfx"]){ const g=ctx.createGain(); g.gain.value=0; g.connect(master); bus[k]=g; }
+    bus.sfx.gain.value=S.sfx?S.fx:0;
+    musicLP=ctx.createBiquadFilter(); musicLP.type="lowpass"; musicLP.frequency.value=3400; musicLP.Q.value=.3; musicLP.connect(bus.music);
+    rev=ctx.createConvolver(); rev.buffer=ir(3,2.6); const rs=ctx.createGain(); rs.gain.value=.4; rev.connect(rs); rs.connect(master);
+    noiseBuf=buf(3,()=>R()*2-1); crackBuf=crackle(5); beds();
+    timer=setInterval(tick,50);
+    return ctx;
+  }
+  function wake(){ const c=init(); if(c&&c.state==="suspended") c.resume(); return c; }
+  function buf(s,f){ const b=ctx.createBuffer(1,ctx.sampleRate*s,ctx.sampleRate),d=b.getChannelData(0); for(let i=0;i<d.length;i++) d[i]=f(); return b; }
+  function crackle(s){ const b=buf(s,()=>(R()*2-1)*.012),d=b.getChannelData(0);
+    for(let i=0;i<d.length;i++) if(R()<.00035){ const a=(R()*.7+.1)*(R()<.5?-1:1); for(let j=0;j<24&&i+j<d.length;j++) d[i+j]+=a*Math.exp(-j/3)*(j%2?-1:1); } return b; }
+  function ir(s,dec){ const len=ctx.sampleRate*s,b=ctx.createBuffer(2,len,ctx.sampleRate); for(let c=0;c<2;c++){ const d=b.getChannelData(c); for(let i=0;i<len;i++) d[i]=(R()*2-1)*Math.pow(1-i/len,dec); } return b; }
+  function out(dest,pan,send){ const g=ctx.createGain(); let n=g;
+    if(pan&&ctx.createStereoPanner){ const p=ctx.createStereoPanner(); p.pan.value=Math.max(-1,Math.min(1,pan)); g.connect(p); n=p; }
+    n.connect(dest); if(send){ const s=ctx.createGain(); s.gain.value=send; n.connect(s); s.connect(rev); } return g; }
+  function osc(type,f,t,stop,dest,det){ const o=ctx.createOscillator(); o.type=type; o.frequency.value=f; if(det) o.detune.value=det; o.connect(dest); o.start(t); o.stop(stop); return o; }
+  function noise(t,stop,dest){ const s=ctx.createBufferSource(); s.buffer=noiseBuf; s.connect(dest); s.start(t,R()*2); s.stop(stop); return s; }
+  function part(g,amp,tau,t){ const p=ctx.createGain(); p.gain.setValueAtTime(amp,t); p.gain.setTargetAtTime(0,t,tau); p.connect(g); return p; }
+
+  const I={
+    rhodes(f,t,d,v,dest,pan){ const g=out(dest,pan,.3); g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(v,t+.012); g.gain.setTargetAtTime(0,t+.012,d*.45);
+      const e=t+d*3+.2; osc("sine",f,t,e,g); const g2=ctx.createGain(); g2.gain.value=.35; g2.connect(g); osc("triangle",f,t,e,g2,4); osc("sine",f*4,t,t+.4,part(g,.25,.04,t)); },
+    kalimba(f,t,d,v,dest,pan){ const g=out(dest,pan,.35); g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(v,t+.004); g.gain.setTargetAtTime(0,t+.004,.32);
+      osc("sine",f,t,t+2.2,g); osc("sine",f*5.4,t,t+.3,part(g,.3,.03,t)); },
+    bell(f,t,d,v,dest,pan){ const g=out(dest,pan,.5); g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(v,t+.006); g.gain.setTargetAtTime(0,t+.006,.9);
+      osc("sine",f,t,t+5,g); osc("sine",f*2.76,t,t+2,part(g,.4,.35,t)); osc("sine",f*5.4,t,t+1,part(g,.18,.12,t)); },
+    pad(f,t,d,v,dest,pan){ const g=out(dest,pan,.45),lp=ctx.createBiquadFilter(); lp.type="lowpass"; lp.frequency.value=900; lp.Q.value=.4; lp.connect(g);
+      g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(v,t+1.6); g.gain.setValueAtTime(v,t+d); g.gain.setTargetAtTime(0,t+d,.9);
+      const e=t+d+5; osc("sawtooth",f,t,e,lp,-7); osc("sawtooth",f,t,e,lp,7); osc("sine",f/2,t,e,g); },
+    bass(f,t,d,v,dest){ const g=out(dest,0,0),lp=ctx.createBiquadFilter(); lp.type="lowpass"; lp.frequency.value=380; lp.connect(g);
+      g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(v,t+.02); g.gain.setTargetAtTime(0,t+.02,d*.5); osc("triangle",f,t,t+d*3,lp); osc("sine",f,t,t+d*3,g); },
+    kick(t,v,dest){ const g=out(dest,0,0),o=ctx.createOscillator(); o.frequency.setValueAtTime(110,t); o.frequency.exponentialRampToValueAtTime(42,t+.14);
+      g.gain.setValueAtTime(v,t); g.gain.setTargetAtTime(0,t,.09); o.connect(g); o.start(t); o.stop(t+.6); },
+    brush(t,v,dest,pan){ const g=out(dest,pan,.15),bp=ctx.createBiquadFilter(); bp.type="bandpass"; bp.frequency.value=2600; bp.Q.value=.6; bp.connect(g);
+      g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(v,t+.01); g.gain.setTargetAtTime(0,t+.01,.07); noise(t,t+.5,bp); },
+    hat(t,v,dest,pan){ const g=out(dest,pan,0),hp=ctx.createBiquadFilter(); hp.type="highpass"; hp.frequency.value=7000; hp.connect(g);
+      g.gain.setValueAtTime(v,t); g.gain.setTargetAtTime(0,t,.018); noise(t,t+.15,hp); }
+  };
+
+  // mức tiếng phòng theo nhịp buổi: [cá nhân, nhóm, nghỉ, phase cuối]
+  const ST={
+    mua:{ten:"Mưa chiều",k:"lo-fi",bpm:72,sfx:"rhodes",
+      room:{vinyl:[.5,.5,.6,.5],rain:[.2,.3,.25,.75],typing:[1,.55,0,.4],birds:[0,0,0,0],wind:[0,0,0,.15],clock:[0,0,0,0],pages:[0,0,0,0]},
+      step(s,t,sd){ const ch=[[53,57,60,64],[52,55,59,62],[50,53,57,60],[48,52,55,59]],bs=[41,40,38,36],bar=Math.floor(s/8)%4,p=s%8,c=ch[bar];
+        if(p%2) t+=sd*.16;
+        if(p===0){ c.forEach((m,i)=>I.rhodes(mtof(m),t+i*.012,2.2,.07,musicLP,(i-1.5)*.15)); I.bass(mtof(bs[bar]),t,1.4,.2,musicLP); I.kick(t,.22,musicLP); }
+        if(p===3) c.slice(1).forEach((m,i)=>I.rhodes(mtof(m+12),t+i*.01,.9,.035,musicLP,.2));
+        if(p===4) I.bass(mtof(bs[bar]+7),t,.8,.12,musicLP);
+        if(p===5) I.kick(t,.14,musicLP);
+        if(p===2||p===6) I.brush(t,.07,musicLP,.1);
+        if(p%2) I.hat(t,.025,musicLP,-.25);
+        if((p===1||p===4||p===7)&&R()<.28) I.rhodes(mtof(pick([72,74,76,79,81])),t,.8,.04,musicLP,.3); } },
+    nang:{ten:"Nắng sớm",k:"kalimba",bpm:86,sfx:"kalimba",n:76,
+      room:{vinyl:[0,0,0,0],rain:[0,0,0,.12],typing:[1,.55,0,.4],birds:[.7,.55,1,.35],wind:[.3,.25,.35,.4],clock:[0,0,0,0],pages:[0,0,0,0]},
+      step(s,t,sd){ const ch=[[48,55,64],[45,52,60],[41,48,57],[43,50,59]],bar=Math.floor(s/8)%4,p=s%8,c=ch[bar];
+        if(p===0){ I.kalimba(mtof(c[0]+12),t,1,.12,musicLP,-.2); c.forEach(m=>I.pad(mtof(m+12),t,sd*7,.012,musicLP)); }
+        if(p===4) I.kalimba(mtof(c[1]+12),t,1,.08,musicLP,-.1);
+        const sc=[72,74,76,79,81,84,86,88];
+        if(p!==0&&R()<.5){ let i=sc.indexOf(this.n); if(i<0) i=2; i=Math.max(0,Math.min(sc.length-1,i+pick([-2,-1,-1,1,1,2]))); this.n=sc[i];
+          I.kalimba(mtof(this.n),t+R()*.02,1,.07+R()*.04,musicLP,(R()-.5)*.6); }
+        if(p%2===1&&R()<.6) I.hat(t,.012,musicLP,.3); } },
+    thu:{ten:"Thư viện ấm",k:"ambient",bpm:58,sfx:"bell",
+      room:{vinyl:[0,0,0,0],rain:[.08,.1,.2,.5],typing:[.9,.5,0,.4],birds:[0,0,0,0],wind:[0,0,0,0],clock:[.55,.5,.7,.5],pages:[.5,.7,.3,.4]},
+      step(s,t,sd){ const ch=[[50,57,61,64,66],[47,54,57,61,62],[43,50,54,59,62],[45,52,57,62,64]],bar=Math.floor(s/16)%4,p=s%16;
+        if(p===0){ ch[bar].forEach((m,i)=>I.pad(mtof(m),t+i*.05,sd*15,.022,musicLP,(i-2)*.2)); I.bass(mtof(ch[bar][0]-12),t,sd*10,.1,musicLP); }
+        if(R()<.11) I.bell(mtof(pick([74,76,78,81,83,86])),t,1,.05+R()*.03,musicLP,(R()-.5)*.8); } }
+  };
+  if(!ST[S.style]) S.style="mua";
+  const NHAC=[.85,.75,1.15,.9]; // nhạc to/nhỏ theo nhịp buổi
+  let ph=0, step=0, nextT=0;
+
+  const bed={}, BED={rain:.22,vinyl:.5,wind:.35}, lv={rain:0,vinyl:0,wind:0,typing:0,birds:0,clock:0,pages:0};
+  function loop(b,chain){ const g=ctx.createGain(); g.gain.value=0; const s=ctx.createBufferSource(); s.buffer=b; s.loop=true;
+    let n=s; chain.forEach(f=>{ n.connect(f); n=f; }); n.connect(g); g.connect(bus.room); s.start(); return g; }
+  function filt(type,f,q){ const x=ctx.createBiquadFilter(); x.type=type; x.frequency.value=f; if(q) x.Q.value=q; return x; }
+  function beds(){
+    bed.rain=loop(noiseBuf,[filt("lowpass",2200),filt("highpass",350)]);
+    bed.vinyl=loop(crackBuf,[filt("highpass",900)]);
+    const bp=filt("bandpass",520,.9), lfo=ctx.createOscillator(), lg=ctx.createGain(); lfo.frequency.value=.07; lg.gain.value=260; lfo.connect(lg); lg.connect(bp.frequency); lfo.start();
+    bed.wind=loop(noiseBuf,[bp]);
+  }
+  const on=()=>S.amb&&!S.mute;
+  function apply(){
+    if(!ctx) return; const n=ctx.currentTime, st=ST[S.style], a=on();
+    for(const k in lv){ lv[k]=a?st.room[k][ph]:0; if(bed[k]) bed[k].gain.setTargetAtTime(lv[k]*BED[k],n,.9); }
+    bus.room.gain.setTargetAtTime(a?S.room:0,n,.4);
+    bus.music.gain.setTargetAtTime(a?S.music*NHAC[ph]*.9:0,n,a?1.2:.4);
+    bus.sfx.gain.setTargetAtTime(S.sfx?S.fx:0,n,.05);
+    master.gain.setTargetAtTime(S.mute?0:S.master,n,.05);
+  }
+
+  function key(t,v,pan){ const g=out(bus.room,pan,.08),bp=filt("bandpass",1800+R()*1600,2.2); bp.connect(g);
+    g.gain.setValueAtTime(v,t); g.gain.setTargetAtTime(0,t,.011); noise(t,t+.08,bp); osc("sine",150+R()*60,t,t+.08,part(g,v*.6,.014,t)); }
+  function drop(t,v){ const g=out(bus.room,(R()-.5)*1.4,.2),bp=filt("bandpass",2500+R()*3000,5); bp.connect(g);
+    g.gain.setValueAtTime(v,t); g.gain.setTargetAtTime(0,t,.012); noise(t,t+.06,bp); }
+  function chirp(t,v){ const pan=(R()-.5)*1.6,n=2+Math.floor(R()*4),f0=2600+R()*1600;
+    for(let i=0;i<n;i++){ const tt=t+i*(.09+R()*.05),g=out(bus.room,pan,.4),o=ctx.createOscillator();
+      o.frequency.setValueAtTime(f0,tt); o.frequency.exponentialRampToValueAtTime(f0*1.45,tt+.04); o.frequency.exponentialRampToValueAtTime(f0*1.1,tt+.08);
+      g.gain.setValueAtTime(0,tt); g.gain.linearRampToValueAtTime(v,tt+.01); g.gain.setTargetAtTime(0,tt+.04,.02); o.connect(g); o.start(tt); o.stop(tt+.2); } }
+  function tock(t,v,hi){ const g=out(bus.room,.35,.15),bp=filt("bandpass",hi?3300:2500,8); bp.connect(g);
+    g.gain.setValueAtTime(v,t); g.gain.setTargetAtTime(0,t,.008); noise(t,t+.05,bp); }
+  function page(t,v){ const g=out(bus.room,(R()-.5)*.8,.2),bp=filt("bandpass",900,.8); bp.frequency.setValueAtTime(900,t); bp.frequency.linearRampToValueAtTime(2600,t+.25); bp.connect(g);
+    g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(v,t+.08); g.gain.setTargetAtTime(0,t+.12,.08); noise(t,t+.6,bp); }
+
+  const typ=[0,1,2,3,4].map(i=>({next:0,left:0,pan:(i-2)*.32}));
+  let nextClock=0, hi=false;
+  function tick(){
+    if(!ctx||ctx.state!=="running"||!on()) return;
+    const now=ctx.currentTime, LOOK=document.hidden?1.2:.2, end=now+LOOK, st=ST[S.style], sd=60/st.bpm/2;
+    if(nextT<now) nextT=now+.05;
+    while(nextT<end){ st.step(step,nextT,sd); step++; nextT+=sd; }
+    const nT=Math.round(lv.typing*typ.length);
+    typ.forEach((y,i)=>{ if(i>=nT){ y.next=0; return; } if(!y.next) y.next=now+R()*2;
+      while(y.next<end){ key(y.next,.05+R()*.04,y.pan+(R()-.5)*.1); if(--y.left>0) y.next+=.07+R()*.12; else { y.left=4+Math.floor(R()*16); y.next+=.6+R()*3.5; } } });
+    const k=LOOK/.2;
+    if(lv.rain>0&&R()<lv.rain*.9) for(let j=0;j<k;j++) drop(now+R()*LOOK,.05+R()*.08*lv.rain);
+    if(lv.birds>0&&R()<lv.birds*.012*k) chirp(now+.05,.035*lv.birds+.01);
+    if(lv.pages>0&&R()<lv.pages*.004*k) page(now+.05,.06);
+    if(lv.clock>0){ if(nextClock<now) nextClock=now+.1; while(nextClock<end){ tock(nextClock,.05*lv.clock,hi=!hi); nextClock+=1; } }
+  }
+
+  // hiệu ứng: theo âm sắc hướng đang chọn
+  function notes(ns,gap,v,dur){ if(!S.sfx||S.mute) return; const c=wake(); if(!c) return; const t=c.currentTime+.02, f=I[ST[S.style].sfx];
+    ns.forEach((m,i)=>f(mtof(m),t+i*gap,dur||1,v,bus.sfx,(i-(ns.length-1)/2)*.2)); }
+  function tap(v){ if(!S.sfx||S.mute) return; const c=wake(); if(!c) return; const t=c.currentTime+.01,g=out(bus.sfx,0,.05),o=c.createOscillator();
+    o.frequency.setValueAtTime(900,t); o.frequency.exponentialRampToValueAtTime(480,t+.06); g.gain.setValueAtTime(.12*v,t); g.gain.setTargetAtTime(0,t,.025); o.connect(g); o.start(t); o.stop(t+.2); }
+  window.LHLSound={
+    knock(v){ v=v||1; tap(v); notes([pick([76,79,81])],0,.07*v+.03); },
+    bell(){ notes([60,67,72,76,79],.06,.08,1.6); },
+    raise(){ notes([72,79],.09,.14); },
+    lower(){ notes([79,72],.09,.09); }
+  };
+
+  // ---------- nhịp buổi: đọc từ thanh phase + html[data-tod] ----------
+  function readPhase(){
+    const bar=document.getElementById("phaseBar"), tx=bar?bar.textContent:"", tod=document.documentElement.dataset.tod;
+    const n=tod==="nghi"||/Đang nghỉ/.test(tx)?2:tod==="cuoi"?3:/Nhóm|Cả lớp/.test(tx)?1:0;
+    if(n!==ph){ ph=n; apply(); }
+  }
+  const bar=document.getElementById("phaseBar");
+  if(bar) new MutationObserver(readPhase).observe(bar,{childList:true,subtree:true,characterData:true});
+  new MutationObserver(readPhase).observe(document.documentElement,{attributes:true,attributeFilter:["data-tod"]});
+  readPhase();
+
+  // giơ tay / hạ tay (game không có âm riêng cho nút này)
+  const hand=document.getElementById("aHand");
+  if(hand) hand.addEventListener("click",()=>{ const was=hand.classList.contains("on"); setTimeout(()=>{ const now=hand.classList.contains("on"); if(now!==was) (now?LHLSound.raise:LHLSound.lower)(); },0); });
+
+  // ---------- nút loa + bảng nhỏ ----------
+  const topr=document.querySelector(".topr"); if(!topr) return;
+  const b=document.createElement("button"); b.type="button"; b.className="ib glass snd-b"; b.setAttribute("aria-haspopup","dialog"); b.setAttribute("aria-expanded","false");
+  b.innerHTML='<svg viewBox="0 0 24 24"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/><path class="w" d="M15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11"/><path class="x" d="M16 9.5l5 5M21 9.5l-5 5"/></svg>';
+  topr.insertBefore(b,topr.firstChild);
+  const pop=document.createElement("div"); pop.className="snd-pop glass"; pop.hidden=true; pop.setAttribute("role","dialog"); pop.setAttribute("aria-label","Âm thanh");
+  const sl=(id,t,k)=>'<label class="snd-sl" for="'+id+'">'+t+'<input id="'+id+'" type="range" min="0" max="100" value="'+Math.round(S[k]*100)+'" data-k="'+k+'"><output>'+Math.round(S[k]*100)+'</output></label>';
+  pop.innerHTML=
+    '<div class="snd-row"><span><b>Nhạc nền & tiếng phòng</b></span><button class="snd-sw" id="sndAmb" role="switch" aria-checked="false" aria-label="Nhạc nền và tiếng phòng"></button></div>'+
+    '<div class="snd-sty" role="group" aria-label="Hướng âm thanh">'+Object.keys(ST).map(k=>'<button type="button" data-s="'+k+'">'+ST[k].ten+'<small>'+ST[k].k+'</small></button>').join("")+'</div>'+
+    '<div class="snd-row"><span>Âm báo khi bấm nút</span><button class="snd-sw" id="sndFx" role="switch" aria-checked="false" aria-label="Âm báo khi bấm nút"></button></div>'+
+    '<h4>Âm lượng</h4>'+sl("sndV0","Tổng","master")+sl("sndV1","Nhạc nền","music")+sl("sndV2","Tiếng phòng","room")+sl("sndV3","Âm báo","fx")+
+    '<div class="snd-row"><span>Tắt hết âm thanh</span><button class="snd-sw" id="sndMute" role="switch" aria-checked="false" aria-label="Tắt hết âm thanh"></button></div>';
+  topr.parentNode.appendChild(pop);
+  const $s=id=>document.getElementById(id);
+  function ui(){
+    b.classList.toggle("off",!on()); b.classList.toggle("mute",S.mute);
+    b.title=b.ariaLabel=S.mute?"Âm thanh đang tắt":on()?"Âm thanh: "+ST[S.style].ten:"Bật nhạc nền và tiếng phòng";
+    b.setAttribute("aria-label",b.title);
+    $s("sndAmb").setAttribute("aria-checked",S.amb); $s("sndFx").setAttribute("aria-checked",S.sfx); $s("sndMute").setAttribute("aria-checked",S.mute);
+    pop.querySelectorAll("[data-s]").forEach(x=>x.setAttribute("aria-pressed",x.dataset.s===S.style));
+  }
+  function open(v){ pop.hidden=!v; b.setAttribute("aria-expanded",v); if(v&&!S.seen){ S.seen=true; save(); b.classList.remove("snd-new"); } }
+  b.onclick=e=>{ e.stopPropagation(); open(pop.hidden); };
+  document.addEventListener("pointerdown",e=>{ if(!pop.hidden&&!pop.contains(e.target)&&!b.contains(e.target)) open(false); });
+  document.addEventListener("keydown",e=>{ if(e.key==="Escape"&&!pop.hidden){ open(false); b.focus(); } });
+  $s("sndAmb").onclick=()=>{ S.amb=!S.amb; if(S.amb){ S.mute=false; wake(); step=0; nextT=0; } save(); apply(); ui(); };
+  $s("sndFx").onclick=()=>{ S.sfx=!S.sfx; save(); wake(); apply(); ui(); if(S.sfx) LHLSound.knock(.6); };
+  $s("sndMute").onclick=()=>{ S.mute=!S.mute; save(); wake(); apply(); ui(); };
+  pop.querySelectorAll("[data-s]").forEach(x=>x.onclick=()=>{ if(S.style!==x.dataset.s){ S.style=x.dataset.s; step=0; nextT=0; } if(!S.amb) S.amb=true; S.mute=false; save(); wake(); apply(); ui(); });
+  pop.querySelectorAll("input[type=range]").forEach(x=>x.oninput=()=>{ S[x.dataset.k]=x.value/100; x.nextElementSibling.textContent=x.value; save(); if(ctx) apply(); });
+  if(!S.seen) b.classList.add("snd-new");
+  ui();
+
+  // Đã bật từ lần trước: chờ cú chạm đầu tiên rồi mới phát (chính sách autoplay của trình duyệt).
+  if(on()){ const go=()=>{ wake(); apply(); window.removeEventListener("pointerdown",go,true); window.removeEventListener("keydown",go,true); };
+    window.addEventListener("pointerdown",go,true); window.addEventListener("keydown",go,true); }
+  document.addEventListener("visibilitychange",()=>{ if(ctx&&!document.hidden&&ctx.state==="suspended") ctx.resume(); });
 })();
 </script>
 
