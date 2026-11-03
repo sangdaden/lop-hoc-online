@@ -223,7 +223,7 @@ a:focus-visible,button:focus-visible,select:focus-visible{outline:2px solid var(
 /* Phân quyền: AUTH = vai đã vào phòng (có mật mã), ROLE = vai đang xem.
    Phần quản lý phòng chỉ Key Coach thấy; phần cá nhân của học viên chỉ hiện khi đang ở vai Học viên. */
 body:not([data-auth="key"]) .only-key{display:none!important}
-body[data-live] .sim-only{display:none!important}
+body[data-live] .sim-only,body[data-nosim] .sim-only{display:none!important}
 body:not([data-live]) .only-live{display:none!important}
 body:not([data-role="hv"]) .for-hv{display:none!important}
 body[data-role="hv"] .for-coach{display:none!important}
@@ -889,6 +889,8 @@ body.drawer .rail,body.drawer .kcard{display:none}
   const SB_LOCAL=/^http:\/\/(127\.0\.0\.1|localhost):\d+$/.test(URLQ.get("sbu")||"")?URLQ.get("sbu"):"";
   const SBU=SB_LOCAL||SB_URL, SBK=SB_LOCAL?URLQ.get("sbk")||"":SB_KEY;
   const HAS_NET=!!(SBU&&SBK);
+  // Có máy chủ thì không còn phòng mô phỏng: ai cũng phải vào lớp thật (Key Coach mở, người khác nhập mã).
+  const NOSIM=HAS_NET; if(NOSIM) document.body.dataset.nosim="1";
   const NET={uid:"",sb:null,off:0,ready:null,token:""};
   NET.now=()=>Date.now()+NET.off;
   // LIVE.on = đang ở phòng thật: tắt toàn bộ mô phỏng, mọi người trong phòng là người thật.
@@ -1827,7 +1829,7 @@ body.drawer .rail,body.drawer .kcard{display:none}
         '<select id="pBuoi" class="inp" aria-label="Buổi học" style="font-size:16px;padding:10px 12px" hidden></select>'+
         '<input id="pPass" class="inp" type="password" autocomplete="off" style="font-size:16px;padding:10px 12px">'+
         '<p class="note" id="pNote" style="margin:0"></p><p class="note" id="pErr" style="margin:0;color:var(--warn)"></p>'+
-        '<button type="button" class="btn" id="pSim" style="justify-self:start">Thử phòng mô phỏng (không có người thật)</button></div>':'')+
+        '</div>':'')+
       '<div data-step="2"><h3 class="q">Nhân vật của bạn</h3><div class="sexes" role="group" aria-label="Giới tính"><button type="button" class="sexc" data-s="nam"><span class="ph"></span>Nam</button><button type="button" class="sexc" data-s="nu"><span class="ph"></span>Nữ</button></div><p class="note" style="margin:0">Đồng phục áo trắng gile be là chung cả lớp.</p></div>'+
       '<div data-step="3"><h3 class="q">Chỉnh ngoại hình</h3><div class="ed-grid"><div class="ed-prev"><div class="pv" id="edPv"></div><span class="note">Kéo để xoay</span></div><div class="ed-ctl">'+
         '<div class="tabs" role="tablist"><button type="button" class="tab" data-t="toc">Tóc</button><button type="button" class="tab" data-t="mat">Mặt</button><button type="button" class="tab" data-t="pk">Phụ kiện</button></div>'+
@@ -1879,7 +1881,7 @@ body.drawer .rail,body.drawer .kcard{display:none}
       pPass.placeholder=role==="key"?"Mật mã Key Coach":role==="lab"?"Mã Lab Coach (4 số)":"Mã vào lớp (4 số)";
       ov.querySelector("#pNote").textContent=role==="key"?"Nhập tên phòng học (1 chữ cái + 3 số) và chọn buổi. Phòng đang đóng thì mở buổi mới với mã vào lớp và mã Lab Coach mới.":role==="lab"?"Key Coach gửi mã Lab Coach. Nhập đúng mã là vào thẳng lớp đó.":"Key Coach đọc mã cho cả lớp. Nhập đúng mã là vào thẳng lớp của bạn."; };
     function URQ_C(){ const c=(URLQ.get("c")||"").replace(/\D/g,"").slice(0,6); if(c) return c; try{ return localStorage.getItem("lhl-pass-"+normCode(URLQ.get("p")||""))||""; }catch(e){ return ""; } }
-    if(pCode) ov.querySelector("#pSim").onclick=async()=>{
+    if(pCode&&ov.querySelector("#pSim")) ov.querySelector("#pSim").onclick=async()=>{
       if(role!=="hv"&&!unlocked[role]&&!(await checkCode(role,pPass.value))){ ov.querySelector("#pErr").textContent=role==="key"?"Nút này chỉ mở phòng mô phỏng (cần mật mã mô phỏng). Muốn mở phòng thật thì nhập mật mã Key Coach rồi bấm Tiếp.":"Nút này chỉ mở phòng mô phỏng (cần mật mã mô phỏng). Muốn vào lớp thật thì nhập mã rồi bấm Tiếp."; pPass.hidden=false; pPass.focus(); return; }
       pending=null; at++; show(); };
     const show=()=>{
@@ -1891,7 +1893,7 @@ body.drawer .rail,body.drawer .kcard{display:none}
       const f=stp===5?(role!=="key"||pCode.value&&!pPass.hidden?pPass:pCode):stp===4?inp:stp===1?(codeRow&&!codeRow.hidden?codeInp:ov.querySelector(".rolec.on")):ov.querySelector('[data-step="'+stp+'"] .on, [data-step="'+stp+'"] button');
       if(f) setTimeout(()=>{ f.focus(); if(f===inp) inp.select(); },30);
     };
-    ov.querySelector("#eBack").onclick=()=>{ if(at>0){ at--; show(); } else ov.remove(); };
+    ov.querySelector("#eBack").onclick=()=>{ if(at>0){ at--; show(); } else if(!(first&&NOSIM)) ov.remove(); };
     const relook=ov.querySelector("#eRelook"); if(relook) relook.onclick=()=>{ ORDER=HAS_NET?[1,5,2,3,4]:[1,2,3,4]; at=ORDER.indexOf(2); show(); };
     ov.querySelector("form").onsubmit=async e=>{ e.preventDefault();
       if(ORDER[at]===5){ const go=ov.querySelector("#eGo"), err=ov.querySelector("#pErr"); go.disabled=true; err.textContent="Đang kết nối…";
@@ -1927,7 +1929,7 @@ body.drawer .rail,body.drawer .kcard{display:none}
     const L=layout(TYPE,N);
     seats=L.S.map(s=>Object.assign(s,{kid:null,name:"",step:0,stuck:false,reserved:false,nop:false})); tables=L.TB;
     buildHall();
-    if(!LIVE.on){ // phòng mô phỏng: lấp ghế bằng học viên giả
+    if(!LIVE.on&&!NOSIM){ // phòng mô phỏng: lấp ghế bằng học viên giả
       const order=[...Array(N).keys()].sort(()=>Math.random()-.5);
       const fill=Math.round(N*0.84);
       order.forEach((i,k)=>{ if(k<fill) seatKid(i); });
@@ -1943,9 +1945,9 @@ body.drawer .rail,body.drawer .kcard{display:none}
     keyHome=new T.Vector3(-W*0.12,0,zFront+3.0); keySpot=new T.Vector3(-W*0.18+1.85,0,zFront+1.2);
     if(ROLE==="hv"){ me.g.position.copy(doorPos); me.g.rotation.y=Math.PI; }
     else { me.home=ROLE==="lab"?labHome(0):keyHome.clone(); me.g.position.copy(me.home); me.g.rotation.y=0; me.busy=false; }
-    tas=[]; if(!LIVE.on) for(let t=ROLE==="lab"?1:0;t<TAS;t++){ const k=makeKid("ta"); k.name="Lab Coach "+(t+1); k.zone=t; k.home=labHome(t); k.g.position.copy(k.home); k.g.rotation.y=0; k.busy=false; k.atHome=true; tas.push(k); }
+    tas=[]; if(!LIVE.on&&!NOSIM) for(let t=ROLE==="lab"?1:0;t<TAS;t++){ const k=makeKid("ta"); k.name="Lab Coach "+(t+1); k.zone=t; k.home=labHome(t); k.g.position.copy(k.home); k.g.rotation.y=0; k.busy=false; k.atHome=true; tas.push(k); }
     keyC=me; if(LIVE.on){ LIVE.kids={}; LIVE.stuck.clear(); if(ROLE!=="key") keyC={g:{position:keyHome.clone()},name:"Key Coach",busy:false}; restoreMe(); }
-    else if(ROLE!=="key"){ keyC=makeKid("key"); keyC.name="Key Coach"; keyC.home=keyHome.clone(); keyC.g.position.copy(keyHome); keyC.g.rotation.y=0; keyC.busy=false; }
+    else if(ROLE!=="key"&&!NOSIM){ keyC=makeKid("key"); keyC.name="Key Coach"; keyC.home=keyHome.clone(); keyC.g.position.copy(keyHome); keyC.g.rotation.y=0; keyC.busy=false; }
     $("actions").dataset.role=ROLE; document.body.dataset.role=ROLE; $("lFix").disabled=true;
     setHint();
     document.querySelectorAll(".role").forEach(b=>{const on=b.dataset.r===ROLE; b.classList.toggle("on",on); b.setAttribute("aria-pressed",on);});
@@ -1976,7 +1978,7 @@ body.drawer .rail,body.drawer .kcard{display:none}
   }
   // Học viên mô phỏng tự quyết: phần lớn tự hạ tay sau khi được xem, số còn lại giữ tay để coach quay lại.
   function selfLower(j,kid,p,msg){
-    if(LIVE.on) return; // phòng thật: chỉ học viên tự hạ tay
+    if(LIVE.on||NOSIM) return; // phòng thật: chỉ học viên tự hạ tay
     setTimeout(()=>{ const s=seats[j]; if(!s||s.kid!==kid||!s.stuck||s.coming) return;
       if(Math.random()<p){ setStuck(j,false); if(msg&&kid.g.position.distanceTo(me.g.position)<10) bubble(kid,esc(s.name)+" "+msg,1800,"ok"); render(); }
     },1200+Math.random()*3500);
@@ -2474,7 +2476,7 @@ body.drawer .rail,body.drawer .kcard{display:none}
   // Key Coach mô phỏng (khi bạn không đóng vai Key Coach): mở bước kế khi ≥60% lớp đã qua bước đang dẫn,
   // giảng lại khi một bước chuyển cam (≥ HOT người kẹt), mỗi bước cách nhau ít nhất 25 giây.
   setInterval(()=>{
-    if(LIVE.on||ROLE==="key"||!keyC||keyC.busy||MODE!=="lop") return;
+    if(LIVE.on||NOSIM||ROLE==="key"||!keyC||keyC.busy||MODE!=="lop") return;
     const people=seats.filter(s=>s.kid); if(!people.length) return;
     if(KS.brk){ if(KS.left<=0||performance.now()-KS.openAt>12000) openNext(); return; }
     if(KS.left<=0&&KS.guide<NS-1){ openNext(); return; }
@@ -2627,7 +2629,7 @@ body.drawer .rail,body.drawer .kcard{display:none}
 
   // ---------- simulated classmates ----------
   setInterval(()=>{
-    if(LIVE.on) return;
+    if(LIVE.on||NOSIM) return;
     const occ=seats.map((s,i)=>s.kid&&s.kid!==me&&s.kid.sitting?i:-1).filter(i=>i>=0);
     if(!occ.length) return;
     const n=Math.ceil(N/40);
@@ -2652,7 +2654,7 @@ body.drawer .rail,body.drawer .kcard{display:none}
   },1300);
 
   setInterval(()=>{
-    if(LIVE.on) return;
+    if(LIVE.on||NOSIM) return;
     tas.forEach(ta=>{
       if(ta.busy) return;
       if(!queue.some(i=>seats[i]&&!seats[i].coming&&!seats[i].seen)){ if(!ta.atHome){ ta.busy=true; const gen=GEN; walkTo(ta,ta.home,2.4,()=>{ if(gen!==GEN) return; ta.busy=false; ta.atHome=true; ta.g.rotation.y=0; }); } return; }
@@ -2807,7 +2809,7 @@ body.drawer .rail,body.drawer .kcard{display:none}
   $("kDemo").onclick=()=>{ actx(); if(MODE!=="lop"){ toast("Đăng ký demo chỉ có trong giờ học."); return; } keyOp(()=>{ setDemoOpen(!DEMO.open); return DEMO.open?"Đã mở đăng ký demo":"Đã đóng đăng ký demo (còn "+DEMO.list.length+" lượt)"; }); };
   // Mô phỏng: khi đang mở, thỉnh thoảng một nhóm khác đăng ký; Key Coach mô phỏng mở đăng ký ở phase có moDemo.
   setInterval(()=>{
-    if(MODE!=="lop"||LIVE.on) return;
+    if(MODE!=="lop"||LIVE.on||NOSIM) return;
     if(ROLE!=="key"&&!DEMO.open&&!KS.brk&&phaseOf(KS.guide).moDemo&&performance.now()-KS.openAt>4000) setDemoOpen(true);
     if(!DEMO.open||Math.random()>.35) return;
     const myG=mySeat>=0?seats[mySeat].grp:-1, cn=demoKind()==="canhan";
@@ -2893,7 +2895,7 @@ body.drawer .rail,body.drawer .kcard{display:none}
   $("cBonus").onclick=()=>{ actx(); openDrawer("lop"); const el=$("bonusQ"); if(el&&el.scrollIntoView) el.scrollIntoView({block:"start",behavior:"smooth"}); };
   // Mô phỏng: bạn cùng lớp thỉnh thoảng gửi điểm cộng; khi bạn là học viên, coach mô phỏng xác nhận sau vài giây.
   setInterval(()=>{
-    if(LIVE.on) return;
+    if(LIVE.on||NOSIM) return;
     const now=performance.now();
     if(ROLE==="hv"){
       BON.q.slice().forEach(b=>{ if(now-b.at<(b.me?7000:4000)) return; if(b.me){ bonusDecide(b.id,true); const s=seats[b.seat]; const ta=tas.find(t=>s&&t.zone===s.zone)||tas[0]; if(ta) bubble(ta,"Đã xác nhận điểm cộng của bạn",2200,"ta"); toast("Coach đã xác nhận điểm cộng: "+b.ly); } else bonusDecide(b.id,true); });
