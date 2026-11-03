@@ -1540,7 +1540,7 @@ body[data-auth="key"] .game #livePanel{order:-1}
       for(let i=0;i<P.count;i++){ v.fromBufferAttribute(P,i).applyMatrix4(m.matrix); n.fromBufferAttribute(N,i).applyMatrix3(nm).normalize(); pos.push(v.x,v.y,v.z); nor.push(n.x,n.y,n.z); }
       parent.remove(m); });
     const g=new T.BufferGeometry(); g.setAttribute('position',new T.Float32BufferAttribute(pos,3)); g.setAttribute('normal',new T.Float32BufferAttribute(nor,3));
-    const out=new T.Mesh(g,list[0].material); parent.add(out); return out; }
+    const out=new T.Mesh(g,list[0].material); out.userData.src=list.map(m=>[m.geometry,m.matrix.clone()]); parent.add(out); return out; }
   function mergeByMaterial(parent){ const by=new Map(); parent.children.slice().forEach(c=>{ if(c.isMesh&&!c.children.length){ const k=c.material.uuid; if(!by.has(k)) by.set(k,[]); by.get(k).push(c); } });
     by.forEach(list=>{ if(list.length>1) mergeMeshes(list,parent).userData.merged=true; }); }
   function buildHair2(gr,L){
@@ -1645,7 +1645,88 @@ body[data-auth="key"] .game #livePanel{order:-1}
     kids.push(k); return k;
   }
   function setLook(k,lk){ setLook2(k,lk); }
-  function setExpr(k,ex){ if(k.expr===ex) return; k.expr=ex; k.faceM.material=faceMat(k.sex,k.lk.eye,ex); }
+  function setExpr(k,ex){ if(k.expr===ex) return; k.expr=ex; k.faceM.material=faceMat(k.sex,k.lk.eye,ex); if(k.faceB) k.faceB.material=k.faceM.material; }
+  // ---------- Hiệu năng: người ở xa gộp thành một khối ----------
+  // Lớp 200–250 người: mỗi nhân vật đầy đủ ~25 lượt vẽ, ~7.000 tam giác, ~40 nút cần tính lại mỗi khung hình.
+  // Người ở xa đang ngồi/đứng yên được "nướng" thành một lưới màu theo đỉnh (ít đỉnh hơn, ở khoảng cách đó mắt không thấy khác)
+  // + một mặt riêng để vẫn chớp mắt, đổi nét mặt. Lại gần, giơ tay, đứng dậy, đi lại, đổi nhân vật: tự về nhân vật đầy đủ ngay.
+  const LOW=new Map(); let lowOn=false;
+  function withLow(fn){ // dựng lại hình với số mặt cắt ~60%
+    const C={}, cut=(n,m)=>Math.max(m,Math.round(n*0.6));
+    const wrap=(name,fix)=>{ const O=T[name]; C[name]=O; T[name]=function(...a){ fix(a); return new O(...a); }; };
+    wrap("SphereGeometry",a=>{ a[1]=cut(a[1]||8,6); a[2]=cut(a[2]||6,4); });
+    wrap("CylinderGeometry",a=>{ a[3]=cut(a[3]||8,6); });
+    wrap("ConeGeometry",a=>{ a[2]=cut(a[2]||8,5); });
+    wrap("TorusGeometry",a=>{ a[2]=cut(a[2]||8,3); a[3]=cut(a[3]||6,6); });
+    wrap("LatheGeometry",a=>{ a[1]=cut(a[1]||12,8); });
+    wrap("CircleGeometry",a=>{ a[1]=cut(a[1]||8,8); });
+    try{ return fn(); } finally{ Object.assign(T,C); }
+  }
+  function lowInit(){
+    if(lowOn) return; lowOn=true; g2();
+    const keep=Object.assign({},N2);
+    try{ withLow(()=>{ Object.keys(N2).forEach(k=>delete N2[k]); g2(); });
+      Object.keys(keep).forEach(k=>{ const h=keep[k], l=N2[k]; if(h&&h.isBufferGeometry&&l&&l.isBufferGeometry&&l!==h) LOW.set(h,l); }); }
+    finally{ Object.keys(N2).forEach(k=>delete N2[k]); Object.assign(N2,keep); }
+  }
+  function geoLo(g){
+    let l=LOW.get(g); if(l) return l;
+    const st=Object.keys(HAIR_DEF).find(s=>N2["hs_"+s]===g); // vỏ tóc
+    if(st){ delete N2["hs_"+st]; try{ l=withLow(()=>hairShell(st)); } finally{ N2["hs_"+st]=g; } LOW.set(g,l); return l; }
+    return g;
+  }
+  const BK={q:0,t:0}, _bv=new T.Vector3(), _bn=new T.Matrix3();
+  function bakeParts(k){ return k.bk?k.bkParts:k.g.children.filter(c=>c!==k.shadow&&!c.isSprite); }
+  function bakeKid(k){
+    lowInit();
+    if(!BK.mat){ BK.mat=new T.MeshLambertMaterial({vertexColors:true}); BK.matD=new T.MeshLambertMaterial({vertexColors:true,side:T.DoubleSide}); }
+    const L=[[],[]]; let face=null, bad=false;
+    const walk=(o,pm)=>{ if(!o.visible||bad) return; o.updateMatrix(); const mw=new T.Matrix4().multiplyMatrices(pm,o.matrix);
+      if(o===k.faceM) face=mw;
+      else if(o.isMesh){ const mt=o.material; if(!mt.isMeshLambertMaterial||mt.map||mt.transparent){ bad=true; return; }
+        const src=o.userData.src?o.userData.src.map(([g,m])=>[geoLo(g),new T.Matrix4().multiplyMatrices(mw,m)]):[[geoLo(o.geometry),mw]];
+        src.forEach(([g,m])=>L[mt.side===T.DoubleSide||m.determinant()<0?1:0].push([g,m,mt.color])); }
+      else if(o.isSprite||o.isLine||o.isPoints) bad=true;
+      o.children.forEach(c=>walk(c,mw)); };
+    const I=new T.Matrix4(); bakeParts(k).forEach(o=>walk(o,I));
+    if(bad||!face) return null;
+    const grp=new T.Group();
+    L.forEach((list,d)=>{ if(!list.length) return; let nv=0,ni=0;
+      list.forEach(([g])=>{ const c=g.attributes.position.count; nv+=c; ni+=g.index?g.index.count:c; });
+      const P=new Float32Array(nv*3), N=new Float32Array(nv*3), C=new Uint8Array(nv*3), X=nv>65535?new Uint32Array(ni):new Uint16Array(ni); let vo=0,io=0;
+      for(const [g,m,col] of list){ const p=g.attributes.position, n=g.attributes.normal; _bn.getNormalMatrix(m);
+        const r=Math.round(col.r*255), gg=Math.round(col.g*255), b=Math.round(col.b*255);
+        for(let i=0;i<p.count;i++){ const j=(vo+i)*3;
+          _bv.fromBufferAttribute(p,i).applyMatrix4(m); P[j]=_bv.x; P[j+1]=_bv.y; P[j+2]=_bv.z;
+          _bv.fromBufferAttribute(n,i).applyMatrix3(_bn).normalize(); N[j]=_bv.x; N[j+1]=_bv.y; N[j+2]=_bv.z;
+          C[j]=r; C[j+1]=gg; C[j+2]=b; }
+        if(g.index){ const a=g.index.array; for(let i=0;i<a.length;i++) X[io++]=a[i]+vo; } else for(let i=0;i<p.count;i++) X[io++]=vo+i;
+        vo+=p.count; }
+      const geo=new T.BufferGeometry(); geo.setAttribute("position",new T.BufferAttribute(P,3)); geo.setAttribute("normal",new T.BufferAttribute(N,3));
+      geo.setAttribute("color",new T.BufferAttribute(C,3,true)); geo.setIndex(new T.BufferAttribute(X,1)); geo.computeBoundingSphere();
+      const mesh=new T.Mesh(geo,d?BK.matD:BK.mat); mesh.matrixAutoUpdate=false; grp.add(mesh); });
+    const fc=new T.Mesh(geoLo(k.faceM.geometry),k.faceM.material); fc.renderOrder=k.faceM.renderOrder; fc.matrixAutoUpdate=false; fc.matrix.copy(face); grp.add(fc);
+    return {grp,face:fc,st:bakeState(k)};
+  }
+  // những gì làm hình người thay đổi (ngoài cử động nhỏ như gõ phím, chớp mắt)
+  function bakeState(k){ return [k.lk,k.sitting,k.hand,k.rest,k.skirtOn,k.body.material,k.vest.material,k.vest.visible,k.legL.visible,k.hip.position.z,k.torso.scale.x,k.lookG.children.length]; }
+  function bakeSame(k){ const a=k.bk.st, b=bakeState(k); for(let i=0;i<a.length;i++) if(a[i]!==b[i]) return false; return true; }
+  function bakeOn(k,b){ k.bkParts=bakeParts(k); k.bkParts.forEach(c=>k.g.remove(c)); k.bk=b; k.faceB=b.face; k.g.add(b.grp); }
+  function bakeOff(k){ if(!k.bk) return; k.g.remove(k.bk.grp); k.bk.grp.children.forEach(m=>{ if(m!==k.faceB) m.geometry.dispose(); }); k.bkParts.forEach(c=>k.g.add(c)); k.bk=null; k.faceB=null; k.bkParts=null; }
+  function settled(k){ const ty=(k.sitting&&!k.hand&&!k.walk&&k.rest==null)?1:0;
+    return !k.walk&&!(k.bow>0)&&!(k.nod>0)&&Math.abs(k.handA-(k.hand?1:0))<0.01&&Math.abs((k.typeA||0)-ty)<0.01; }
+  let lodD=14;
+  function lodTick(){
+    const cp=camera.position, t0=performance.now(), n=kids.length; if(!n) return;
+    const st=BK.q%n; BK.q++;
+    for(let i=0;i<n;i++){ const k=kids[(st+i)%n]; if(k===me||k.kind==="me") continue;
+      const d=k.g.position.distanceTo(cp), far=d>(k.bk?lodD*0.92:lodD);
+      if(!far||!k.g.visible||!settled(k)){ bakeOff(k); continue; }
+      if(k.bk&&bakeSame(k)) continue;
+      bakeOff(k);
+      if(performance.now()-t0<3&&!(k.bkNo>t0)){ const b=bakeKid(k); if(b) bakeOn(k,b); else k.bkNo=t0+5000; }
+    }
+  }
   // Trang phục theo vai: học viên áo trắng gile be, bạn áo vàng, Lab Coach áo xanh ngọc + thẻ LAB COACH,
   // Key Coach áo xanh than gile vàng + thẻ KEY COACH. Học viên vẫn giống hệt nhau; chỉ người hướng dẫn khác để dễ nhận ra.
   function dress(k,look){
@@ -1655,7 +1736,7 @@ body[data-auth="key"] .game #livePanel{order:-1}
     k.badge.visible=look==="ta"||look==="key"; k.badge.material=look==="key"?M.badgeKey:M.badgeLab;
     k.coach=look==="ta"?"lab":look==="key"?"key":"";
   }
-  function removeKid(k){ freeRest(k); scene.remove(k.g); const i=kids.indexOf(k); if(i>=0) kids.splice(i,1); bubbles.filter(b=>b.k===k).forEach(b=>killBubble(b)); }
+  function removeKid(k){ freeRest(k); bakeOff(k); scene.remove(k.g); const i=kids.indexOf(k); if(i>=0) kids.splice(i,1); bubbles.filter(b=>b.k===k).forEach(b=>killBubble(b)); }
   function setSit(k,on){
     setSit2(k,on);
     k.hip.position.z=on?0.07:0; // ngồi nhích ra mép ghế, người hơi đổ về laptop
@@ -2185,7 +2266,7 @@ body[data-auth="key"] .game #livePanel{order:-1}
   }
   function killBubble(b){ if(!b) return; b.el.remove(); const i=bubbles.indexOf(b); if(i>=0) bubbles.splice(i,1); }
   function placeBubbles(now){
-    const w=stage.clientWidth, h=stage.clientHeight;
+    const w=SW||stage.clientWidth, h=SH||stage.clientHeight;
     for(let i=bubbles.length-1;i>=0;i--){
       const b=bubbles[i]; if(now>b.until){killBubble(b);continue;}
       v3.copy(b.k.g.position); v3.y+=b.h; v3.project(camera);
@@ -3837,7 +3918,9 @@ body[data-auth="key"] .game #livePanel{order:-1}
 
   // ---------- frame loop ----------
   const tmp=new T.Vector3(), look=new T.Vector3();
-  function resize(){ const w=stage.clientWidth, h=stage.clientHeight; if(!w||!h) return; renderer.setSize(w,h,false); camera.aspect=w/h; camera.updateProjectionMatrix(); }
+  let SW=0, SH=0; // kích thước khung, lưu sẵn để mỗi khung hình khỏi hỏi lại trình duyệt
+  function resize(){ const w=stage.clientWidth, h=stage.clientHeight; if(!w||!h) return; SW=w; SH=h; renderer.setSize(w,h,false); camera.aspect=w/h; camera.updateProjectionMatrix();
+    lodD=Math.max(8,Math.min(22,h*0.012)); } // khoảng cách bắt đầu gộp người ở xa: đầu nhỏ hơn ~30px
   if(window.ResizeObserver) new ResizeObserver(resize).observe(stage); else window.addEventListener("resize",resize);
   resize();
   function animKid(k,dt,t){
@@ -3895,6 +3978,21 @@ body[data-auth="key"] .game #livePanel{order:-1}
     // quay lại tab: bù phần thế giới đã trôi, hỏi máy chủ ngay thay vì chờ lượt hỏi chậm của tab ẩn
     simAdvance(); if(LIVE.on&&LIVE.joined&&!pollBusy) pollLoop();
   });
+  // Độ nét tự điều chỉnh: máy không giữ nổi ~50 khung/giây thì hạ độ nét từng nấc 0,25 (thấp nhất 1),
+  // máy chạy dư thì nâng lại. Nấc nào vừa nâng lên đã tụt hình thì không thử lại nấc đó nữa.
+  const PR_MAX=Math.min(window.devicePixelRatio||1,2); let prMin=Math.min(1,PR_MAX);
+  let prNow=PR_MAX, prCap=PR_MAX, prAt=0, prUpAt=0, ftAvg=16.7, ftLast=0, prDrop=null;
+  function prTick(now){
+    const dt=now-ftLast; ftLast=now; if(!(dt>0&&dt<250)){ prAt=now; return; }
+    ftAvg+=(dt-ftAvg)*0.05; if(now-prAt<2500) return;
+    let want=prNow;
+    // vừa hạ mà không nhanh hơn (máy chậm vì việc khác, không vì độ nét): trả lại độ nét cũ, thôi không hạ nữa
+    if(prDrop&&ftAvg>prDrop.ft*0.92){ want=prCap=prDrop.pr; prDrop=null; prMin=want; }
+    else if(ftAvg>20&&prNow>prMin){ prDrop={pr:prNow,ft:ftAvg}; want=Math.max(prMin,prNow-0.25); if(now-prUpAt<6000) prCap=want; }
+    else { prDrop=null; if(ftAvg<17.5&&prNow<prCap&&now-prAt>6000){ want=Math.min(prCap,prNow+0.25); prUpAt=now; } }
+    if(want!==prNow){ prNow=want; renderer.setPixelRatio(prNow); prAt=now; }
+  }
+  window.__lhlPerf=()=>({fps:Math.round(1000/ftAvg),pr:prNow,calls:renderer.info.render.calls,tris:renderer.info.render.triangles,baked:kids.filter(k=>k.bk).length,kids:kids.length});
   function frame(){
     simAdvance();
     const target=me.g.position; let want, at;
@@ -3905,6 +4003,7 @@ body[data-auth="key"] .game #livePanel{order:-1}
     if(HANG.length){ camera.updateMatrixWorld(); hangTick(); }
     { const fd=camPos.distanceTo(camLook); scene.fog.near=Math.max(20,fd*0.9); scene.fog.far=Math.max(fogFar,fd+(zBack-zFront)+8); }
     guideTick(performance.now());
+    lodTick(); prTick(performance.now());
     renderer.render(scene,camera);
     nameTick(performance.now());
     placeBubbles(performance.now());
