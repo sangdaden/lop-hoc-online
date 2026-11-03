@@ -979,6 +979,8 @@ body[data-auth="key"] .game #livePanel{order:-1}
     STEPS=WORK.map(i=>PH[i].ten); NS=STEPS.length; DECK=d.the||DECK_AI;
   }
   loadDay(DAY02);
+  // Ngày chưa có gói lab riêng: dùng khung lab chung (cùng quy trình phase như Ngày 02) để Key Coach vẫn mở lớp được.
+  const packOf=d=>d.pack||d.auto||(d.auto=Object.assign({},DAY02,{id:"day"+d.so,so:d.so,tieuDe:"Khung lab chung",nguon:""}));
   const phaseOf=k=>PH[WORK[Math.min(k,NS-1)]];
   const breakAfter=k=>{ const i=WORK[k]; return i!=null&&PH[i+1]&&PH[i+1].cheDo==="nghi"?PH[i+1]:null; };
   const TYPE_NAME={island:"cụm bàn",round:"bàn tròn",rows:"dãy"};
@@ -2134,7 +2136,7 @@ body[data-auth="key"] .game #livePanel{order:-1}
       (first&&HAS_NET?'<div data-step="5"><h3 class="q" id="pQ">Vào phòng nào?</h3>'+
         '<input id="pCode" class="inp" maxlength="8" autocomplete="off" autocapitalize="characters" spellcheck="false" style="font-size:20px;letter-spacing:.12em;text-transform:uppercase;padding:10px 12px">'+
         ''+
-        '<select id="pBuoi" class="inp" aria-label="Buổi học" style="font-size:16px;padding:10px 12px" hidden></select>'+
+        '<select id="pNgay" class="inp" aria-label="Ngày học" style="font-size:16px;padding:10px 12px" hidden></select><select id="pBuoi" class="inp" aria-label="Buổi học" style="font-size:16px;padding:10px 12px" hidden></select>'+
         '<input id="pPass" class="inp" type="password" autocomplete="off" style="font-size:16px;padding:10px 12px">'+
         '<p class="note" id="pNote" style="margin:0"></p><p class="note" id="pErr" style="margin:0;color:var(--warn)"></p>'+
         '</div>':'')+
@@ -2174,20 +2176,21 @@ body[data-auth="key"] .game #livePanel{order:-1}
     const pCode=ov.querySelector("#pCode"), pPass=ov.querySelector("#pPass");
     const keyOk=(()=>{ try{ return !!localStorage.getItem("lhl-keyok"); }catch(e){ return false; } })();
     const lastKey=(()=>{ try{ return localStorage.getItem("lhl-keyroom")||""; }catch(e){ return ""; } })();
-    const pBuoi=ov.querySelector("#pBuoi");
+    const pBuoi=ov.querySelector("#pBuoi"), pNgay=ov.querySelector("#pNgay");
     // Key Coach: gõ tên phòng và chọn buổi. Học viên / Lab Coach: chỉ nhập một mã là vào thẳng lớp.
     const CA=["Sáng","Chiều","Tối"];
     const fillBuoi=()=>{ const h=new Date().getHours(), ca=h<12?0:h<17?1:2;
-      pBuoi.innerHTML=DAYS.filter(d=>d.pack).map(d=>CA.map((c,k)=>{ const v="Ngày "+d.so+" · "+c; return '<option value="'+v+'"'+(d.pack===DAY&&k===ca?' selected':'')+'>Buổi '+esc(v)+' · '+esc(d.pack.tieuDe)+'</option>'; }).join("")).join(""); };
+      pNgay.innerHTML=DAYS.map(d=>'<option value="Ngày '+d.so+'"'+(packOf(d)===DAY?' selected':'')+'>Ngày '+d.so+' · '+esc(d.pack?d.pack.tieuDe:"Khung lab chung (chưa có gói riêng)")+'</option>').join("");
+      pBuoi.innerHTML=CA.map((c,k)=>'<option value="'+c+'"'+(k===ca?' selected':'')+'>Buổi '+c+'</option>').join(""); };
     const fillRoom=()=>{ if(!pCode) return; ov.querySelector("#pErr").textContent="";
       const urlP=normCode(URLQ.get("p")||""); pCode.value=urlP||(role==="key"?lastKey:"");
-      pBuoi.hidden=role!=="key"; pCode.hidden=role!=="key"; if(role==="key") fillBuoi();
+      pBuoi.hidden=pNgay.hidden=role!=="key"; pCode.hidden=role!=="key"; if(role==="key") fillBuoi();
       ov.querySelector("#pQ").textContent=role==="key"?"Mở phòng học":role==="lab"?"Nhập mã Lab Coach":"Nhập mã vào lớp";
       pCode.placeholder="Tên phòng, ví dụ H201";
       pPass.hidden=role==="key"&&keyOk; pPass.value=role==="hv"?String(URQ_C()):"";
       pPass.type=role==="key"?"password":"text"; pPass.inputMode=role==="key"?"text":"numeric";
       pPass.placeholder=role==="key"?"Mật mã Key Coach":role==="lab"?"Mã Lab Coach (4 số)":"Mã vào lớp (4 số)";
-      ov.querySelector("#pNote").textContent=role==="key"?"Nhập tên phòng học (1 chữ cái + 3 số) và chọn buổi. Phòng đang đóng thì mở buổi mới với mã vào lớp và mã Lab Coach mới.":role==="lab"?"Key Coach gửi mã Lab Coach. Nhập đúng mã là vào thẳng lớp đó.":"Key Coach đọc mã cho cả lớp. Nhập đúng mã là vào thẳng lớp của bạn."; };
+      ov.querySelector("#pNote").textContent=role==="key"?"Nhập tên phòng học (1 chữ cái + 3 số), chọn ngày học và buổi. Phòng đang đóng thì mở buổi mới với mã vào lớp và mã Lab Coach mới.":role==="lab"?"Key Coach gửi mã Lab Coach. Nhập đúng mã là vào thẳng lớp đó.":"Key Coach đọc mã cho cả lớp. Nhập đúng mã là vào thẳng lớp của bạn."; };
     function URQ_C(){ const c=(URLQ.get("c")||"").replace(/\D/g,"").slice(0,6); if(c) return c; try{ return localStorage.getItem("lhl-pass-"+normCode(URLQ.get("p")||""))||""; }catch(e){ return ""; } }
     if(pCode&&ov.querySelector("#pSim")) ov.querySelector("#pSim").onclick=async()=>{
       if(role!=="hv"&&!unlocked[role]&&!(await checkCode(role,pPass.value))){ ov.querySelector("#pErr").textContent=role==="key"?"Nút này chỉ mở phòng mô phỏng (cần mật mã mô phỏng). Muốn mở phòng thật thì nhập mật mã Key Coach rồi bấm Tiếp.":"Nút này chỉ mở phòng mô phỏng (cần mật mã mô phỏng). Muốn vào lớp thật thì nhập mã rồi bấm Tiếp."; pPass.hidden=false; pPass.focus(); return; }
@@ -2205,7 +2208,7 @@ body[data-auth="key"] .game #livePanel{order:-1}
     const relook=ov.querySelector("#eRelook"); if(relook) relook.onclick=()=>{ ORDER=HAS_NET?[1,5,2,3,4]:[1,2,3,4]; at=ORDER.indexOf(2); show(); };
     ov.querySelector("form").onsubmit=async e=>{ e.preventDefault();
       if(ORDER[at]===5){ const go=ov.querySelector("#eGo"), err=ov.querySelector("#pErr"); go.disabled=true; err.textContent="Đang kết nối…";
-        let r; try{ r=await netPrepare(role,pCode.value,pPass.value,pBuoi.value); }catch(x){ r="Không vào được phòng: "+(x.message||x); }
+        let r; try{ r=await netPrepare(role,pCode.value,pPass.value,pNgay.value+" · "+pBuoi.value); }catch(x){ r="Không vào được phòng: "+(x.message||x); }
         go.disabled=false; if(typeof r==="string"){ err.textContent=r; if(/mật mã|mã Lab|mã vào/.test(r)){ pPass.hidden=false; pPass.select(); } else pCode.select(); return; }
         err.textContent=""; pending=r; at++; show(); return; }
       if(!HAS_NET&&ORDER[at]===1&&!unlocked[role]&&!(await checkCode(role,codeInp.value))){ ov.querySelector("#eErr").textContent=codeInp.value?"Sai mật mã. Học viên thì chọn “Học viên”, không cần mật mã.":"Nhập mật mã cho vai này."; codeInp.select(); return; }
@@ -3359,7 +3362,7 @@ body[data-auth="key"] .game #livePanel{order:-1}
   // Lịch ngày lab + chế độ phòng
   function renderDays(){
     $("days").innerHTML=DAYS.map((d,k)=>{
-      const on=d.pack===DAY, ok=!!d.pack;
+      const on=(d.pack||d.auto)===DAY, ok=!!d.pack;
       const sub=d.tt==="nay"?"hôm nay":d.tt==="qua"?(ok?"đã qua · tự học":"đã qua · chưa nạp gói"):"sắp tới";
       return '<button class="day'+(on?' on':'')+(ok?'':' off')+(d.tt==="nay"?' nay':'')+(d.tt==="qua"?' qua':'')+(d.tt==="qua"&&!ok?' miss':'')+'" data-k="'+k+'"'+(ok?'':' aria-disabled="true"')+' title="Ngày '+d.so+(d.pack?' · '+esc(d.pack.tieuDe):'')+' · '+sub+'" aria-label="Ngày '+d.so+' · '+sub+'">'+Number(d.so)+'</button>';
     }).join("")+'<p class="dayt">'+(DAY?'Ngày '+DAY.so+' · '+esc(DAY.tieuDe||""):'')+'</p>';
@@ -3399,7 +3402,7 @@ body[data-auth="key"] .game #livePanel{order:-1}
     if(role==="key"){
       if(!ROOM_RE.test(code)) return "Tên phòng gồm 1 chữ cái và 3 số, ví dụ H201.";
       if(!(await rpc("lhl_key_login",{p_pass:pass?String(pass).trim():null}))) return pass?"Sai mật mã Key Coach.":"Nhập mật mã Key Coach.";
-      const d=DAYS.find(x=>x.pack&&buoi&&buoi.indexOf("Ngày "+x.so+" ")===0); if(d&&d.pack!==DAY){ loadDay(d.pack); drawWB(); renderDays(); }
+      const d=DAYS.find(x=>buoi&&buoi.indexOf("Ngày "+x.so+" ")===0); if(d&&packOf(d)!==DAY){ loadDay(packOf(d)); drawWB(); renderDays(); }
       const r=await rpc("lhl_create_room",{p_code:code,p_title:buoi||"Ngày "+DAY.so}); lab=r.lab; jpass=r.pass; fresh=r.fresh;
     } else {
       pass=String(pass||"").replace(/\D/g,"");
@@ -3482,7 +3485,7 @@ body[data-auth="key"] .game #livePanel{order:-1}
   // Mọi người khác: nhận trạng thái chung từ Key Coach
   function applyState(s,first){
     const prev=LIVE.st; LIVE.st=s;
-    const pack=(DAYS.find(d=>d.pack&&d.pack.id===s.day)||{}).pack;
+    const pack=DAYS.map(packOf).find(p=>p.id===s.day);
     const rebuild=s.N!==N||s.type!==TYPE||s.mode!==MODE||(pack&&pack!==DAY);
     if(pack&&pack!==DAY){ loadDay(pack); drawWB(); }
     MODE=s.mode||MODE;
