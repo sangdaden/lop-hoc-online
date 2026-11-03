@@ -2735,6 +2735,49 @@ body.drawer .rail,body.drawer .kcard{display:none}
   requestAnimationFrame(frame);
 })();
 </script>
+<!-- Báo có bản mới: định kỳ hỏi máy chủ index.html có đổi không (ETag/Last-Modified, không tải cả file).
+     Có đổi thì hiện một viên nhỏ phía trên; bấm vào để tải lại. Không tự tải lại, không kêu, không chặn màn hình. -->
+<style>
+.newver{all:unset;box-sizing:border-box;cursor:pointer;position:fixed;left:50%;top:calc(max(14px,env(safe-area-inset-top,0px)) + 52px);transform:translate(-50%,-6px);z-index:40;display:flex;gap:8px;align-items:center;padding:6px 14px 6px 10px;border-radius:999px;font:600 13px/1.3 "Be Vietnam Pro",system-ui,sans-serif;color:#fff;background:rgba(18,21,26,.72);border:1px solid rgba(242,193,78,.55);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);opacity:0;transition:opacity .4s,transform .4s;max-width:calc(100% - 32px)}
+.newver.on{opacity:1;transform:translate(-50%,0)}
+.newver i{flex:none;width:8px;height:8px;border-radius:50%;background:#F2C14E;box-shadow:0 0 0 3px rgba(242,193,78,.25)}
+.newver span{white-space:nowrap}
+.newver small{font-weight:400;opacity:.75}
+.newver:focus-visible{outline:2px solid #F2C14E;outline-offset:2px}
+@media (prefers-reduced-motion:reduce){.newver{transition:none}}
+</style>
+<script>
+(()=>{
+  if(!/^https?:$/.test(location.protocol)) return;
+  const URL_=location.pathname.replace(/[^/]*$/,"")+"index.html";
+  const EVERY=3*60*1000; // 3 phút một lần; 250 người cũng chỉ ~1,4 yêu cầu nhỏ mỗi giây
+  let base=null, shown=false, busy=false;
+  async function sig(){
+    const r=await fetch(URL_+"?v="+Date.now(),{method:"HEAD",cache:"no-store"});
+    if(!r.ok) return null;
+    const t=r.headers.get("etag")||r.headers.get("last-modified")||r.headers.get("content-length");
+    if(t) return t;
+    const g=await fetch(URL_+"?v="+Date.now(),{cache:"no-store"}); // máy chủ không trả header nào thì so độ dài nội dung
+    return g.ok?String((await g.text()).length):null;
+  }
+  async function check(){
+    if(shown||busy||document.hidden) return; busy=true;
+    try{ const s=await sig(); if(s){ if(base===null) base=s; else if(s!==base) show(); } }catch(e){}
+    busy=false;
+  }
+  function show(){
+    shown=true;
+    const b=document.createElement("button"); b.type="button"; b.className="newver"; b.setAttribute("role","status");
+    b.title="Lớp vừa có bản cập nhật. Bấm để tải lại trang.";
+    b.innerHTML='<i></i><span>Có bản mới · <small>bấm để tải lại</small></span>';
+    b.onclick=()=>location.reload();
+    document.body.appendChild(b); requestAnimationFrame(()=>b.classList.add("on"));
+  }
+  check(); setInterval(check,EVERY);
+  document.addEventListener("visibilitychange",()=>{ if(!document.hidden) check(); });
+  window.__lhlNewVer=show; // để thử: gọi __lhlNewVer() trong console
+})();
+</script>
 
 </body>
 </html>
