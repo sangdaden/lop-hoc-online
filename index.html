@@ -1621,6 +1621,8 @@ body.focus .focuschip{display:flex}
     DX.letters=mk(2048,160,()=>{});
     DX.banA=mk(192,640,()=>{}); DX.banB=mk(192,640,()=>{});
     DX.plaque=mk(512,128,()=>{});
+    DX.demo=mk(512,288,()=>{}); DX.map=mk(400,520,()=>{});
+    DX.mat=mk(256,160,(x,w,h)=>{x.fillStyle="#22324F";x.fillRect(0,0,w,h);x.strokeStyle="#F2C14E";x.lineWidth=8;x.strokeRect(14,14,w-28,h-28);x.fillStyle="#F2C14E";x.font="700 30px "+DF;x.textAlign="center";x.textBaseline="middle";x.fillText("Chào bạn",w/2,h/2+2);});
     DX.posters=[0,1,2,3].map(()=>mk(256,360,()=>{}));
     DX.numbers=mk(1024,1024,()=>{});
     DX.rug=mk(256,256,(x,w,h)=>{x.fillStyle="#e7d8c4";x.fillRect(0,0,w,h);const r=drng(5);for(let i=0;i<2500;i++){x.fillStyle="rgba(255,255,255,"+(r()*.08)+")";x.fillRect(r()*w,r()*h,2,1);}x.strokeStyle="rgba(0,0,0,.10)";x.lineWidth=6;x.strokeRect(8,8,w-16,h-16);});
@@ -1637,7 +1639,9 @@ body.focus .focuschip{display:flex}
       posters:DX.posters.map(p=>new T.MeshLambertMaterial({map:p.tex})), numbers:new T.MeshLambertMaterial({map:DX.numbers.tex,side:T.DoubleSide}),
       wood:new T.MeshLambertMaterial({color:0x8a6040}), woodL:new T.MeshLambertMaterial({color:0xb98a5c}), frame:new T.MeshLambertMaterial({color:0xe9e6df}),
       pot:new T.MeshLambertMaterial({color:0xcfc6b8}), potS:new T.MeshLambertMaterial({color:0xd9cfc2}), navy:new T.MeshLambertMaterial({color:0x22324f}),
-      dark:new T.MeshLambertMaterial({color:0x1e2023}), cup:new T.MeshLambertMaterial({color:0xf3eee4}), disp:new T.MeshLambertMaterial({color:0xe8e6e1})
+      dark:new T.MeshLambertMaterial({color:0x1e2023}), gold:new T.MeshLambertMaterial({color:0xF2C14E}),
+      demo:M2({map:DX.demo.tex}), map:new T.MeshLambertMaterial({map:DX.map.tex}), mat:new T.MeshLambertMaterial({map:DX.mat.tex}),
+      glass:new T.MeshLambertMaterial({color:0xa9c4e0,transparent:true,opacity:.28,depthWrite:false}), cup:new T.MeshLambertMaterial({color:0xf3eee4}), disp:new T.MeshLambertMaterial({color:0xe8e6e1})
     };
     drawStatic(); drawDecor(); setSky("lam");
     if(document.fonts&&document.fonts.ready) document.fonts.ready.then(()=>{ drawStatic(); drawDecor(); });
@@ -1688,8 +1692,32 @@ body.focus .focuschip{display:flex}
     x.font="600 20px "+DF; x.textAlign="center"; x.textBaseline="middle"; x.fillStyle=KS.brk?"#B07F15":"#23407A"; x.fillText(lop?(KS.brk?"nghỉ":"phase "+KS.guide):"tự học",128,172);
     DX.clock.tex.needsUpdate=true;
     // số agent chạy được: số người đã qua phase 3 (mô phỏng), chỉ đếm, không tên
+    drawBack();
     const ag=seats.filter(s=>s.kid&&s.step>=Math.min(3,NS)).length;
     if(ag!==DX.agents){ DX.agents=ag; drawStatic(); }
+  }
+  // cuối lớp: màn góc xem demo + bảng "Bạn đang ở đây" ở lối vào (chỉ vẽ lại khi nội dung đổi)
+  function drawBack(){
+    if(!DX||!DX.demo) return;
+    let dm=null; try{ dm=DEMO; }catch(e){}
+    const lop=MODE==="lop", dOpen=!!(lop&&dm&&dm.open), dN=dm?dm.list.length:0, present=kids.length;
+    const line=lop?"Ngày "+DAY.so+" · "+(KS.brk?"Giờ nghỉ":"Phase "+KS.guide):"Phòng tự học";
+    const key=[dOpen,dN,line,present,tables.length,W,zBack].join("|"); if(key===DX.backKey) return; DX.backKey=key;
+    let x=DX.demo.canvas.getContext("2d"), w=512, h=288; x.fillStyle="#22324F"; x.fillRect(0,0,w,h); x.textAlign="center"; x.textBaseline="middle";
+    x.fillStyle="#F2C14E"; x.font="700 28px "+DF; x.fillText("GÓC XEM DEMO",w/2,62);
+    x.fillStyle="#F3EEDF"; x.font="800 72px "+DF; x.fillText(dOpen?dN+" lượt":"Demo",w/2,150);
+    x.fillStyle="#9FB3D1"; x.font="500 24px "+DF; x.fillText(dOpen?"đã đăng ký demo":"mở khi Key Coach bật demo",w/2,222); DX.demo.tex.needsUpdate=true;
+    x=DX.map.canvas.getContext("2d"); w=400; h=520; x.fillStyle="#F3EEDF"; x.fillRect(0,0,w,h); x.fillStyle="#22324F"; x.fillRect(0,0,w,86);
+    x.fillStyle="#fff"; x.font="700 32px "+DF; x.fillText("Bạn đang ở đây",w/2,46);
+    // sơ đồ nhìn từ cửa vào: tường sau ở dưới, bên phải người đứng ở cửa là x âm
+    const X0=24,X1=w-24,Y0=104,Y1=372, sx=(X1-X0)/W, sz=(Y1-Y0)/(zBack-zFront), k=Math.min(sx,sz), ox=(X0+X1)/2, oy=(Y0+Y1)/2, cz=(zBack+zFront)/2;
+    const P=(px,pz)=>[ox-px*k, oy+(pz-cz)*k];
+    x.strokeStyle="#B9BCC6"; x.lineWidth=3; x.strokeRect(ox-W/2*k,oy-(zBack-zFront)/2*k,W*k,(zBack-zFront)*k);
+    x.fillStyle="#22324F"; const [fx0,fy0]=P(W/2,zFront); x.fillRect(fx0,fy0,W*k,5);
+    x.fillStyle="#C9C3B5"; tables.forEach(t=>{ const [a,b]=P(t.x,t.z); if(t.kind==="round"){ x.beginPath(); x.arc(a,b,Math.max(3,t.r*k),0,7); x.fill(); } else x.fillRect(a-t.w*k/2,b-t.d*k/2,Math.max(3,t.w*k),Math.max(3,t.d*k)); });
+    const [dx,dy]=P(doorPos.x,doorPos.z); x.fillStyle="#F2C14E"; x.beginPath(); x.arc(dx,dy,13,0,7); x.fill(); x.strokeStyle="#22324F"; x.lineWidth=4; x.stroke();
+    x.fillStyle="#22324F"; x.font="600 24px "+DF; x.fillText(line,w/2,420); x.font="800 34px "+DF; x.fillText(present+" người có mặt",w/2,470);
+    DX.map.tex.needsUpdate=true;
   }
   function setSky(t){
     const S=TOD[t], x=DX.sky.canvas.getContext("2d"), w=256, h=256; const g=x.createLinearGradient(0,0,0,h); g.addColorStop(0,S.sky[0]); g.addColorStop(1,S.sky[1]); x.fillStyle=g; x.fillRect(0,0,w,h);
@@ -1706,6 +1734,7 @@ body.focus .focuschip{display:flex}
     sun.color.lerp(todTarget.sun,k); sun.intensity+=(S.si-sun.intensity)*k;
     scene.background.lerp(todTarget.bg,k); scene.fog.color.copy(scene.background);
     DX.m.patch.color.lerp(todTarget.patch,k); DX.m.patch.opacity+=(S.po-DX.m.patch.opacity)*k;
+    (DX.booth||[]).forEach(b=>{ const on=!!(RS[b.rs]&&RS[b.rs].by); if(b.on!==on){ b.on=on; b.lamp.color.setHex(on?0xF2C14E:0x5d6573); } }); // bốt yên tĩnh: đèn vàng = có người
   }
   function buildDecor(){
     initDecor(); const m=DX.m, H=4.6, D=zBack-zFront, cz=(zBack+zFront)/2, fz=zFront;
@@ -1722,7 +1751,7 @@ body.focus .focuschip{display:flex}
     if(TYPE!=="rows"){
       const xs=[...new Set(tables.map(t=>Math.round(t.x*100)/100))].sort((a,b)=>a-b), ax=[]; for(let i=0;i<xs.length-1;i++) ax.push((xs[i]+xs[i+1])/2);
       let tz0=1e9,tz1=-1e9; tables.forEach(t=>{tz0=Math.min(tz0,t.z);tz1=Math.max(tz1,t.z);});
-      const za=tz0-1.8, zb=zBack-1.0, a0=ax.length?ax[0]:0; const ln=im(new T.PlaneGeometry(1,1),m.aisle,ax.length+2);
+      const za=tz0-1.8, zb=zBack-3.1, a0=ax.length?ax[0]:0; const ln=im(new T.PlaneGeometry(1,1),m.aisle,ax.length+2);
       ax.forEach((x,i)=>place(ln,i,x,.007,(za+zb)/2,0,-Math.PI/2,.06,zb-za,1));
       place(ln,ax.length,(a0+doorPos.x)/2,.007,zb,0,-Math.PI/2,Math.abs(doorPos.x-a0)+.06,.06,1); place(ln,ax.length+1,doorPos.x,.007,(zb+zBack)/2,0,-Math.PI/2,.06,zBack-zb,1);
     }
@@ -1812,6 +1841,50 @@ body.focus .focuschip{display:flex}
           [[xw-.5,z-.6,-Math.PI/2],[xw-.5,z+.15,-Math.PI/2],[xw-1.35,z+.5,Math.PI]].forEach(([x,zz,ry],j)=>{ const k=ci++; place(cu,k,x,.49,zz,ry); cu.setColorAt(k,col.setHex(j===1?0xF2C14E:0x2E4E8F));
             RS.push({kind:"sofa",name:"Sofa góc",mesh:cu,inst:k,pos:new T.Vector3(x,0,zz),yaw:ry,y:.42,by:null}); });
         } });
+    }
+    // --- cuối lớp (Sang duyệt 03/11/2026): cây lớn trang trí, góc xem demo, 2 bốt yên tĩnh, lối vào có bản đồ ---
+    // dải sàn từ hàng ghế cuối tới tường sau; lối từ cửa vào bàn để trống (vạch lối đi đã dời lên sát hàng ghế cuối)
+    { const L0=-W/2+3.6, R0=doorPos.x-2.0, zc=zBack-1.55; DX.booth=[];
+      // A. cây lớn trên bục gỗ tròn, chỉ trang trí; viền bục là chỗ ngồi
+      const tx=L0+1.25;
+      const pf=new T.Mesh(new T.CylinderGeometry(1.15,1.2,.42,40),m.woodL); pf.position.set(tx,.21,zc); room.add(pf);
+      const ms=new T.Mesh(new T.CylinderGeometry(.78,.78,.03,36),m.moss); ms.position.set(tx,.43,zc); room.add(ms);
+      const tr=new T.Mesh(new T.CylinderGeometry(.14,.24,2.1,10),m.wood); tr.position.set(tx,1.45,zc); room.add(tr);
+      obsCirc(tx,zc,1.2);
+      const gr=[0x5f8f5e,0x78a46f,0x4f7f55,0x6a9a5c,0x89b07a], rr=drng(13), NF=46, fo=im(new T.IcosahedronGeometry(1,0),M.white,NF);
+      for(let i=0;i<NF;i++){ const a=i*2.4, y=2.1+rr()*1.2, rad=(.25+rr()*.95)*(1-(y-2.1)/2.2), s=.19+rr()*.13; place(fo,i,tx+Math.cos(a)*rad,y,zc+Math.sin(a)*rad*.9,rr()*3,rr()*3,s,s,s); fo.setColorAt(i,col.setHex(gr[i%5])); }
+      const fl=im(new T.SphereGeometry(.08,10,8),m.gold,7); for(let i=0;i<7;i++){ const a=i*.9+.3; place(fl,i,tx+Math.cos(a)*.75,2.35+(i%3)*.35,zc+Math.sin(a)*.65); }
+      const TA=[75,115,155,205,245,285], tc=im(new T.CylinderGeometry(.22,.22,.06,18),M.white,TA.length); tc.setColorAt(0,col.setHex(0x23407A));
+      TA.forEach((d,k)=>{ const t=d*Math.PI/180, x=tx+Math.sin(t)*.93, z=zc+Math.cos(t)*.93; place(tc,k,x,.45,z); tc.setColorAt(k,col.setHex(k%2?0xF2C14E:0x23407A));
+        RS.push({kind:"tree",name:"Bục cây",mesh:tc,inst:k,pos:new T.Vector3(x,0,z),yaw:t,y:.32,by:null}); });
+      // B. góc xem demo: màn trên tường sau + 2 băng ghế quay về màn
+      const bL=tx+1.4, bR=R0-2.65, bx=(bL+bR)/2, bw=Math.min(2.4,bR-bL-.2), nb=Math.max(2,Math.floor(bw/.6));
+      const bc=im(new T.BoxGeometry(.48,.06,.36),M.white,bw>1.2?nb*2:0); bc.setColorAt(0,col.setHex(0x23407A));
+      if(bw>1.2){
+        box(2.3,1.35,.08,m.dark,bx,1.8,zBack-.06); plane(2.18,1.23,m.demo,bx,1.8,zBack-.105,Math.PI);
+        [zBack-1.35,zBack-2.25].forEach((z,row)=>{ box(bw,.08,.42,m.woodL,bx,.42,z); [-1,1].forEach(sd=>box(.08,.38,.36,m.wood,bx+sd*(bw/2-.12),.19,z)); obsBox(bx,z,bw,.42);
+          for(let j=0;j<nb;j++){ const x=bx-bw/2+bw*(j+.5)/nb, k=row*nb+j; place(bc,k,x,.49,z); bc.setColorAt(k,col.setHex((j+row)%2?0xF2C14E:0x23407A));
+            RS.push({kind:"bench",name:"Góc xem demo",mesh:bc,inst:k,pos:new T.Vector3(x,0,z),yaw:0,y:.35,by:null}); } });
+      }
+      // C. hai bốt yên tĩnh một người (khung xanh than, vách kính, cửa mở bên phải); đèn trên nóc vàng = có người
+      const bw2=1.2, bd=1.2, bh=2.25, bz=zBack-.68, BX=[R0-1.9,R0-.62];
+      const fr=im(new T.BoxGeometry(1,1,1),m.navy,BX.length*5), gl=im(new T.BoxGeometry(1,1,1),m.glass,BX.length*3);
+      const st=im(new T.CylinderGeometry(.2,.2,.06,18),M.white,BX.length), sp=im(new T.CylinderGeometry(.03,.03,.58,8),M.black,BX.length); st.setColorAt(0,col.setHex(0xF2C14E));
+      BX.forEach((x,i)=>{
+        place(fr,i*5,x,bh,bz,0,0,bw2,.08,bd); place(fr,i*5+1,x,.03,bz,0,0,bw2,.06,bd); place(fr,i*5+2,x,bh/2,bz+bd/2-.03,0,0,bw2,bh,.06);
+        [-1,1].forEach((sd,j)=>place(fr,i*5+3+j,x+sd*(bw2/2-.03),bh/2,bz-bd/2+.03,0,0,.06,bh,.06));
+        place(gl,i*3,x-bw2/2+.03,bh/2,bz,0,0,.04,bh-.1,bd-.08); place(gl,i*3+1,x+bw2/2-.03,bh/2,bz,0,0,.04,bh-.1,bd-.08); place(gl,i*3+2,x-bw2*.2,bh/2,bz-bd/2+.03,0,0,bw2*.56,bh-.1,.03);
+        box(.9,.05,.36,m.woodL,x,.78,bz+bd/2-.26);
+        place(st,i,x,.63,bz-.05); place(sp,i,x,.32,bz-.05); st.setColorAt(i,col.setHex(i?0x23407A:0xF2C14E));
+        const lm=new T.MeshBasicMaterial({color:0x5d6573}), lp=new T.Mesh(new T.CylinderGeometry(.09,.09,.06,14),lm); lp.position.set(x,bh+.07,bz); room.add(lp);
+        obsBox(x,bz,bw2,bd);
+        RS.push({kind:"booth",name:"Bốt yên tĩnh",mesh:st,inst:i,pos:new T.Vector3(x,0,bz-.05),yaw:0,y:.48,by:null}); DX.booth.push({lamp:lm,rs:RS.length-1,on:null}); });
+      // E. lối vào: thảm trước cửa + bảng "Bạn đang ở đây" (hai mặt)
+      plane(1.6,1.0,m.mat,doorPos.x,.009,zBack-.6,Math.PI,-Math.PI/2);
+      const sx=doorPos.x-1.45, sz=zBack-.75;
+      box(.06,1.0,.06,m.wood,sx,.5,sz); box(.82,1.06,.04,m.wood,sx,1.45,sz); box(.5,.04,.4,m.wood,sx,.02,sz);
+      plane(.74,.96,m.map,sx,1.45,sz+.025,0); plane(.74,.96,m.map,sx,1.45,sz-.025,Math.PI); obsBox(sx,sz,.5,.4);
+      DX.backKey=null;
     }
     const CH=[[-W*0.32,zFront+0.9,0,"pod"]];
     [D*0.24,D*0.62].forEach(t=>[0,.75].forEach(o=>{ const z=zFront+t+o; if(z>zBack-3.8) return; CH.push([-W/2+.42,z,Math.PI/2,"wall"],[W/2-.42,z,-Math.PI/2,"wall"]); }));
