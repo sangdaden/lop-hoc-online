@@ -317,6 +317,14 @@ body{overflow:hidden;background:var(--stage-bg)}
 .phasebar .pi{width:19px;height:19px;fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;opacity:.9}
 .phasebar .pi.khong{stroke:#ffb27c}
 .phasebar .ptm{font-variant-numeric:tabular-nums;font-weight:600;opacity:.92;padding-left:8px;border-left:1px solid rgba(255,255,255,.25)}
+.phasebar .pw{position:relative;display:flex;align-items:center;gap:4px;font-style:normal}
+.phasebar .ppl b{font-variant-numeric:tabular-nums;font-weight:600;font-size:13px;color:#fff}
+.phasebar .ppl{padding-left:8px;border-left:1px solid rgba(255,255,255,.25)}
+.hudtip{position:fixed;z-index:60;max-width:260px;padding:5px 10px;border-radius:8px;background:#1a1d22;color:#fff;font:500 12px/1.35 "Be Vietnam Pro",system-ui,sans-serif;pointer-events:none;box-shadow:0 4px 14px rgba(0,0,0,.25);opacity:0;transition:opacity .1s}
+.hudtip.on{opacity:1}
+.phasebar .pdrop{display:none;position:absolute;left:0;top:calc(100% + 6px);padding:8px 12px;border-radius:12px;background:var(--glass);color:var(--hud-fg);gap:6px;font-size:13px;white-space:nowrap;box-shadow:0 6px 18px rgba(0,0,0,.18)}
+.phasebar.full .pdrop{display:grid}
+.phasebar .pr{display:flex;align-items:center;gap:8px}
 .phasebar .pfull{display:none;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 .phasebar.full .pfull{display:block}
 .phasebar .sr,.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
@@ -707,6 +715,8 @@ body.drawer .rail,body.drawer .kcard{display:none}
   // cheDo: canhan | nhom | calop | nghi · ai: duoc | truoc (tự làm trước, AI sau) | phanbien (chỉ để phản biện) | khong
   const AI_NAME={duoc:"AI: được dùng",truoc:"AI: tự làm trước, AI sau",phanbien:"AI: chỉ để phản biện",khong:"AI: không dùng"};
   const MODE_NAME={canhan:"Cá nhân",nhom:"Nhóm",calop:"Cả lớp",nghi:"Nghỉ"};
+  const MODE_TIP={canhan:"Làm một mình",nhom:"Làm theo nhóm",calop:"Cả lớp cùng làm",nghi:"Giờ nghỉ"};
+  const AI_TIP={duoc:"Được dùng AI",truoc:"Tự làm trước, dùng AI sau",phanbien:"AI chỉ để phản biện",khong:"Không dùng AI"};
   const DAY02={
     id:"day02", so:"02", tieuDe:"Tìm đúng bài toán cho AI",
     muc:"Problem Statement · Rule / Workflow / Agent · Go / Not Yet / No-Go",
@@ -2585,12 +2595,42 @@ body.drawer .rail,body.drawer .kcard{display:none}
     else if(KS.brk){ const b=breakAfter(KS.guide); pct=b?100-KS.left/(b.phut*60)*100:0; l1="Đang nghỉ"; l2="còn "+mmss(KS.left)+" · gập laptop, vươn vai"; tag=""; ics=phIc(PH_IC.nghi,"Đang nghỉ"); tm=mmss(KS.left); }
     else { const p=phaseOf(KS.guide); pct=100-KS.left/(p.phut*60)*100; l1="Phase "+KS.guide+" · "+p.ten; l2="còn "+mmss(KS.left)+" · "+MODE_NAME[p.cheDo]+" · "+AI_NAME[p.ai];
       tag="P"+KS.guide; ics=phIc(PH_IC[p.cheDo]||"",MODE_NAME[p.cheDo])+phIc(AI_IC[p.ai]||"",AI_NAME[p.ai],p.ai); tm=mmss(KS.left); }
+    // Mỗi icon có chú thích: rê chuột thì hiện nhãn nhỏ, bấm viên thì mở bảng giải thích bên dưới.
+    const cur=MODE==="tuhoc"?(myStep<NS?phaseOf(myStep):null):(KS.brk?null:phaseOf(KS.guide));
+    const n=kids.length, PPL='<path d="M9 11.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7zM2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6M16 4.5a3.5 3.5 0 0 1 0 7M18 14c2.2.6 3.5 2.6 3.5 6"/>';
+    const tipM=cur?MODE_TIP[cur.cheDo]||MODE_NAME[cur.cheDo]:"Giờ nghỉ", tipA=cur?AI_TIP[cur.ai]||AI_NAME[cur.ai]:"", tipP=n+" người đang trong lớp";
+    const wrap=(h,t)=>h?'<i class="pw" data-tip="'+esc(t)+'">'+h+'</i>':"";
+    ics=cur?wrap(phIc(PH_IC[cur.cheDo]||"",tipM),tipM)+wrap(phIc(AI_IC[cur.ai]||"",tipA,cur.ai),tipA):(MODE==="lop"&&KS.brk?wrap(phIc(PH_IC.nghi,tipM),tipM):"");
+    const row=(ic,t,c)=>'<span class="pr">'+'<svg class="pi'+(c?' '+c:'')+'" viewBox="0 0 24 24" aria-hidden="true">'+ic+'</svg>'+esc(t)+'</span>';
+    const drop='<span class="pdrop">'+(cur?row(PH_IC[cur.cheDo]||"",tipM)+row(AI_IC[cur.ai]||"",tipA,cur.ai):(MODE==="lop"&&KS.brk?row(PH_IC.nghi,"Giờ nghỉ · gập laptop, vươn vai"):""))+row(PPL,tipP)+'</span>';
     el.classList.toggle("brk",MODE==="lop"&&KS.brk);
-    el.innerHTML='<span class="ring" style="--p:'+Math.max(0,Math.min(100,pct)).toFixed(1)+'"></span>'+(tag?'<b class="pt">'+tag+'</b>':'')+'<span class="pis">'+ics+'</span>'+(tm?'<span class="ptm">'+tm+'</span>':'')+
-      '<span class="pfull">'+esc(l1.replace(/^Phase \d+ · /,""))+'</span><span class="sr">'+esc(l1)+' · '+esc(l2)+'</span>';
+    el.innerHTML='<span class="ring" style="--p:'+Math.max(0,Math.min(100,pct)).toFixed(1)+'"></span>'+(tag?'<b class="pt" data-tip="'+esc(l1)+' · bấm để xem giải thích">'+tag+'</b>':'')+'<span class="pis">'+ics+'</span>'+
+      '<i class="pw ppl" data-tip="'+esc(tipP)+'"><svg class="pi" viewBox="0 0 24 24" aria-hidden="true">'+PPL+'</svg><b>'+n+'</b></i>'+(tm?'<span class="ptm" data-tip="'+(KS.brk&&MODE==="lop"?"Thời gian nghỉ còn lại":"Thời gian còn lại của phase")+'">'+tm+'</span>':'')+
+      '<span class="pfull">'+esc(l1.replace(/^Phase \d+ · /,""))+'</span><span class="sr">'+esc(l1)+' · '+esc(l2)+' · '+esc(tipP)+'</span>'+drop;
     el.title="Ngày "+DAY.so+" · "+l1+" · "+l2;
   }
   $("phaseBar").setAttribute("role","button"); $("phaseBar").tabIndex=0;
+  // Nhãn khi rê chuột (máy có chuột): hiện ngay, đọc data-tip / title / aria-label của icon trên HUD.
+  // Đặt ngoài viên phase nên viên vẽ lại mỗi giây cũng không làm nhãn nhấp nháy.
+  if(matchMedia("(hover:hover)").matches){
+    const tip=document.createElement("div"); tip.className="hudtip"; tip.setAttribute("aria-hidden","true"); document.body.appendChild(tip);
+    const SEL=".phasebar [data-tip], .game .topr .ib, .game #rail, .game #miniMap, .game .vcyc";
+    let cur=null;
+    const show=(el,x,y)=>{
+      if(el.title){ el.dataset.tip=el.title; el.removeAttribute("title"); }
+      const t=el.dataset.tip||el.getAttribute("aria-label"); if(!t){ tip.classList.remove("on"); return; }
+      tip.textContent=t; const r=el.getBoundingClientRect(), w=tip.offsetWidth, h=tip.offsetHeight;
+      let left=Math.min(innerWidth-w-8,Math.max(8,r.left+r.width/2-w/2)), top=r.bottom+8; if(top+h>innerHeight-8) top=r.top-h-8;
+      tip.style.left=left+"px"; tip.style.top=top+"px"; tip.classList.add("on");
+    };
+    document.addEventListener("mousemove",e=>{
+      if($("phaseBar").classList.contains("full")&&e.target.closest(".phasebar")){ tip.classList.remove("on"); cur=null; return; }
+      const el=e.target.closest&&e.target.closest(SEL);
+      if(!el){ if(cur){ tip.classList.remove("on"); cur=null; } return; }
+      if(el!==cur){ cur=el; show(el); }
+    },{passive:true});
+    document.addEventListener("mousedown",()=>{ tip.classList.remove("on"); cur=null; },true);
+  }
   { const t=()=>{ $("phaseBar").classList.toggle("full"); }; $("phaseBar").addEventListener("click",t); $("phaseBar").addEventListener("keydown",e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); t(); } }); }
 
 
