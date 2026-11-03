@@ -186,6 +186,10 @@ begin
   else
     insert into lhl_members(code, uid, name, role, look, joined, upd, seen) values (p_code, auth.uid(), left(p_name, 24), p_role, p_look, t, t, t);
   end if;
+  -- Mỗi lớp chỉ một Key Coach: người vừa vào với vai Key Coach thay hẳn bản ghi Key Coach cũ (tab khác, máy khác, người dẫn trước).
+  if p_role = 'key' then
+    delete from lhl_members where code = p_code and role = 'key' and uid <> auth.uid();
+  end if;
   return json_build_object('ok', true, 'old', case when old.uid is not null then row_to_json(old) end, 'lab', case when p_role = 'key' then r.lab end, 'pass', case when p_role = 'key' then r.pass end);
 end $$;
 

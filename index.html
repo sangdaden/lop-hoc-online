@@ -767,7 +767,7 @@ body.drawer .rail,body.drawer .kcard{display:none}
     b.onclick=()=>{ t.remove(); undoEl=null; fn(); }; t.append(sp,b); stage.appendChild(t); undoEl=t;
     setTimeout(()=>{ if(undoEl===t){ t.remove(); undoEl=null; } },8000);
   }
-  function toast(msg){const t=document.createElement("div");t.className="toast";t.textContent=msg;stage.appendChild(t);setTimeout(()=>t.remove(),2600);}
+  function toast(msg,ms){const t=document.createElement("div");t.className="toast";t.textContent=msg;stage.appendChild(t);setTimeout(()=>t.remove(),ms||2600);}
   const esc=s=>String(s).replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
   const SAY_IC={seat:'<path d="M4 14h16M6 14v6M18 14v6M7 10h10v4H7z"/>',walk:'<path d="M5 12h12M13 6l6 6-6 6"/>',zone:'<path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2zM9 4v14M15 6v14"/>',key:'<path d="M12 3v5M8.5 9.5 12 13l3.5-3.5M6 21c0-4 2.7-6 6-6s6 2 6 6"/>',fix:'<path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L4 17l3 3 5.3-5.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.5-2.5z"/>',ok:'<path d="M5 12.5 10 17l9-10"/>'};
   const PH_IC={
@@ -2851,7 +2851,8 @@ body.drawer .rail,body.drawer .kcard{display:none}
   async function pollLoop(){
     if(!LIVE.on||pollBusy) return; pollBusy=true; clearTimeout(pollT);
     try{ const r=await rpc("lhl_poll",{p_code:LIVE.code,p_since:Math.max(0,LIVE.since-4000),p_beat:document.hidden||pollN++%4===0}); onPoll(r,false); if(pollFail>=3) toast("Đã kết nối lại."); pollFail=0; }
-    catch(e){ pollFail++; if(pollFail===3) toast("Mất kết nối tới phòng. Đang thử lại…"); }
+    catch(e){ if(/chua vao phong/.test(e&&e.message||e)&&LIVE.role==="key"){ LIVE.closed=true; LIVE.kicked=true; pollBusy=false; renderLive(); toast("Lớp này vừa có Key Coach khác vào (tab hoặc máy khác), nên tab này đã thoát vai Key Coach. Tải lại trang nếu muốn dẫn lớp ở đây.",12000); return; }
+      pollFail++; if(pollFail===3) toast("Mất kết nối tới phòng. Đang thử lại…"); }
     pollBusy=false; const wait=document.hidden?6000:2500; pollDue=Date.now()+wait; pollT=setTimeout(pollLoop,wait);
   }
   function onPoll(r,first){
@@ -2910,8 +2911,10 @@ body.drawer .rail,body.drawer .kcard{display:none}
     const labs=Object.keys(mem).filter(u=>mem[u].on&&mem[u].role==="lab").sort((a,b)=>(mem[a].at||0)-(mem[b].at||0));
     if(ROLE==="lab"){ const z=Math.max(0,labs.indexOf(NET.uid))%TAS; if(me.zone!==z){ me.zone=z; netMe({zone:z}); } }
     const seen={}; tas=[]; let key=null;
+    // Mỗi lớp chỉ một Key Coach: chỉ vẽ người vào vai Key Coach sau cùng (mình là Key Coach thì không vẽ ai khác).
+    const keyU=ROLE==="key"?null:Object.keys(mem).filter(u=>u!==NET.uid&&mem[u].on&&mem[u].role==="key").sort((a,b)=>(mem[b].at||0)-(mem[a].at||0))[0];
     Object.keys(mem).forEach(u=>{
-      const d=mem[u]; if(u===NET.uid||!d.on) return; seen[u]=1;
+      const d=mem[u]; if(u===NET.uid||!d.on) return; if(d.role==="key"&&u!==keyU) return; seen[u]=1;
       let R=LIVE.kids[u]; const kind=kindOf(d.role);
       if(R&&R.kind!==kind){ removeKid(R.k); R=null; }
       if(!R){ const k=makeKid(kind,d.look); R=LIVE.kids[u]={k,kind,seat:-1,bowN:d.bowN||0,to:"",lk:JSON.stringify(d.look||null)};
@@ -2962,8 +2965,8 @@ body.drawer .rail,body.drawer .kcard{display:none}
     const link=location.origin+location.pathname+"?p="+LIVE.code+(LIVE.pass?"&c="+LIVE.pass:"");
     $("liveCode").textContent=fmtCode(LIVE.code); $("liveLink").value=link;
     $("liveLab").textContent=LIVE.lab||"–"; $("livePass").textContent=LIVE.pass||"–"; $("liveLabRow").hidden=ROLE!=="key";
-    $("liveClose").hidden=ROLE!=="key"; $("liveClose").textContent=LIVE.closed?"Mở lại phòng":"Đóng phòng";
-    $("liveNote").textContent=LIVE.closed?"Phòng đang đóng: không ai vào thêm được, mọi thao tác bị khóa.":ROLE==="key"?"Đọc mã vào lớp cho cả lớp (mã cũng hiện trên màn hình lớn), học viên nhập mã là vào thẳng lớp này. Lab Coach nhập mã Lab Coach.":"Đây là phòng thật: mọi người bạn thấy đều là người thật.";
+    $("liveClose").hidden=ROLE!=="key"||!!LIVE.kicked; $("liveClose").textContent=LIVE.closed?"Mở lại phòng":"Đóng phòng";
+    $("liveNote").textContent=LIVE.kicked?"Tab này đã thoát vai Key Coach vì lớp vừa có Key Coach khác vào. Tải lại trang nếu muốn dẫn lớp ở đây.":LIVE.closed?"Phòng đang đóng: không ai vào thêm được, mọi thao tác bị khóa.":ROLE==="key"?"Đọc mã vào lớp cho cả lớp (mã cũng hiện trên màn hình lớn), học viên nhập mã là vào thẳng lớp này. Lab Coach nhập mã Lab Coach.":"Đây là phòng thật: mọi người bạn thấy đều là người thật.";
     drawTV();
   }
   $("liveCopy").onclick=()=>{ const v=$("liveLink").value; (navigator.clipboard?navigator.clipboard.writeText(v):Promise.reject()).then(()=>toast("Đã chép link mời."),()=>{ $("liveLink").select(); toast("Đã chọn sẵn link, bấm Ctrl+C để chép."); }); };
