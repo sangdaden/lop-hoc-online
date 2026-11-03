@@ -267,62 +267,161 @@ td:first-child{font-weight:600}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation-duration:.01s!important}}
 </style>
 <style>
-/* Bản game toàn màn hình cho GitHub Pages */
+/* Bản game toàn màn hình: phòng 3D phủ kín, HUD kính mờ ở bốn góc (hướng A, kiểu Sansa). Bảng chữ nằm trong ngăn kéo bên phải, chỉ mở khi cần. */
+:root{--glass:rgba(20,18,28,.58);--glass-ln:rgba(255,255,255,.16);--hud-fg:#fff;--hud-acc:#7b5ce0;--hud-warn:#e8813f;--hud-ok:#3fae79}
 html,body{height:100%;margin:0}
-body{overflow:hidden}
-.game{height:100vh;height:100dvh;box-sizing:border-box;padding:max(10px,env(safe-area-inset-top,0px)) max(10px,env(safe-area-inset-right,0px)) max(10px,env(safe-area-inset-bottom,0px)) max(10px,env(safe-area-inset-left,0px))}
-.game .proto{height:100%;grid-template-columns:minmax(0,1fr) 300px;gap:12px;align-items:stretch}
-.game .scene{display:flex;flex-direction:column;min-height:0;gap:10px}
-.game .stage{flex:1 1 auto;height:auto;min-height:240px}
-.game .side{overflow-y:auto;min-height:0;align-content:start;padding-right:2px}
-@media (max-width:860px){
-  body{overflow:auto}
-  .game{height:auto}
-  .game .proto{height:auto;grid-template-columns:minmax(0,1fr)}
-  .game .stage{flex:none;height:62vh;height:62dvh}
-  .game .side{overflow:visible}
+body{overflow:hidden;background:var(--stage-bg)}
+.game,.game .proto{position:fixed;inset:0;display:block}
+.game .scene{position:absolute;inset:0;padding:0;border:0;border-radius:0;background:var(--stage-bg);display:block;overflow:hidden}
+.game .stage{position:absolute;inset:0;height:auto;border-radius:0}
+.glass{background:var(--glass);color:var(--hud-fg);border:1px solid var(--glass-ln);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+.game .phasebar{position:absolute;left:max(14px,env(safe-area-inset-left,0px));top:max(14px,env(safe-area-inset-top,0px));z-index:5;display:flex;gap:10px;align-items:center;flex-wrap:nowrap;padding:7px 16px 7px 8px;border-radius:999px;max-width:min(560px,calc(100% - 230px));font-size:13px;line-height:1.3;background:var(--glass);color:var(--hud-fg)}
+.phasebar .ring{flex:none;width:34px;height:34px;border-radius:50%;background:conic-gradient(#c8b6ff calc(var(--p,0)*1%),rgba(255,255,255,.18) 0);display:grid;place-items:center}
+.phasebar .ring::after{content:"";width:26px;height:26px;border-radius:50%;background:#1d1a26}
+.phasebar.brk .ring{background:conic-gradient(var(--hud-ok) calc(var(--p,0)*1%),rgba(255,255,255,.18) 0)}
+.phasebar .tx{display:grid;min-width:0}
+.phasebar .tx b{color:var(--hud-fg);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.phasebar .tx small{opacity:.78;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}
+.topr{position:absolute;right:max(14px,env(safe-area-inset-right,0px));top:max(14px,env(safe-area-inset-top,0px));z-index:5;display:flex;gap:8px}
+.ib{all:unset;position:relative;cursor:pointer;width:42px;height:42px;border-radius:50%;display:grid;place-items:center;box-sizing:border-box}
+.ib svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.ib.glass{background:var(--glass);border:1px solid var(--glass-ln);color:var(--hud-fg);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+.ib.glass:hover{background:rgba(20,18,28,.78)}
+.ib.on{background:var(--hud-acc);border-color:rgba(255,255,255,.4)}
+.ib:focus-visible,.act:focus-visible,.rail:focus-visible{outline:2px solid #fff;outline-offset:2px}
+.dotw{position:absolute;top:4px;right:4px;width:9px;height:9px;border-radius:50%;background:var(--hud-warn);box-shadow:0 0 0 2px rgba(20,18,28,.8)}
+.dotw[hidden]{display:none}
+.rail{all:unset;cursor:pointer;position:absolute;right:max(14px,env(safe-area-inset-right,0px));top:50%;transform:translateY(-50%);z-index:5;display:grid;gap:9px;justify-items:center;padding:12px 9px;border-radius:999px;background:var(--glass);border:1px solid var(--glass-ln);backdrop-filter:blur(8px)}
+.rail i{display:block;width:12px;height:12px;border-radius:50%;background:rgba(255,255,255,.28)}
+.rail i.d{background:var(--hud-ok)} .rail i.c{background:#c8b6ff;box-shadow:0 0 0 4px rgba(200,182,255,.3)} .rail i.w{background:var(--hud-warn)} .rail i.me{outline:2px solid #fff;outline-offset:2px}
+.rail i.br{width:12px;height:3px;border-radius:2px;background:rgba(255,255,255,.2)} .rail i.br.c{background:var(--hud-ok);box-shadow:none}
+.kcard{position:absolute;right:max(14px,env(safe-area-inset-right,0px));top:calc(max(14px,env(safe-area-inset-top,0px)) + 54px);z-index:5;width:220px;border-radius:12px;padding:10px 12px;display:grid;gap:5px;font-size:13px}
+.kcard .r{display:flex;justify-content:space-between;gap:8px} .kcard b{font-variant-numeric:tabular-nums}
+.kcard .bar{height:5px;border-radius:3px;background:rgba(255,255,255,.18);overflow:hidden} .kcard .bar i{display:block;height:100%;background:var(--hud-ok)}
+.kcard.hot .bar i{background:var(--hud-warn)} .kcard .w{color:#ffb27c}
+body:not([data-role="hv"]) .rail{top:calc(50% + 60px)}
+.game .status{position:absolute;left:50%;top:max(14px,env(safe-area-inset-top,0px));transform:translate(-50%,-8px);z-index:4;margin:0;max-width:min(520px,calc(100% - 32px));padding:7px 14px;border-radius:12px;font-size:13px;text-align:center;background:var(--glass);color:var(--hud-fg);backdrop-filter:blur(8px);opacity:0;pointer-events:none;transition:opacity .3s,transform .3s}
+.game .status.show{opacity:1;transform:translate(-50%,0)}
+@media (max-width:900px){.game .status{top:calc(max(14px,env(safe-area-inset-top,0px)) + 56px)}}
+.game .actions{position:absolute;left:50%;transform:translateX(-50%);bottom:max(18px,env(safe-area-inset-bottom,0px));z-index:5;display:flex;gap:14px;align-items:flex-end;grid-template-columns:none}
+.game .act{all:unset;cursor:pointer;position:relative;display:grid;justify-items:center;gap:5px;width:70px;font-size:12px;font-weight:600;color:var(--hud-fg);text-shadow:0 0 3px rgba(0,0,0,.95),0 1px 4px rgba(0,0,0,.8);text-align:center;line-height:1.15}
+.game .act svg{box-sizing:border-box;width:60px;height:60px;padding:16px;border-radius:50%;background:var(--glass);border:1.5px solid var(--glass-ln);stroke:#fff;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;backdrop-filter:blur(8px);transition:transform .15s}
+.game .act:hover svg{transform:translateY(-2px)}
+.game .act.main svg{width:72px;height:72px;padding:19px;background:var(--hud-acc);border-color:rgba(255,255,255,.45)}
+.game .act.sm svg{width:46px;height:46px;padding:12px}
+.game .act.open svg{background:var(--hud-ok);border-color:rgba(255,255,255,.5)}
+.game .act.on svg{background:var(--hud-warn);border-color:rgba(255,255,255,.5);stroke:#fff}
+.game .act small{position:absolute;top:-6px;right:0;min-width:14px;padding:1px 6px;border-radius:999px;background:#fff;color:#1d1a26;font-size:11px;font-weight:700;text-shadow:none;font-variant-numeric:tabular-nums}
+.game .act.sm small{display:none}
+.game .act:disabled{opacity:.45;cursor:default}
+.game .actions:not([data-role="hv"]) .r-hv,.game .actions:not([data-role="lab"]) .r-lab,.game .actions:not([data-role="key"]) .r-key{display:none}
+.game .ctxbar{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(max(18px,env(safe-area-inset-bottom,0px)) + 112px);z-index:5;padding:9px 18px;border-radius:999px;background:#fff;color:#1d1a26;font-size:14px;box-shadow:0 4px 18px rgba(0,0,0,.3);max-width:calc(100% - 32px)}
+.game .hint{left:50%;transform:translateX(-50%);bottom:calc(max(18px,env(safe-area-inset-bottom,0px)) + 112px);max-width:calc(100% - 32px);text-align:center;font-size:12px;padding:5px 10px;border-radius:999px}
+.game .hint[hidden]{display:none}
+.game .toast{bottom:calc(max(18px,env(safe-area-inset-bottom,0px)) + 160px);border-radius:999px;background:var(--glass);color:var(--hud-fg);backdrop-filter:blur(8px)}
+.game .toast.undo{bottom:calc(max(18px,env(safe-area-inset-bottom,0px)) + 160px)}
+.game .toast.undo button{color:#c8b6ff}
+.bub.seatp{pointer-events:auto;cursor:pointer;background:#fff;color:#1d1a26;font-weight:600;border-radius:8px}
+.bub.seatp kbd{font:inherit;font-size:11px;border:1px solid #bbb;border-radius:4px;padding:0 4px;margin-right:5px}
+.bub.qn{min-width:24px;height:24px;padding:0;display:grid;place-items:center;border-radius:50%;background:var(--hud-warn);border:2px solid #fff;font-weight:700}
+.bub.qn.far{background:#8b8b93}
+/* Ngăn kéo bên phải: Sổ lab · Cả lớp · Phòng */
+.game .side{position:absolute;top:0;right:0;bottom:0;z-index:15;width:min(360px,100%);box-sizing:border-box;overflow-y:auto;padding:max(14px,env(safe-area-inset-top,0px)) max(14px,env(safe-area-inset-right,0px)) 24px 14px;display:grid;gap:12px;align-content:start;background:color-mix(in srgb,var(--paper) 94%,transparent);border-left:1px solid var(--line);box-shadow:-10px 0 30px rgba(0,0,0,.25)}
+.game .side[hidden]{display:none}
+.game .side .panel:not([data-tab]){display:none}
+.game .side[data-tab="so"] .panel:not([data-tab="so"]),.game .side[data-tab="lop"] .panel:not([data-tab="lop"]),.game .side[data-tab="phong"] .panel:not([data-tab="phong"]){display:none}
+.dhead{display:flex;justify-content:space-between;align-items:center;gap:8px;position:sticky;top:calc(-1 * max(14px,env(safe-area-inset-top,0px)));background:color-mix(in srgb,var(--paper) 96%,transparent);padding-block:4px;z-index:1}
+.dhead .ib{width:36px;height:36px;color:var(--ink)}
+.dtabs{display:flex;gap:4px}
+.dtab{all:unset;cursor:pointer;padding:6px 12px;border-radius:999px;font-size:14px;font-weight:600;color:var(--muted)}
+.dtab.on{background:var(--violet-soft);color:var(--violet)}
+.dtab:focus-visible{outline:2px solid var(--violet)}
+.game .side .pickers{display:grid;gap:10px}
+body.drawer .rail,body.drawer .kcard{display:none}
+@media (max-width:640px){
+  .game .phasebar{max-width:calc(100% - 28px)}
+  .topr{top:calc(max(14px,env(safe-area-inset-top,0px)) + 58px)}
+  .kcard{top:calc(max(14px,env(safe-area-inset-top,0px)) + 110px);width:190px}
+  .game .actions{gap:8px}
+  .game .act{width:58px;font-size:11px}
+  .game .act svg{width:50px;height:50px;padding:13px}
+  .game .act.main svg{width:60px;height:60px;padding:16px}
+  .game .act.sm svg{width:40px;height:40px;padding:10px}
+  .game .ctxbar,.game .hint{bottom:calc(max(18px,env(safe-area-inset-bottom,0px)) + 96px)}
 }
+/* Màn vào phòng theo từng bước */
+.wz{position:absolute;inset:0;z-index:20;display:grid;place-items:center;padding:16px;background:rgba(14,12,20,.62);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+.wz .card{max-width:620px;width:100%;max-height:100%;overflow:auto;gap:16px;padding:22px}
+.wz .dots{display:flex;gap:6px}.wz .dots i{width:28px;height:5px;border-radius:9px;background:var(--line)}.wz .dots i.on{background:var(--violet)}
+.wz .q{font-family:var(--f-display);font-size:clamp(26px,4vw,34px);line-height:1.1;margin:0;font-weight:400}
+.wz [data-step]{display:grid;gap:12px}
+.wz [data-step][hidden]{display:none}
+.wz .rolec{all:unset;cursor:pointer;display:flex;gap:14px;align-items:center;padding:12px 14px;border-radius:12px;border:1.5px solid var(--line);background:var(--paper)}
+.wz .rolec.on{border-color:var(--violet);background:var(--violet-soft)}
+.wz .rolec .sw2{width:38px;height:38px;border-radius:50%;flex:none}
+.wz .rolec b{display:block;font-size:16px}.wz .rolec small{color:var(--muted);font-size:13px}
+.wz .rolec:focus-visible{outline:2px solid var(--violet);outline-offset:2px}
+.wz .sexes{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.wz .sexc{all:unset;cursor:pointer;display:grid;justify-items:center;gap:6px;padding:12px;border-radius:14px;border:1.5px solid var(--line);background:var(--paper);font-size:17px;font-weight:600}
+.wz .sexc img,.wz .sexc .ph{width:100%;max-width:170px;aspect-ratio:1;border-radius:10px;background:var(--floor)}
+.wz .sexc.on{border-color:var(--violet);background:var(--violet-soft);color:var(--violet)}
+.wz .sexc:focus-visible{outline:2px solid var(--violet);outline-offset:2px}
+.wz .nav{display:flex;justify-content:space-between;gap:8px;align-items:center}
+.wz .nav .sp{flex:1}
+.wz .namerow input{font-size:18px;padding:10px 12px}
+@media (prefers-reduced-motion:reduce){.game .status{transition:none}}
 </style>
 </head>
 <body>
 <main class="game">
   <div class="proto">
     <div class="scene" id="scene">
-      <div class="pickers only-key"><div class="sizes" role="group" aria-label="Sĩ số lớp"><span class="muted">Sĩ số:</span><button class="btn size" data-n="50">50</button><button class="btn size" data-n="100">100</button><button class="btn size" data-n="150">150</button><button class="btn size" data-n="200">200</button><button class="btn size" data-n="250">250</button></div>
-      <div class="sizes" role="group" aria-label="Kiểu bàn"><span class="muted">Kiểu bàn:</span><button class="btn tbl" data-t="island">Cụm bàn dài</button><button class="btn tbl" data-t="round">Bàn tròn 5 người</button><button class="btn tbl" data-t="rows">Dãy hàng ngang</button></div>
-      <div class="sizes" role="group" aria-label="Xem với vai trò"><span class="muted">Xem như:</span><button class="btn role" data-r="hv">Học viên</button><button class="btn role" data-r="lab">Lab Coach</button><button class="btn role" data-r="key">Key Coach</button></div></div>
-      <div class="roombar">
-        <span>AI Thực chiến · <b id="occ">0</b>/<b id="cap">50</b> học viên trong phòng</span>
-        <span>Đang kẹt: <b id="stuckN">0</b> · Đã xong lab: <b id="doneN">0</b> · Đã nộp: <b id="nopN">0</b></span>
-      </div>
-      <div class="phasebar" id="phaseBar" aria-live="polite"></div>
       <div class="stage" id="stage">
         <canvas id="cv" aria-label="Giảng đường 3D: kéo để xoay, bấm sàn để đi, bấm bàn trống để ngồi"></canvas>
         <div class="hud" id="hud"></div>
         <p class="hint" id="hint">Kéo để xoay · cuộn để phóng to · bấm sàn để đi · bấm ghế tím (còn trống) để ngồi</p>
-        <button class="btn camb" id="bCam">Nhìn toàn phòng</button>
       </div>
-      <p class="status" id="doorText">Bạn đang đứng ở cửa sau phòng thực hành. Bấm một ghế tím để đi tới và ngồi.</p>
+      <div class="phasebar glass" id="phaseBar" aria-live="polite"></div>
+      <div class="topr">
+        <button class="ib glass" id="bCam" title="Nhìn toàn phòng" aria-label="Nhìn toàn phòng"><svg viewBox="0 0 24 24"><path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2zM9 4v14M15 6v14"/></svg></button>
+        <button class="ib glass" id="bSo" data-tab="so" title="Sổ lab của bạn" aria-label="Sổ lab của bạn"><svg viewBox="0 0 24 24"><path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3zM5 17a3 3 0 0 1 3-3h11"/></svg></button>
+        <button class="ib glass" id="bLop" data-tab="lop" title="Cả lớp" aria-label="Tiến độ cả lớp"><svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg><i class="dotw" id="lopDot" hidden></i></button>
+        <button class="ib glass only-key" id="bPhong" data-tab="phong" title="Thiết lập phòng" aria-label="Thiết lập phòng"><svg viewBox="0 0 24 24"><path d="M4 20V8l8-4 8 4v12M9 20v-6h6v6"/></svg></button>
+      </div>
+      <div class="kcard glass for-coach" id="kCard"></div>
+      <button class="rail glass" id="rail" aria-label="Tiến độ cả lớp theo phase, bấm để mở bảng"></button>
+      <p class="status" id="doorText" role="status">Bạn đang đứng ở cửa sau phòng thực hành. Bấm một ghế tím để đi tới và ngồi.</p>
       <button class="ctxbar" id="aCtx" hidden></button>
       <div class="actions" id="actions" data-role="hv">
-        <button class="act" id="aGreet"><svg viewBox="0 0 24 24"><path d="M12 3v5M8.5 9.5 12 13l3.5-3.5M6 21c0-4 2.7-6 6-6s6 2 6 6"/></svg>Chào<small>bạn gần nhất chào lại</small></button>
-        <button class="act r-hv" id="aSit"><svg viewBox="0 0 24 24"><path d="M4 14h16M6 14v6M18 14v6M7 10h10v4H7z"/></svg><span id="sitLabel">Vào chỗ</span><small>đi tới ghế trống gần nhất</small></button>
-        <button class="act r-hv" id="aStep"><svg viewBox="0 0 24 24"><path d="M5 12.5 10 17l9-10"/></svg>Xong bước<small id="stepLabel">tick mục tự kiểm</small></button>
-        <button class="act r-hv" id="aHand"><svg viewBox="0 0 24 24"><path d="M8 13V5.5a1.5 1.5 0 0 1 3 0V11M11 10V4.5a1.5 1.5 0 0 1 3 0V11M14 10.5V6a1.5 1.5 0 0 1 3 0v8a6 6 0 0 1-6 6h-.5a5.5 5.5 0 0 1-4.6-2.5L4 14.5a1.5 1.5 0 0 1 2.5-1.7L8 15"/></svg><span id="handLabel">Giơ tay</span><small>mình bị kẹt</small></button>
-        <button class="act r-lab" id="lTake"><svg viewBox="0 0 24 24"><path d="M4 6h10M4 12h7M4 18h5M15 13l3 3 4-6"/></svg>Nhận lượt kế<small id="lTakeN">hàng chờ 0</small></button>
-        <button class="act r-lab" id="lFix" disabled><svg viewBox="0 0 24 24"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L4 17l3 3 5.3-5.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.5-2.5z"/></svg>Gỡ xong<small id="lFixN">đã gỡ 0</small></button>
-        <button class="act r-lab" id="lEsc"><svg viewBox="0 0 24 24"><path d="M12 19V5M6 11l6-6 6 6"/></svg>Báo Key Coach<small id="lEscN">đã báo 0</small></button>
-        <button class="act r-key" id="kOpen"><svg viewBox="0 0 24 24"><path d="M5 12h12M13 6l6 6-6 6"/></svg>Sang phase tiếp<small id="kOpenN">phase 1</small></button>
-        <button class="act r-key" id="kPlus"><svg viewBox="0 0 24 24"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2M9 2h6"/></svg>Thêm 5 phút<small id="kPlusN">còn 00:00</small></button>
-        <button class="act r-key" id="kRe"><svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.4-5.7M4 4v4h4"/></svg>Giảng lại<small id="kReN">đã giảng lại 0</small></button>
-        <button class="act r-key" id="kDemo"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="12" rx="1.5"/><path d="M8 20h8M12 16v4M10 8.5l4 1.5-4 1.5z"/></svg><span id="kDemoL">Mở đăng ký demo</span><small id="kDemoN">đang đóng</small></button>
-        <button class="act r-key" id="kCall"><svg viewBox="0 0 24 24"><path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4zM10 21h4"/></svg>Gọi chú ý<small id="kCallN">0 lần</small></button>
+        <button class="act" id="aGreet" title="Chào: bạn gần nhất chào lại"><svg viewBox="0 0 24 24"><path d="M12 3v5M8.5 9.5 12 13l3.5-3.5M6 21c0-4 2.7-6 6-6s6 2 6 6"/></svg>Chào<small id="greetN">0</small></button>
+        <button class="act r-hv sm" id="aSit" title="Đi tới ghế trống gần nhất (phím E)"><svg viewBox="0 0 24 24"><path d="M4 14h16M6 14v6M18 14v6M7 10h10v4H7z"/></svg><span id="sitLabel">Vào chỗ</span></button>
+        <button class="act r-hv main" id="aStep" title="Tick mục tự kiểm đang làm"><svg viewBox="0 0 24 24"><path d="M5 12.5 10 17l9-10"/></svg>Xong mục<small id="stepLabel">0/0</small></button>
+        <button class="act r-hv" id="aHand" title="Giơ tay khi bị kẹt, Lab Coach sẽ tới"><svg viewBox="0 0 24 24"><path d="M8 13V5.5a1.5 1.5 0 0 1 3 0V11M11 10V4.5a1.5 1.5 0 0 1 3 0V11M14 10.5V6a1.5 1.5 0 0 1 3 0v8a6 6 0 0 1-6 6h-.5a5.5 5.5 0 0 1-4.6-2.5L4 14.5a1.5 1.5 0 0 1 2.5-1.7L8 15"/></svg><span id="handLabel">Giơ tay</span><small id="handN">0</small></button>
+        <button class="act r-lab main" id="lTake" title="Nhận người kế tiếp trong hàng chờ"><svg viewBox="0 0 24 24"><path d="M4 6h10M4 12h7M4 18h5M15 13l3 3 4-6"/></svg>Nhận lượt<small id="lTakeN">0</small></button>
+        <button class="act r-lab" id="lFix" disabled title="Gỡ xong cho người đang giúp"><svg viewBox="0 0 24 24"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L4 17l3 3 5.3-5.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.5-2.5z"/></svg>Gỡ xong<small id="lFixN">0</small></button>
+        <button class="act r-lab" id="lEsc" title="Báo Key Coach giảng lại cho cả lớp"><svg viewBox="0 0 24 24"><path d="M12 19V5M6 11l6-6 6 6"/></svg>Báo Key<small id="lEscN">0</small></button>
+        <button class="act r-key main" id="kOpen" title="Sang phase tiếp cho cả phòng"><svg viewBox="0 0 24 24"><path d="M5 12h12M13 6l6 6-6 6"/></svg>Sang phase<small id="kOpenN">P0</small></button>
+        <button class="act r-key" id="kPlus" title="Thêm 5 phút cho phase đang chạy"><svg viewBox="0 0 24 24"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2M9 2h6"/></svg>+5 phút<small id="kPlusN">00:00</small></button>
+        <button class="act r-key" id="kRe" title="Giảng lại phase có nhiều người kẹt nhất"><svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.4-5.7M4 4v4h4"/></svg>Giảng lại<small id="kReN">0</small></button>
+        <button class="act r-key" id="kDemo" title="Mở hoặc đóng đăng ký lên demo"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="12" rx="1.5"/><path d="M8 20h8M12 16v4M10 8.5l4 1.5-4 1.5z"/></svg><span id="kDemoL">Demo</span><small id="kDemoN">0</small></button>
+        <button class="act r-key" id="kCall" title="Gọi cả lớp chú ý"><svg viewBox="0 0 24 24"><path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4zM10 21h4"/></svg>Chú ý<small id="kCallN">0</small></button>
       </div>
     </div>
-    <aside class="side">
-      <div class="panel">
+    <aside class="side" id="side" data-tab="so" aria-label="Bảng thông tin" hidden>
+      <div class="dhead">
+        <div class="dtabs" role="tablist"><button class="dtab" data-tab="so">Sổ lab</button><button class="dtab" data-tab="lop">Cả lớp</button><button class="dtab only-key" data-tab="phong">Phòng</button></div>
+        <button class="ib" id="dClose" aria-label="Đóng bảng"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+      </div>
+      <div class="panel" data-tab="phong">
+        <h3>Thiết lập phòng</h3>
+        <div class="pickers"><div class="sizes" role="group" aria-label="Sĩ số lớp"><span class="muted">Sĩ số:</span><button class="btn size" data-n="50">50</button><button class="btn size" data-n="100">100</button><button class="btn size" data-n="150">150</button><button class="btn size" data-n="200">200</button><button class="btn size" data-n="250">250</button></div>
+        <div class="sizes" role="group" aria-label="Kiểu bàn"><span class="muted">Kiểu bàn:</span><button class="btn tbl" data-t="island">Cụm bàn dài</button><button class="btn tbl" data-t="round">Bàn tròn 5 người</button><button class="btn tbl" data-t="rows">Dãy hàng ngang</button></div>
+        <div class="sizes" role="group" aria-label="Xem với vai trò"><span class="muted">Xem như:</span><button class="btn role" data-r="hv">Học viên</button><button class="btn role" data-r="lab">Lab Coach</button><button class="btn role" data-r="key">Key Coach</button></div></div>
+        <div class="sizes" role="group" aria-label="Chế độ phòng"><span class="muted">Chế độ:</span><button class="btn mode" data-m="lop">Trong giờ học</button><button class="btn mode" data-m="tuhoc">Phòng tự học</button></div>
+        <div class="toolbar"><span class="muted">Đồng hồ demo:</span><button class="btn" id="tFast">Tua ×60</button></div>
+      </div>
+      <div class="panel" data-tab="so">
         <h3>Ngày lab</h3>
-        <div class="sizes only-key" role="group" aria-label="Chế độ phòng"><button class="btn mode" data-m="lop">Trong giờ học</button><button class="btn mode" data-m="tuhoc">Phòng tự học</button></div>
         <div class="days" id="days"></div>
         <p class="note" id="modeNote"></p>
         <div class="kv for-hv" id="grpKv">
@@ -332,23 +431,27 @@ body{overflow:hidden}
         </div>
         <div class="toolbar for-hv" id="myFix" aria-label="Sửa thao tác bấm nhầm"><button class="btn" id="fBack">Lùi 1 mục</button><button class="btn" id="fRole">Đổi vai</button><button class="btn" id="fNop">Hủy nộp</button></div>
       </div>
-      <div class="panel">
+      <div class="panel" data-tab="lop">
         <h3>Tiến độ cả lớp</h3>
+        <div class="roombar">
+          <span>AI Thực chiến · <b id="occ">0</b>/<b id="cap">50</b> trong phòng</span>
+          <span>Kẹt <b id="stuckN">0</b> · Xong <b id="doneN">0</b> · Nộp <b id="nopN">0</b></span>
+        </div>
         <div class="steplist" id="steplist"></div>
         <p class="note" id="hotNote">Chỉ đếm số người, không hiện tên.</p>
       </div>
-      <div class="panel">
+      <div class="panel" data-tab="lop">
         <h3>Lên demo <span class="demo-state" id="demoState">đang đóng</span></h3>
         <ol class="demoq" id="demoq"></ol>
         <div class="toolbar for-hv"><button class="btn" id="fDemo" disabled>Đăng ký demo cho nhóm</button></div>
         <p class="note" id="demoNote"></p>
       </div>
-      <div class="panel">
+      <div class="panel" data-tab="lop">
         <h3>Hàng chờ Lab Coach</h3>
         <ol class="helpq" id="helpq"></ol>
         <p class="note" id="helpNote"></p>
       </div>
-      <div class="panel">
+      <div class="panel" data-tab="lop">
         <h3>Người hướng dẫn buổi này</h3>
         <div class="kv">
           <span><i class="coachkey" style="background:#22324f;box-shadow:inset 0 -4px #d8a93b"></i>Key Coach đang dẫn</span><b id="cGuide">phase 1</b>
@@ -359,25 +462,7 @@ body{overflow:hidden}
         </div>
         <p class="note" id="coachNote">Key Coach đứng đầu phòng, dẫn nhịp cả lớp và giảng lại bước có nhiều người kẹt. Mỗi Lab Coach phụ trách một khu bàn, đi tới ghế người giơ tay.</p>
       </div>
-      <div class="panel">
-        <p class="eyebrow">Tên của bạn trong phòng</p>
-        <div class="name" id="myName">…</div>
-        <button class="btn" id="bRename" style="justify-self:start">Đổi tên khác</button>
-        <button class="btn" id="bEdit" style="justify-self:start">Sửa nhân vật</button>
-        <p class="note">Bạn cùng lớp chỉ thấy tên này. Giảng viên thấy tên thật để điểm danh.</p>
-      </div>
-      <div class="panel for-hv">
-        <h3>Phiên tập trung</h3>
-        <div class="timer" id="timer">25:00</div>
-        <div class="toolbar">
-          <button class="btn on" id="t25">25 phút</button>
-          <button class="btn" id="t50">50 phút</button>
-          <button class="btn only-key" id="tFast">Tua ×60</button>
-        </div>
-        <button class="btn primary" id="tStart" style="justify-self:start">Bắt đầu phiên</button>
-        <p class="note">Bản tương đương “108 lạy”: một vòng có đầu có cuối, hết giờ có chuông.</p>
-      </div>
-      <div class="panel for-hv">
+      <div class="panel for-hv" data-tab="so">
         <h3>Nhiệm vụ buổi này</h3>
         <div class="quest" id="q1"><span class="box"></span><span>Đi hết các phase của ngày</span><b id="q1n">0/8</b></div>
         <div class="quest" id="q4"><span class="box"></span><span>Nộp repo bài làm</span><b id="q4n">0/1</b></div>
@@ -388,6 +473,22 @@ body{overflow:hidden}
           <span>Mục tự kiểm đã tick</span><b id="sChk">0</b>
           <span>Lượt pitch ở bàn</span><b id="sPitch">0</b>
         </div>
+      </div>
+      <div class="panel for-hv" data-tab="so">
+        <h3>Phiên tập trung</h3>
+        <div class="timer" id="timer">25:00</div>
+        <div class="toolbar">
+          <button class="btn on" id="t25">25 phút</button>
+          <button class="btn" id="t50">50 phút</button>
+          <button class="btn primary" id="tStart">Bắt đầu phiên</button>
+        </div>
+        <p class="note">Bản tương đương “108 lạy”: một vòng có đầu có cuối, hết giờ có chuông.</p>
+      </div>
+      <div class="panel" data-tab="so">
+        <p class="eyebrow">Tên của bạn trong phòng</p>
+        <div class="name" id="myName">…</div>
+        <div class="toolbar"><button class="btn" id="bRename">Đổi tên khác</button><button class="btn" id="bEdit">Sửa nhân vật</button></div>
+        <p class="note">Bạn cùng lớp chỉ thấy tên này. Giảng viên thấy tên thật để điểm danh.</p>
       </div>
     </aside>
   </div>
@@ -974,29 +1075,37 @@ body{overflow:hidden}
     cvp.addEventListener("pointerup",()=>{ dx=null; }); cvp.addEventListener("pointercancel",()=>{ dx=null; });
     return true;
   }
+  // Màn vào phòng theo từng bước: 1 vai (coach nhập mật mã) → 2 nam/nữ → 3 ngoại hình → 4 tên.
+  // Đã có nhân vật lưu trong trình duyệt thì chỉ hỏi vai và tên. "Sửa nhân vật" đi các bước 2–4.
   function openEditor(first){
-    let cur=Object.assign({},myLook), tab="toc";
-    const ov=document.createElement("div"); ov.className="overlay";
-    ov.innerHTML='<form class="card editor" role="dialog" aria-label="Nhân vật của bạn"><h3>'+(first?'Vào phòng lab':'Sửa nhân vật')+'</h3>'+
-      '<div class="ed-grid"><div class="ed-prev"><div class="pv" id="edPv"></div><span class="note">Kéo để xoay</span></div><div class="ed-ctl">'+
-      '<label class="note" for="eName">Tên hiện cho bạn cùng lớp</label><div class="namerow"><input id="eName" maxlength="24" autocomplete="off" placeholder="Nhập tên"><button type="button" class="btn" id="eRand">Tên ngẫu nhiên</button></div>'+
-      '<div class="seg" role="group" aria-label="Giới tính"><button type="button" class="btn" data-s="nam">Nam</button><button type="button" class="btn" data-s="nu">Nữ</button></div>'+
-      '<div class="tabs" role="tablist"><button type="button" class="tab" data-t="toc">Tóc</button><button type="button" class="tab" data-t="mat">Mặt</button><button type="button" class="tab" data-t="pk">Phụ kiện</button></div>'+
-      '<div class="pane" id="edPane"></div>'+
-      '<button type="button" class="btn lrand" id="eLook">Ngoại hình ngẫu nhiên</button></div></div>'+
-      (first?'<p class="note" style="margin:0">Vào với vai</p><div class="sizes" role="group" aria-label="Vai"><button type="button" class="btn erole" data-r="hv">Học viên</button><button type="button" class="btn erole" data-r="lab">Lab Coach</button><button type="button" class="btn erole" data-r="key">Key Coach</button></div>'+
-      '<div id="eCodeRow" hidden><input id="eCode" type="password" autocomplete="off" placeholder="Mật mã cho vai này" style="width:100%;font:inherit;font-size:16px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--paper);color:inherit"><p class="note" id="eErr" style="margin:4px 0 0;color:var(--warn)"></p></div>':'')+
-      '<div class="row" style="justify-content:flex-end">'+(first?'':'<button type="button" class="btn" id="eCancel">Hủy</button>')+'<button class="btn primary" id="eGo">'+(first?'Vào phòng':'Lưu')+'</button></div></form>';
+    let cur=Object.assign({},myLook), tab="toc", role=ROLE;
+    const saved=(()=>{ try{ return !!localStorage.getItem("lhl-look2"); }catch(e){ return false; } })();
+    let ORDER=first?(saved?[1,4]:[1,2,3,4]):[2,3,4], at=0;
+    const ov=document.createElement("div"); ov.className="wz";
+    const roleCard=(r,col,sub)=>'<button type="button" class="rolec" data-r="'+r+'" aria-pressed="false"><span class="sw2" style="'+col+'"></span><span><b>'+ROLE_NAME[r]+'</b><small>'+sub+'</small></span></button>';
+    ov.innerHTML='<form class="card" role="dialog" aria-label="'+(first?'Vào phòng lab':'Sửa nhân vật')+'"><div class="dots" id="wDots"></div>'+
+      (first?'<div data-step="1"><h3 class="q">Hôm nay bạn vào với vai gì?</h3>'+
+        roleCard("hv","background:#8b6cf0","Làm lab, giơ tay khi bị kẹt")+
+        roleCard("lab","background:#2f7f72","Tới bàn gỡ kẹt cho người giơ tay · cần mật mã")+
+        roleCard("key","background:#22324f;box-shadow:inset 0 -10px #d8a93b","Dẫn nhịp cả phòng · cần mật mã")+
+        '<div id="eCodeRow" hidden><input id="eCode" type="password" autocomplete="off" placeholder="Mật mã do Key Coach của khóa cấp" style="width:100%;box-sizing:border-box;font:inherit;font-size:16px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--paper);color:inherit"><p class="note" id="eErr" style="margin:4px 0 0;color:var(--warn)"></p></div></div>':'')+
+      '<div data-step="2"><h3 class="q">Nhân vật của bạn</h3><div class="sexes" role="group" aria-label="Giới tính"><button type="button" class="sexc" data-s="nam"><span class="ph"></span>Nam</button><button type="button" class="sexc" data-s="nu"><span class="ph"></span>Nữ</button></div><p class="note" style="margin:0">Đồng phục áo trắng gile be là chung cả lớp.</p></div>'+
+      '<div data-step="3"><h3 class="q">Chỉnh ngoại hình</h3><div class="ed-grid"><div class="ed-prev"><div class="pv" id="edPv"></div><span class="note">Kéo để xoay</span></div><div class="ed-ctl">'+
+        '<div class="tabs" role="tablist"><button type="button" class="tab" data-t="toc">Tóc</button><button type="button" class="tab" data-t="mat">Mặt</button><button type="button" class="tab" data-t="pk">Phụ kiện</button></div>'+
+        '<div class="pane" id="edPane"></div><button type="button" class="btn lrand" id="eLook">Ngoại hình ngẫu nhiên</button></div></div></div>'+
+      '<div data-step="4"><h3 class="q">Bạn cùng lớp sẽ gọi bạn là</h3><div class="namerow"><input id="eName" maxlength="24" autocomplete="off" placeholder="Nhập tên" aria-label="Tên hiện cho bạn cùng lớp"><button type="button" class="btn" id="eRand">Tên ngẫu nhiên</button></div>'+
+        '<p class="note" style="margin:0">Bạn cùng lớp chỉ thấy tên này. Coach thấy tên thật để điểm danh.</p>'+(first&&saved?'<button type="button" class="btn" id="eRelook" style="justify-self:start">Đổi nhân vật</button>':'')+'</div>'+
+      '<div class="nav"><button type="button" class="btn" id="eBack">Quay lại</button><span class="sp"></span><button class="btn primary" id="eGo">Tiếp</button></div></form>';
     sceneEl.appendChild(ov);
     const inp=ov.querySelector("#eName"); inp.value=myName;
     const pane=ov.querySelector("#edPane"), pv=ov.querySelector("#edPv");
     const has3d=prevInit(); if(has3d){ pv.appendChild(prev.r.domElement); setLook(prev.k,cur); prev.auto=true; }
-    const opts=(title,list,key,cls)=>'<p class="eyebrow">'+title+'</p><div class="'+(cls||'chips')+'">'+list.map((n,j)=>'<button type="button" class="btn'+(cur[key]===j?' on':'')+'" aria-pressed="'+(cur[key]===j)+'" data-k="'+key+'" data-v="'+j+'">'+n+'</button>').join("")+'</div>';
     const tiles=(title,list,key,mode,colors)=>'<p class="eyebrow">'+title+'</p><div class="looks">'+list.map((n,j)=>{ const u=thumb(Object.assign({},cur,{[key]:j},key==="hair"?{gl:0,acc:0}:{}),mode); const lab=colors?'<span><i class="dot" style="background:#'+colors[j][1].toString(16).padStart(6,"0")+'"></i>'+colors[j][0]+'</span>':n;
       return '<button type="button" class="btn'+(cur[key]===j?' on':'')+'" aria-pressed="'+(cur[key]===j)+'" data-k="'+key+'" data-v="'+j+'">'+(u?'<img alt="" src="'+u+'">':'<span class="ph"></span>')+lab+'</button>'; }).join("")+'</div>';
-    const sw=(title,list,key)=>'<p class="eyebrow">'+title+'</p><div class="sws">'+list.map(([n,c],j)=>'<button type="button" class="sw'+(cur[key]===j?' on':'')+'" aria-pressed="'+(cur[key]===j)+'" title="'+n+'" aria-label="'+n+'" data-k="'+key+'" data-v="'+j+'" style="background:#'+c.toString(16).padStart(6,"0")+'"></button>').join("")+'</div>';
+    const drawSex=()=>ov.querySelectorAll(".sexc").forEach(b=>{ const on=b.dataset.s===cur.s; b.classList.toggle("on",on); b.setAttribute("aria-pressed",on);
+      const u=thumb(fixLook(Object.assign({},cur,{s:b.dataset.s})),"body"); const ph=b.querySelector("img,.ph"); if(u&&ph.tagName!=="IMG"){ const im=document.createElement("img"); im.alt=""; ph.replaceWith(im); } const im=b.querySelector("img"); if(im&&u) im.src=u; });
     const draw=()=>{
-      ov.querySelectorAll(".seg .btn").forEach(b=>{ const on=b.dataset.s===cur.s; b.classList.toggle("on",on); b.setAttribute("aria-pressed",on); });
+      drawSex();
       ov.querySelectorAll(".tab").forEach(b=>{ const on=b.dataset.t===tab; b.classList.toggle("on",on); b.setAttribute("aria-selected",on); });
       const o=OPT[cur.s];
       if(tab==="toc") pane.innerHTML=tiles("Kiểu tóc",o.hair,"hair")+tiles("Màu tóc",HAIR_C,"hc","head",HAIR_C);
@@ -1005,29 +1114,39 @@ body{overflow:hidden}
       pane.querySelectorAll("[data-k]").forEach(b=>b.onclick=()=>{ cur[b.dataset.k]=+b.dataset.v; apply(); });
     };
     const apply=(cheer)=>{ cur=fixLook(cur); if(has3d){ setLook(prev.k,cur); if(cheer){ prev.k.smile=1.2; prev.jump=0.5; } } draw(); };
-    ov.querySelectorAll(".seg .btn").forEach(b=>b.onclick=()=>{ if(cur.s===b.dataset.s) return; cur=Object.assign({},cur,{s:b.dataset.s}); apply(true); });
+    ov.querySelectorAll(".sexc").forEach(b=>b.onclick=()=>{ if(cur.s!==b.dataset.s){ cur=Object.assign({},cur,{s:b.dataset.s}); apply(true); } });
     ov.querySelectorAll(".tab").forEach(b=>b.onclick=()=>{ tab=b.dataset.t; draw(); });
     ov.querySelector("#eLook").onclick=()=>{ cur=randLook(cur.s); apply(true); };
     ov.querySelector("#eRand").onclick=()=>{ inp.value=rname(); inp.focus(); };
-    if(!first) ov.querySelector("#eCancel").onclick=()=>ov.remove();
-    let role=ROLE; const roleBtns=ov.querySelectorAll(".erole"), codeRow=ov.querySelector("#eCodeRow"), codeInp=ov.querySelector("#eCode");
-    const markRole=()=>{ if(!codeRow) return; roleBtns.forEach(b=>{const on=b.dataset.r===role; b.classList.toggle("on",on); b.setAttribute("aria-pressed",on);}); codeRow.hidden=role==="hv"||unlocked[role]; ov.querySelector("#eErr").textContent=""; };
-    roleBtns.forEach(b=>b.onclick=()=>{ role=b.dataset.r; markRole(); if(!codeRow.hidden) codeInp.focus(); }); markRole();
+    const codeRow=ov.querySelector("#eCodeRow"), codeInp=ov.querySelector("#eCode");
+    const markRole=()=>{ if(!codeRow) return; ov.querySelectorAll(".rolec").forEach(b=>{const on=b.dataset.r===role; b.classList.toggle("on",on); b.setAttribute("aria-pressed",on);}); codeRow.hidden=role==="hv"||unlocked[role]; ov.querySelector("#eErr").textContent=""; };
+    ov.querySelectorAll(".rolec").forEach(b=>b.onclick=()=>{ role=b.dataset.r; markRole(); if(!codeRow.hidden) codeInp.focus(); }); markRole();
+    const show=()=>{
+      const stp=ORDER[at];
+      ov.querySelectorAll("[data-step]").forEach(d=>d.hidden=+d.dataset.step!==stp);
+      ov.querySelector("#wDots").innerHTML=ORDER.map((_,k)=>'<i class="'+(k<=at?'on':'')+'"></i>').join("");
+      const back=ov.querySelector("#eBack"); back.textContent=at>0?"Quay lại":"Hủy"; back.hidden=first&&at===0;
+      ov.querySelector("#eGo").textContent=at<ORDER.length-1?"Tiếp":first?"Vào phòng":"Lưu";
+      const f=stp===4?inp:stp===1?(codeRow&&!codeRow.hidden?codeInp:ov.querySelector(".rolec.on")):ov.querySelector('[data-step="'+stp+'"] .on, [data-step="'+stp+'"] button');
+      if(f) setTimeout(()=>{ f.focus(); if(f===inp) inp.select(); },30);
+    };
+    ov.querySelector("#eBack").onclick=()=>{ if(at>0){ at--; show(); } else ov.remove(); };
+    const relook=ov.querySelector("#eRelook"); if(relook) relook.onclick=()=>{ ORDER=[1,2,3,4]; at=1; show(); };
     ov.querySelector("form").onsubmit=async e=>{ e.preventDefault();
-      if(first&&!unlocked[role]&&!(await checkCode(role,codeInp.value))){ ov.querySelector("#eErr").textContent="Sai mật mã. Học viên thì chọn “Học viên”, không cần mật mã."; codeInp.select(); return; }
+      if(ORDER[at]===1&&!unlocked[role]&&!(await checkCode(role,codeInp.value))){ ov.querySelector("#eErr").textContent=codeInp.value?"Sai mật mã. Học viên thì chọn “Học viên”, không cần mật mã.":"Nhập mật mã cho vai này."; codeInp.select(); return; }
+      if(at<ORDER.length-1){ at++; show(); return; }
       const nm=inp.value.replace(/\s+/g," ").trim().slice(0,24);
       setMyName(nm||rname()); chooseLook(cur); ov.remove(); if(first){ AUTH=role; document.body.dataset.auth=AUTH; setRole(role); render(); } me.smile=1.5; render(); };
-    draw();
+    draw(); show();
     if(has3d){ let last=performance.now();
       const loop=now=>{ if(!ov.isConnected) return; const dt=Math.min((now-last)/1000,0.05); last=now;
         const w=pv.clientWidth, h=pv.clientHeight; if(w&&h&&(prev.w!==w||prev.h!==h)){ prev.w=w; prev.h=h; prev.r.setSize(w,h,false); prev.c.aspect=w/h; prev.c.updateProjectionMatrix(); }
         if(prev.auto) prev.yaw+=dt*0.5; prev.k.g.rotation.y=prev.yaw;
         prev.jump=Math.max(0,(prev.jump||0)-dt); prev.k.g.position.y=Math.sin(prev.jump/0.5*Math.PI)*0.12;
-        animKid(prev.k,dt,now/1000); prev.r.render(prev.s,prev.c); requestAnimationFrame(loop); };
+        if(w&&h){ animKid(prev.k,dt,now/1000); prev.r.render(prev.s,prev.c); } requestAnimationFrame(loop); };
       requestAnimationFrame(loop); }
-    if(first){ inp.focus(); inp.select(); } else ov.querySelector("#eGo").focus();
   }
-  $("bEdit").onclick=()=>openEditor(false);
+  $("bEdit").onclick=()=>{ closeDrawer(); openEditor(false); };
   let meLabel=null;
   function relabel(){ killBubble(meLabel); meLabel=bubble(me,"<b>Bạn"+(ROLE==="hv"?(myRole?" · "+esc(myRole):""):" · "+ROLE_NAME[ROLE])+"</b>"+esc(myName),0,"me"); meLabel.h=ROLE==="hv"?1.75:1.85; }
 
@@ -1071,7 +1190,7 @@ body{overflow:hidden}
     $("doorText").textContent=ROLE==="hv"?"Bạn đang đứng ở cửa sau phòng thực hành. Bấm một ghế tím để đi tới và ngồi."
       :ROLE==="lab"?"Bạn là Lab Coach 1, phụ trách khu 1"+(TAS>1?" (bên trái phòng)":"")+". Bấm “Nhận lượt kế” hoặc bấm thẳng vào ghế có dấu “!”."
       :"Bạn là Key Coach, đứng đầu phòng. Bấm “Sang phase tiếp” khi phần lớn lớp đã tick xong, giảng lại khi một phase chuyển cam.";
-    camYaw=ROLE==="hv"?0.25:Math.PI-0.25; camPitch=ROLE==="hv"?0.5:1.0; camDist=ROLE==="hv"?7:6; overview=false; $("bCam").classList.remove("on"); $("bCam").textContent="Nhìn toàn phòng";
+    camYaw=ROLE==="hv"?0.25:Math.PI-0.25; camPitch=ROLE==="hv"?0.5:1.0; camDist=ROLE==="hv"?7:6; overview=ROLE==="key"; markCam();
     if(ROLE==="hv"){ camPos.set(doorPos.x,6,zBack+8); camLook.set(doorPos.x,1,zBack-4); } else { camPos.set(me.g.position.x,6,zFront-4); camLook.set(me.g.position.x,1,zFront+6); }
     render();
   }
@@ -1159,7 +1278,8 @@ body{overflow:hidden}
   });
   cv.addEventListener("pointercancel",()=>{down=null;cv.classList.remove("drag");});
   cv.addEventListener("wheel",e=>{ e.preventDefault(); camDist=Math.max(3.5,Math.min(16,camDist*(1+e.deltaY*0.0012))); },{passive:false});
-  $("bCam").onclick=()=>{ overview=!overview; $("bCam").classList.toggle("on",overview); $("bCam").textContent=overview?"Về sau lưng bạn":"Nhìn toàn phòng"; };
+  $("bCam").onclick=()=>{ overview=!overview; markCam(); };
+  function markCam(){ const b=$("bCam"), t=overview?"Về sau lưng bạn":"Nhìn toàn phòng"; b.classList.toggle("on",overview); b.title=t; b.setAttribute("aria-label",t); }
 
   // ---------- actions ----------
   $("aGreet").onclick=()=>{
@@ -1261,7 +1381,7 @@ body{overflow:hidden}
     if(ROLE==="hv"){ items.length=0; items.push(myPos>=0?'<li class="me">Bạn đứng thứ '+(myPos+1)+' / '+queue.length+' người đang chờ</li>':'<li>'+(queue.length?queue.length+' người đang chờ Lab Coach':'Chưa ai giơ tay')+'</li>'); }
     $("helpq").innerHTML=items.length?items.join(""):'<li>Chưa ai giơ tay.</li>';
     { const g=mySeat>=0?myGate():"", p=phaseOf(myStep), n=(p.tuKiem||[]).length;
-      $("stepLabel").textContent=myStep>=NS?"đã xong "+NS+"/"+NS+" phase":g&&!KS.brk?"chờ phase tiếp":g?"đang nghỉ":"mục "+(myChk+1)+"/"+n+" · phase "+myStep; }
+      $("stepLabel").textContent=myStep>=NS?"✓":g?"…":myChk+"/"+n; $("aStep").title=myStep>=NS?"Đã xong "+NS+"/"+NS+" phase":g&&!KS.brk?"Chờ Key Coach mở phase tiếp":g?"Đang nghỉ":"Tick mục "+(myChk+1)+"/"+n+" của phase "+myStep; }
     $("q1n").textContent=myStep+"/"+NS; $("q1").classList.toggle("done",myStep>=NS);
     $("q4n").textContent=(myNop?1:0)+"/1"; $("q4").classList.toggle("done",!!myNop);
     $("sChk").textContent=st.chk; $("sPitch").textContent=st.pitch;
@@ -1274,9 +1394,61 @@ body{overflow:hidden}
     $("sGreet").textContent=st.greet; $("sHand").textContent=st.hand;
     $("cGuide").textContent=KS.brk?"đang nghỉ":"phase "+KS.guide+"/"+(NS-1); $("cRe").textContent=KS.re; $("cLab").textContent=TAS;
     $("cFix").textContent=HS.done; $("cWait").textContent=HS.n?Math.round(HS.wait/HS.n)+" giây":"–";
-    $("lTakeN").textContent="hàng chờ "+queue.length; $("lFixN").textContent="đã gỡ "+HS.mine; $("lEscN").textContent="đã báo "+HS.esc;
-    $("kOpenN").textContent=KS.brk?"đang nghỉ · mở phase "+(KS.guide+1):"đang ở phase "+KS.guide+"/"+(NS-1); $("kPlusN").textContent="còn "+mmss(KS.left); $("kReN").textContent="đã giảng lại "+KS.re; $("kCallN").textContent=KS.call+" lần";
+    $("lTakeN").textContent=queue.length; $("lFixN").textContent=HS.mine; $("lEscN").textContent=HS.esc; $("greetN").textContent=st.greet; $("handN").textContent=st.hand;
+    $("kOpenN").textContent=KS.brk?"nghỉ":"P"+KS.guide; $("kPlusN").textContent=mmss(KS.left); $("kReN").textContent=KS.re; $("kCallN").textContent=KS.call;
+    renderHud(people);
   }
+
+
+  // ---------- HUD góc: dải phase bên phải, thẻ coach, số thứ tự hàng chờ, nhắc ghế ----------
+  let qBubs=[], seatBub=null, seatBubJ=-1;
+  function renderHud(people){
+    const total=people.length, cur=MODE==="lop"?KS.guide:Math.min(myStep,NS-1);
+    let hot=false, rail="";
+    for(let k=0;k<NS;k++){
+      const stuck=people.filter(s=>s.stuck&&s.step===k).length; if(stuck>=HOT) hot=true;
+      const c=k===cur&&!(MODE==="lop"&&KS.brk), d=MODE==="lop"?k<KS.guide:k<myStep;
+      rail+='<i class="'+(stuck>=HOT?'w':c?'c':d?'d':'')+(ROLE==="hv"&&mySeat>=0&&myStep===k?' me':'')+'" title="Phase '+k+': '+esc(phaseOf(k).ngan||STEPS[k])+'"></i>';
+      const b=breakAfter(k); if(b) rail+='<i class="br'+(MODE==="lop"&&KS.brk&&KS.guide===k?' c':'')+'"></i>';
+    }
+    $("rail").innerHTML=rail; $("lopDot").hidden=!hot;
+    if(ROLE!=="hv"){
+      const k=KS.guide, p=phaseOf(k), done=people.filter(s=>s.step>k).length, stuck=people.filter(s=>s.stuck&&s.step===k).length;
+      $("kCard").classList.toggle("hot",stuck>=HOT);
+      $("kCard").innerHTML=MODE!=="lop"?'<div class="r"><span>Phòng tự học</span><b>'+total+' người</b></div>':KS.brk?'<div class="r"><span>Đang nghỉ</span><b>'+mmss(KS.left)+'</b></div>':
+        '<div class="r"><span>'+(ROLE==="key"?"Đang dẫn":"Phase")+' '+k+' · '+esc(p.ngan||p.ten)+'</span><b>'+done+'/'+total+'</b></div><div class="bar"><i style="width:'+(total?done/total*100:0)+'%"></i></div>'+
+        (stuck?'<div class="'+(stuck>=HOT?'w':'')+'">'+stuck+' người kẹt ở phase này</div>':'<div style="opacity:.7">Chưa ai kẹt ở phase này</div>')+
+        (ROLE==="lab"?'<div class="r"><span>Khu '+(me.zone+1)+' · chờ</span><b>'+queue.filter(i=>seats[i].zone===me.zone).length+'</b></div>':'');
+    }
+    // Lab Coach / Key Coach: số thứ tự nổi trên đầu người giơ tay (số xám là khu khác)
+    qBubs.forEach(killBubble); qBubs=[];
+    if(ROLE!=="hv"){ queue.slice(0,12).forEach((i,n)=>{ const s=seats[i]; if(!s||!s.kid) return; const b=bubble(s.kid,String(n+1),0,"qn"+(ROLE==="lab"&&s.zone!==me.zone?" far":"")); b.h=2.25; qBubs.push(b); }); }
+    // Học viên chưa ngồi: nhắc nổi trên ghế trống gần nhất
+    const j=ROLE==="hv"&&mySeat<0&&!me.walk?nearestFreeSeat(me.g.position):-1;
+    if(j!==seatBubJ||(seatBub&&bubbles.indexOf(seatBub)<0)){ killBubble(seatBub); seatBub=null; seatBubJ=j;
+      if(j>=0){ seatBub=bubble({g:{position:seats[j].pos}},'<kbd>E</kbd>Ngồi '+esc(seatLabel(j)),0,"seatp"); seatBub.h=1.2; seatBub.el.onclick=()=>{ actx(); goSeat(j); }; } }
+  }
+  // Ngăn kéo bên phải
+  function openDrawer(tab){
+    const sd=$("side"); if(!sd.hidden&&sd.dataset.tab===tab){ closeDrawer(); return; }
+    sd.dataset.tab=tab; sd.hidden=false; document.body.classList.add("drawer");
+    document.querySelectorAll(".dtab").forEach(b=>{ const on=b.dataset.tab===tab; b.classList.toggle("on",on); b.setAttribute("aria-selected",on); });
+    document.querySelectorAll(".topr [data-tab]").forEach(b=>b.classList.toggle("on",b.dataset.tab===tab));
+  }
+  function closeDrawer(){ $("side").hidden=true; document.body.classList.remove("drawer"); document.querySelectorAll(".topr [data-tab]").forEach(b=>b.classList.remove("on")); }
+  document.querySelectorAll(".topr [data-tab],.dtab").forEach(b=>b.addEventListener("click",()=>{ const sd=$("side"); if(b.classList.contains("dtab")&&!sd.hidden&&sd.dataset.tab===b.dataset.tab) return; openDrawer(b.dataset.tab); }));
+  $("dClose").onclick=closeDrawer; $("rail").onclick=()=>openDrawer("lop");
+  // Dòng trạng thái: hiện vài giây mỗi khi đổi, rồi tự ẩn
+  { const el=$("doorText"); let tm=null; const show=()=>{ if(!el.textContent.trim()) return; el.classList.add("show"); clearTimeout(tm); tm=setTimeout(()=>el.classList.remove("show"),4500); };
+    if(window.MutationObserver) new MutationObserver(show).observe(el,{childList:true,characterData:true,subtree:true}); }
+  // Gợi ý điều khiển chỉ hiện lần đầu, tắt sau khi kéo chuột
+  { let seen=false; try{ seen=!!localStorage.getItem("lhl-hint"); }catch(e){} if(seen) $("hint").hidden=true;
+    cv.addEventListener("pointerdown",()=>{ if($("hint").hidden) return; setTimeout(()=>{ $("hint").hidden=true; },2500); try{localStorage.setItem("lhl-hint","1");}catch(e){} }); }
+  document.addEventListener("keydown",e=>{
+    if(e.target.closest&&e.target.closest("input,textarea,select,.overlay,.wz")) return;
+    if(e.key==="Escape"&&!$("side").hidden){ closeDrawer(); return; }
+    if((e.key==="e"||e.key==="E")&&ROLE==="hv"&&!e.metaKey&&!e.ctrlKey){ $("aSit").click(); }
+  });
 
   // ---------- Key Coach & Lab Coach ----------
   // Lấy người kế tiếp trong hàng chờ, ưu tiên khu của Lab Coach đó; ghi lại thời gian chờ.
@@ -1463,15 +1635,18 @@ body{overflow:hidden}
     if(MODE!=="lop") return;
     const was=KS.left; KS.left=Math.max(0,KS.left-speed);
     if(was>0&&KS.left<=0){ bell(); if(ROLE==="key") toast(KS.brk?"Hết giờ nghỉ. Bấm “Sang phase tiếp”.":"Hết giờ phase "+KS.guide+". Thêm 5 phút hoặc sang phase tiếp."); }
-    drawTV(); renderPhase(); if(ROLE==="key") $("kPlusN").textContent="còn "+mmss(KS.left);
+    drawTV(); renderPhase(); if(ROLE==="key") $("kPlusN").textContent=mmss(KS.left);
   },1000);
   function renderPhase(){
-    const el=$("phaseBar");
-    if(MODE==="tuhoc"){ const p=phaseOf(myStep); el.innerHTML='<span>Phòng tự học · Ngày '+DAY.so+'</span><b>'+(myStep>=NS?'Đã đi hết '+NS+' phase':'Phase '+myStep+': '+esc(p.ten))+'</b>'+(myStep<NS?'<span class="tag">'+MODE_NAME[p.cheDo]+'</span><span class="tag">'+AI_NAME[p.ai]+'</span>':''); return; }
-    if(KS.brk){ el.innerHTML='<b>Đang nghỉ</b><span class="tm">còn '+mmss(KS.left)+'</span><span>Laptop gập, đứng dậy vươn vai.</span>'; return; }
-    const p=phaseOf(KS.guide);
-    el.innerHTML='<span>Ngày '+DAY.so+'</span><b>Phase '+KS.guide+': '+esc(p.ten)+'</b><span class="tm">còn '+mmss(KS.left)+'</span><span class="tag">'+MODE_NAME[p.cheDo]+'</span><span class="tag">'+AI_NAME[p.ai]+'</span>';
+    const el=$("phaseBar"); let pct=0, l1="", l2="";
+    if(MODE==="tuhoc"){ const p=phaseOf(myStep); pct=myStep/NS*100; l1=myStep>=NS?"Đã đi hết "+NS+" phase":"Phase "+myStep+" · "+p.ten; l2="Phòng tự học · Ngày "+DAY.so+(myStep<NS?" · "+MODE_NAME[p.cheDo]+" · "+AI_NAME[p.ai]:""); }
+    else if(KS.brk){ const b=breakAfter(KS.guide); pct=b?100-KS.left/(b.phut*60)*100:0; l1="Đang nghỉ"; l2="còn "+mmss(KS.left)+" · gập laptop, vươn vai"; }
+    else { const p=phaseOf(KS.guide); pct=100-KS.left/(p.phut*60)*100; l1="Phase "+KS.guide+" · "+p.ten; l2="còn "+mmss(KS.left)+" · "+MODE_NAME[p.cheDo]+" · "+AI_NAME[p.ai]; }
+    el.classList.toggle("brk",MODE==="lop"&&KS.brk);
+    el.innerHTML='<span class="ring" style="--p:'+Math.max(0,Math.min(100,pct)).toFixed(1)+'"></span><span class="tx"><b>'+esc(l1)+'</b><small>'+esc(l2)+'</small></span>';
+    el.title="Ngày "+DAY.so+" · "+l1+" · "+l2;
   }
+
 
   // Que nói: trong phase có pitch, que đi vòng quanh bàn nhóm của bạn. Người cầm que pitch, xong thì chuyền.
   // Phần nói thật diễn ra ngoài game (Meet / Zoom / Discord riêng của bàn); game chỉ giữ lượt và đếm.
@@ -1532,7 +1707,7 @@ body{overflow:hidden}
     $("demoq").innerHTML=DEMO.list.length?DEMO.list.map(g=>'<li class="'+(g===myG?'me':'')+'">'+esc(grpLabel(g))+(g===myG?' · nhóm bạn':'')+'</li>').join(""):'<li>Chưa nhóm nào đăng ký.</li>';
     const b=$("fDemo"); b.disabled=!open||mySeat<0; b.textContent=mine>=0?"Hủy đăng ký demo":"Đăng ký demo cho nhóm";
     $("demoNote").textContent=MODE!=="lop"?"Đăng ký demo chỉ có trong giờ học.":!open?"Nút đăng ký chỉ bấm được khi Key Coach mở đăng ký.":mySeat<0?"Ngồi vào bàn nhóm để đăng ký.":mine>=0?"Nhóm bạn lên demo thứ "+(mine+1)+". Bấm nhầm thì hủy được.":"Một người đăng ký là tính cho cả nhóm.";
-    $("kDemoL").textContent=DEMO.open?"Đóng đăng ký demo":"Mở đăng ký demo"; $("kDemoN").textContent=(DEMO.open?"đang mở · ":"đang đóng · ")+DEMO.list.length+" nhóm";
+    $("kDemoL").textContent=DEMO.open?"Đóng demo":"Mở demo"; $("kDemoN").textContent=DEMO.list.length; $("kDemo").classList.toggle("open",DEMO.open); $("kDemo").title=(DEMO.open?"Đang mở đăng ký demo · bấm để đóng":"Đang đóng · bấm để mở đăng ký demo")+" · "+DEMO.list.length+" nhóm đã đăng ký";
   }
   $("fDemo").onclick=()=>{ actx(); demoToggle(); };
   $("kDemo").onclick=()=>{ actx(); if(MODE!=="lop"){ toast("Đăng ký demo chỉ có trong giờ học."); return; } setDemoOpen(!DEMO.open); toast(DEMO.open?"Đã mở đăng ký demo. Các nhóm sẽ thấy nút đăng ký.":"Đã đóng đăng ký demo. Còn "+DEMO.list.length+" nhóm trong danh sách."); };
