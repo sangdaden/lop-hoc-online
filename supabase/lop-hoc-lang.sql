@@ -73,6 +73,8 @@ create table if not exists lhl_esc (id bigint generated always as identity prima
 -- Vòng 3: giơ tay kèm loại kẹt (H5), vỗ tay khi demo (D1), nhật ký giơ tay cho báo cáo buổi (C2)
 alter table lhl_members add column if not exists hand_k text not null default '';
 alter table lhl_members add column if not exists clap_n int not null default 0;
+-- Phòng tự học (C1): giờ kết thúc phiên tập trung (ms), > now thì đèn bàn sáng vàng
+alter table lhl_members add column if not exists focus bigint not null default 0;
 create table if not exists lhl_hlog (id bigint generated always as identity primary key, code text not null references lhl_rooms(code) on delete cascade, uid uuid not null, k int not null default 0, hk text not null default '', up bigint not null, down bigint);
 create index if not exists lhl_hlog_code on lhl_hlog(code, uid);
 
@@ -232,6 +234,7 @@ begin
     help = case when (p_patch->>'hand')::boolean is not null then null else help end,
     hand_k = case when locked then hand_k when p_patch ? 'handK' then left(coalesce(p_patch->>'handK', ''), 8) when p_patch ? 'hand' then '' else hand_k end,
     clap_n = coalesce((p_patch->>'clapN')::int, clap_n),
+    focus = coalesce((p_patch->>'focus')::bigint, focus),
     nop = coalesce((p_patch->>'nop')::boolean, nop),
     grp_role = coalesce(left(p_patch->>'grpRole', 24), grp_role),
     zone = coalesce((p_patch->>'zone')::int, zone),
@@ -418,7 +421,7 @@ begin
         'uid', m.uid, 'name', m.name, 'role', m.role, 'look', m.look, 'seat', m.seat, 'step', m.step, 'chk', m.chk,
         'hand', m.hand, 'handAt', m.hand_at, 'nop', m.nop, 'grpRole', m.grp_role, 'zone', m.zone, 'bowN', m.bow_n,
         'x', m.x, 'z', m.z, 'help', m.help, 'on', m.online, 'at', m.joined,
-        'hd', m.help_done, 'hn', m.help_n, 'hw', m.help_wait, 'lock', m.locked, 'fix', m.fixname, 'hk', m.hand_k, 'clapN', m.clap_n)), '[]'::json)
+        'hd', m.help_done, 'hn', m.help_n, 'hw', m.help_wait, 'lock', m.locked, 'fix', m.fixname, 'hk', m.hand_k, 'clapN', m.clap_n, 'focus', m.focus)), '[]'::json)
       from lhl_members m where m.code = p_code and m.upd >= p_since),
     'demo', (select coalesce(json_agg(grp order by at), '[]'::json) from lhl_demo where code = p_code),
     'pit', (select coalesce(json_object_agg(grp, at), '{}'::json) from lhl_pit where code = p_code),

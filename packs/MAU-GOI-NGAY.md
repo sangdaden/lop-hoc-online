@@ -24,6 +24,8 @@ Ví dụ đầy đủ: [mau-day02.json](mau-day02.json) (bài Ngày 02 đang dù
 | `vai` | không | Vai trong nhóm. Mặc định: Điều phối, Workflow, Research, Viết |
 | `nop` | không | Tên 3 thư mục phải có trong repo nộp bài |
 | `the` | không | Thẻ thuật ngữ: `[["Từ", "Giải thích ngắn"], ...]` |
+| `onTap` | không | Thẻ "Ôn nhanh" ở phòng tự học: `[["Câu hỏi", "Đáp án"], ...]`. Mỗi lượt lấy ngẫu nhiên 5 thẻ. Không có thì dùng `the` |
+| `truocBuoi` | không | Việc cần làm trước buổi này (cài công cụ, đọc trước...). Hiện ở phòng tự học dưới mục "Chuẩn bị Ngày NN" khi ngày này là buổi kế tiếp. Không có thì dùng danh sách chung |
 | `phases` | có | Danh sách phase theo thứ tự, kể cả giờ nghỉ |
 
 Mỗi phase:

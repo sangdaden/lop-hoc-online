@@ -191,6 +191,37 @@
       "Quyết định cuối: làm, cần kiểm thêm, hay không dùng AI."
     ]
   ],
+  "onTap": [
+    [
+      "Problem first nghĩa là gì?",
+      "Bắt đầu từ vấn đề thật của một actor cụ thể, chưa nghĩ tới AI."
+    ],
+    [
+      "4 bước để mô tả một bài toán?",
+      "Actor → Workflow → Bottleneck → Metric."
+    ],
+    [
+      "Khi nào chọn Rule thay vì Agent?",
+      "Khi luật nếu–thì đủ giải quyết: rẻ hơn, dễ kiểm hơn."
+    ],
+    [
+      "Problem Statement cần mấy field?",
+      "6: actor, workflow, bottleneck, impact, metric, boundary."
+    ],
+    [
+      "Go / Not Yet / No-Go khác nhau thế nào?",
+      "Làm ngay · cần kiểm chứng thêm · không nên dùng AI."
+    ],
+    [
+      "Validation nhanh gồm gì?",
+      "Phỏng vấn 2–3 người hoặc survey 5–10 người, hoặc xem log."
+    ]
+  ],
+  "truocBuoi": [
+    "Sạc đầy máy, mang theo sạc",
+    "Đăng nhập sẵn tài khoản AI và GitHub",
+    "Đọc lại Problem Statement của nhóm"
+  ],
   "mau": [
     [
       "Bài mẫu (ví dụ)",
