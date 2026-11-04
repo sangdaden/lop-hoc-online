@@ -4065,14 +4065,18 @@ body[data-auth="key"] .game #livePanel{order:-1}
   let keyLast="", keyLayout="";
   function keySnap(){ return {N,type:TYPE,mode:MODE,day:DAY.id,guide:KS.guide,brk:!!KS.brk,endAt:Math.round(KS.endAt||0),re:KS.re,reK:KS.reK==null?-1:KS.reK,call:KS.call,over:KS.over||"",demoOpen:!!DEMO.open,stage:stageOn()?{inv:STG.inv,lbl:STG.lbl,uid:STG.uid,who:STG.who,n:STG.n}:null}; }
   function keyPush(force){
-    if(!LIVE.on||ROLE!=="key"||LIVE.closed) return;
+    if(!LIVE.on||ROLE!=="key"||LIVE.closed||!LIVE.code) return;
     // KS.left có thể bị đổi trực tiếp (lùi phase, bớt/thêm phút, hoàn tác): đồng bộ lại mốc hết giờ
     if(!KS.endAt||Math.abs(Math.max(0,(KS.endAt-NET.now())/1000)-KS.left)>2) KS.endAt=NET.now()+KS.left*1000;
     const s=keySnap(), j=JSON.stringify(s);
     if(!force&&j===keyLast) return; keyLast=j;
     const lay=s.N+"|"+s.type; if(keyLayout&&lay!==keyLayout) s.clearSeats=true; keyLayout=lay;
-    rpcQ("lhl_state",{p_code:LIVE.code,p_state:s});
+    // gửi hỏng (mạng chập chờn, phiên đăng nhập vừa đổi) thì quên bản đã gửi để lần sau gửi lại;
+    // trước đây keyLast được ghi ngay nên trạng thái hỏng (vd. mở demo) không bao giờ lên máy chủ và người vào sau không thấy
+    rpc("lhl_state",{p_code:LIVE.code,p_state:s}).catch(e=>{ if(keyLast===j) keyLast=""; console.warn("lhl_state",e); if(/dong/.test(e&&e.message||"")) toast("Phòng đã đóng."); });
   }
+  // Key Coach: cứ 5 giây kiểm một lần, lần gửi trước hỏng thì gửi lại trạng thái chung
+  setInterval(()=>{ if(LIVE.on&&LIVE.joined&&ROLE==="key"&&!LIVE.closed&&keyLast==="") keyPush(true); },5000);
   // Mọi người khác: nhận trạng thái chung từ Key Coach
   function applyState(s,first){
     const prev=LIVE.st; LIVE.st=s;
