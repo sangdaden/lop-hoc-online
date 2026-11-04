@@ -1727,7 +1727,7 @@ body[data-auth="key"] .game #livePanel{order:-1}
   function bakeOn(k,b){ k.bkParts=bakeParts(k); k.bkParts.forEach(c=>k.g.remove(c)); k.bk=b; k.faceB=b.face; k.g.add(b.grp); }
   function bakeOff(k){ if(!k.bk) return; k.g.remove(k.bk.grp); k.bk.grp.children.forEach(m=>{ if(m!==k.faceB) m.geometry.dispose(); }); k.bkParts.forEach(c=>k.g.add(c)); k.bk=null; k.faceB=null; k.bkParts=null; }
   function settled(k){ const ty=(k.sitting&&!k.hand&&!k.walk&&k.rest==null)?1:0;
-    return !k.walk&&!(k.bow>0)&&!(k.nod>0)&&Math.abs(k.handA-(k.hand?1:0))<0.01&&Math.abs((k.typeA||0)-ty)<0.01; }
+    return !k.walk&&!(k.bow>0)&&!(k.nod>0)&&!(k.attn>0)&&Math.abs(k.handA-(k.hand?1:0))<0.01&&Math.abs((k.typeA||0)-ty)<0.01; }
   let lodD=14;
   function lodTick(){
     const cp=camera.position, t0=performance.now(), n=kids.length; if(!n) return;
@@ -1758,6 +1758,9 @@ body[data-auth="key"] .game #livePanel{order:-1}
   }
   function bow(k){ k.bow=k.bowDur=1.0; }
   function nod(k){ k.nod=0.45; }
+  // Chú ý (Key Coach gọi cả lớp): động tác riêng, khác hẳn cúi chào
+  const ATTN_DUR=1.8;
+  function attn(k){ if(!k||!k.armR) return; k.attn=ATTN_DUR; }
   function walkTo(k,to,speed,done){ freeRest(k); setSit(k,false); to=to.clone(); to.y=0;
     if(!done&&!navFree(to.x,to.z)){ const f=navNearest(to.x,to.z); if(f) to=f; } // bấm vào bàn/đồ vật: dừng ở chỗ trống gần nhất
     k.walk={to,path:navPath(k.g.position,to)||[],speed:speed||2.2,done}; }
@@ -3165,7 +3168,7 @@ body[data-auth="key"] .game #livePanel{order:-1}
   $("kPlus").onclick=()=>{ actx(); if(MODE!=="lop") return; keyOp(()=>{ addFive(); return "Đã thêm 5 phút cho "+phaseLbl(); }); };
   $("kRe").onclick=()=>{ actx(); if(me.busy){ toast("Bạn đang giảng."); return; } const w=worstStep(1); reExplain(w>=0?w:KS.guide); };
   $("kCall").onclick=()=>{
-    actx(); bell(); KS.call++; bow(me);
+    actx(); bell(); KS.call++; attn(me);
     seats.forEach(s=>{ if(s.kid&&s.kid!==me&&s.kid.sitting) nod(s.kid); });
     setKeyOver("Mọi người nhìn lên màn hình một chút");
     setTimeout(()=>{ if(KS.over.startsWith("Mọi người")) setKeyOver(""); },4000);
@@ -3714,7 +3717,7 @@ body[data-auth="key"] .game #livePanel{order:-1}
         if(s.brk){ bell(); bubble(keyC,"Nghỉ giải lao",2600,"ta"); } else bubble(keyC,"Mở phase "+s.guide+": "+phaseOf(s.guide).ten,2600,"ta"); }
       if(s.re>prev.re&&s.reK>=0){ bubble(keyC,"Giảng lại phase "+s.reK+" cho cả lớp",3000,"ta"); seats.forEach(x=>{ if(x.kid&&x.kid!==me&&x.kid.sitting) nod(x.kid); });
         if(mySeat>=0&&myHand&&myStep===s.reK) toast("Key Coach vừa giảng lại phase "+s.reK+". Gỡ được thì bấm “Hạ tay”, vẫn kẹt thì cứ giữ tay."); }
-      if(s.call>prev.call){ bell(); if(keyC.g&&keyC.hip) bow(keyC); }
+      if(s.call>prev.call){ bell(); if(keyC.g&&keyC.hip) attn(keyC); }
       if(s.demoOpen!==prev.demoOpen){ knock(.7); bubble(keyC,s.demoOpen?"Mở đăng ký lên demo":"Đóng đăng ký demo",2600,"ta"); if(ROLE==="hv") toast(s.demoOpen?"Key Coach đã mở đăng ký demo. Nhóm nào muốn lên thì đăng ký.":"Key Coach đã đóng đăng ký demo."); }
     }
     KS.re=s.re||0; KS.call=s.call||0; DEMO.open=!!s.demoOpen;
@@ -3938,6 +3941,16 @@ body[data-auth="key"] .game #livePanel{order:-1}
     lodD=Math.max(8,Math.min(22,h*0.012)); } // khoảng cách bắt đầu gộp người ở xa: đầu nhỏ hơn ~30px
   if(window.ResizeObserver) new ResizeObserver(resize).observe(stage); else window.addEventListener("resize",resize);
   resize();
+  const lerp=(a,b,e)=>a+(b-a)*e;
+  function attnPose(k,p){
+    k.attnOn=true;
+    const e=Math.min(1,p*6,(1-p)*6); // vào/ra mềm
+    // vẫy cao hai tay hình chữ V, nhún nhẹ: nhìn từ cuối lớp vẫn thấy, khác Chào (cúi) và Giơ tay (một tay)
+    const w=Math.sin(p*Math.PI*6)*0.28, hop=Math.abs(Math.sin(p*Math.PI*3))*0.035;
+    k.armR.rotation.x=lerp(k.armR.rotation.x,-0.25,e); k.armR.rotation.z=lerp(k.armR.rotation.z,2.2+w,e);
+    k.armL.rotation.x=lerp(k.armL.rotation.x,-0.25,e); k.armL.rotation.z=lerp(k.armL.rotation.z,-2.2+w,e);
+    if(!k.walk&&!k.sitting) k.g.position.y=hop*e;
+  }
   function animKid(k,dt,t){
     if(k.walk){
       let wp=k.walk.path&&k.walk.path.length?k.walk.path[0]:k.walk.to;
@@ -3960,9 +3973,11 @@ body[data-auth="key"] .game #livePanel{order:-1}
     const tapR=busy?Math.max(0,Math.sin(t*13+k.ph))*0.07:0, tapL=busy?Math.max(0,Math.sin(t*13+k.ph+2.1))*0.07:0;
     k.armR.rotation.x=ty*(-1.05+tapR); k.armL.rotation.x=ty*(-1.05+tapL);
     k.armR.rotation.z=0.1-ty*0.32+k.handA*2.4; k.armL.rotation.z=-0.12+ty*0.34;
+    if(k.attn>0){ k.attn=Math.max(0,k.attn-dt); attnPose(k,1-k.attn/ATTN_DUR); }
+    else if(k.attnOn){ k.attnOn=false; if(!k.walk&&!k.sitting) k.g.position.y=0; }
     if(k.alert.visible) k.alert.position.y=1.55+Math.sin(t*4+k.ph)*0.05;
     if(k.smile>0) k.smile=Math.max(0,k.smile-dt);
-    let ex="normal"; if(k.hand) ex="worry"; else if(k.bow>0||k.nod>0||k.smile>0) ex="smile";
+    let ex="normal"; if(k.hand) ex="worry"; else if(k.bow>0||k.nod>0||k.smile>0||k.attn>0) ex="smile";
     if(ex==="normal"&&t>k.blinkAt){ if(t>k.blinkAt+0.14) k.blinkAt=t+2+Math.random()*4; else ex="blink"; }
     setExpr(k,ex);
   }
