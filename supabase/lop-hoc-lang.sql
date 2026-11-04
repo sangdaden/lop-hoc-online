@@ -70,6 +70,11 @@ create table if not exists lhl_bonus (
 );
 create index if not exists lhl_bonus_code on lhl_bonus(code, st);
 create table if not exists lhl_esc (id bigint generated always as identity primary key, code text not null references lhl_rooms(code) on delete cascade, k int not null, by_name text, at bigint not null);
+-- Vòng 3: giơ tay kèm loại kẹt (H5), vỗ tay khi demo (D1), nhật ký giơ tay cho báo cáo buổi (C2)
+alter table lhl_members add column if not exists hand_k text not null default '';
+alter table lhl_members add column if not exists clap_n int not null default 0;
+create table if not exists lhl_hlog (id bigint generated always as identity primary key, code text not null references lhl_rooms(code) on delete cascade, uid uuid not null, k int not null default 0, hk text not null default '', up bigint not null, down bigint);
+create index if not exists lhl_hlog_code on lhl_hlog(code, uid);
 
 alter table lhl_config enable row level security;
 alter table lhl_key_auth enable row level security;
@@ -80,6 +85,7 @@ alter table lhl_pit enable row level security;
 alter table lhl_bonus enable row level security;
 alter table lhl_esc enable row level security;
 alter table lhl_ban enable row level security;
+alter table lhl_hlog enable row level security;
 
 create or replace function lhl_now() returns bigint language sql stable as $$ select (extract(epoch from clock_timestamp())*1000)::bigint $$;
 
@@ -122,6 +128,7 @@ declare r lhl_rooms; v_lab text; v_pass text;
 begin
   if not exists (select 1 from lhl_key_auth where uid = auth.uid()) then raise exception 'khong phai key coach'; end if;
   if p_code !~ '^[A-Z][0-9]{3}$' then raise exception 'ten phong khong dung'; end if;
+  if p_code = 'T000' then raise exception 'T000 la phong tu hoc'; end if;
   -- Mã vào lớp và mã Lab Coach đều 4 số, không trùng với mã nào của lớp đang mở, vì người vào chỉ nhập mã.
   loop
     v_pass := lpad(((get_byte(gen_random_bytes(1),0)*256 + get_byte(gen_random_bytes(1),0)) % 9000 + 1000)::text, 4, '0');
@@ -142,6 +149,7 @@ begin
     delete from lhl_pit where code = p_code;
     delete from lhl_esc where code = p_code;
     delete from lhl_ban where code = p_code;
+    delete from lhl_hlog where code = p_code;
     update lhl_rooms set key_uid = auth.uid(), open = true, title = left(p_title, 60), lab = v_lab, pass = v_pass, state = '{}'::jsonb, created_at = now() where code = p_code;
     return json_build_object('code', p_code, 'lab', v_lab, 'pass', v_pass, 'fresh', true);
   end if;
@@ -153,7 +161,7 @@ drop function if exists lhl_open_rooms();
 -- Học viên nhập mã vào lớp (Lab Coach nhập mã Lab Coach) là ra đúng lớp đang mở.
 create or replace function lhl_find(p_role text, p_pass text) returns text language sql stable security definer set search_path = public as $$
   select code from lhl_rooms
-  where open and created_at > now() - interval '18 hours'
+  where open and code <> 'T000' and created_at > now() - interval '18 hours'
     and case when p_role = 'lab' then lab = trim(p_pass) else pass = trim(p_pass) end
   order by created_at desc limit 1
 $$;
@@ -187,7 +195,7 @@ begin
      and not exists (select 1 from lhl_members where code = p_code and uid = auth.uid() and role = 'lab') then
     perform pg_sleep(0.5); return json_build_object('err', 'labpass');
   end if;
-  if p_role = 'hv' and coalesce(p_pass, '') <> r.pass
+  if p_role = 'hv' and p_code <> 'T000' and coalesce(p_pass, '') <> r.pass
      and not exists (select 1 from lhl_members where code = p_code and uid = auth.uid()) then
     perform pg_sleep(0.5); return json_build_object('err', 'pass');
   end if;
@@ -210,9 +218,10 @@ end $$;
 
 -- Cập nhật bản ghi của chính mình (chỉ các trường cho phép)
 create or replace function lhl_me(p_code text, p_patch jsonb) returns void language plpgsql security definer set search_path = public as $$
-declare t bigint := lhl_now();
+declare t bigint := lhl_now(); o lhl_members; st jsonb; v_k int;
 begin
   perform lhl_need(p_code, array['hv','lab','key']);
+  select * into o from lhl_members where code = p_code and uid = auth.uid();
   update lhl_members set
     name = case when fixname then name else coalesce(left(p_patch->>'name', 24), name) end,
     look = case when p_patch ? 'look' then p_patch->'look' else look end,
@@ -221,6 +230,8 @@ begin
     hand = case when locked then false else coalesce((p_patch->>'hand')::boolean, hand) end,
     hand_at = case when locked then hand_at when (p_patch->>'hand')::boolean then t when p_patch ? 'hand' then 0 else hand_at end,
     help = case when (p_patch->>'hand')::boolean is not null then null else help end,
+    hand_k = case when locked then hand_k when p_patch ? 'handK' then left(coalesce(p_patch->>'handK', ''), 8) when p_patch ? 'hand' then '' else hand_k end,
+    clap_n = coalesce((p_patch->>'clapN')::int, clap_n),
     nop = coalesce((p_patch->>'nop')::boolean, nop),
     grp_role = coalesce(left(p_patch->>'grpRole', 24), grp_role),
     zone = coalesce((p_patch->>'zone')::int, zone),
@@ -229,6 +240,20 @@ begin
     online = coalesce((p_patch->>'on')::boolean, online),
     upd = t, seen = t
   where code = p_code and uid = auth.uid();
+  -- C2: ghi lượt giơ tay theo phase (phase Key Coach đang dẫn; phòng tự học thì phase của chính học viên)
+  if found and not o.locked and p_patch ? 'hand' then
+    if (p_patch->>'hand')::boolean and not o.hand then
+      select state into st from lhl_rooms where code = p_code;
+      v_k := case when st->>'mode' = 'tuhoc' then coalesce((p_patch->>'step')::int, o.step) else coalesce((st->>'guide')::int, 0) end;
+      update lhl_hlog set down = t where code = p_code and uid = auth.uid() and down is null;
+      insert into lhl_hlog(code, uid, k, hk, up) values (p_code, auth.uid(), v_k, left(coalesce(p_patch->>'handK', ''), 8), t);
+    elsif not coalesce((p_patch->>'hand')::boolean, true) and o.hand then
+      update lhl_hlog set down = t where code = p_code and uid = auth.uid() and down is null;
+    end if;
+  end if;
+  if found and p_patch ? 'handK' and not (p_patch ? 'hand') then
+    update lhl_hlog set hk = left(coalesce(p_patch->>'handK', ''), 8) where code = p_code and uid = auth.uid() and down is null;
+  end if;
 end $$;
 
 -- Ngồi / rời ghế. Ghế của người đã rời phòng (mất kết nối > 60 giây) được giải phóng.
@@ -393,7 +418,7 @@ begin
         'uid', m.uid, 'name', m.name, 'role', m.role, 'look', m.look, 'seat', m.seat, 'step', m.step, 'chk', m.chk,
         'hand', m.hand, 'handAt', m.hand_at, 'nop', m.nop, 'grpRole', m.grp_role, 'zone', m.zone, 'bowN', m.bow_n,
         'x', m.x, 'z', m.z, 'help', m.help, 'on', m.online, 'at', m.joined,
-        'hd', m.help_done, 'hn', m.help_n, 'hw', m.help_wait, 'lock', m.locked, 'fix', m.fixname)), '[]'::json)
+        'hd', m.help_done, 'hn', m.help_n, 'hw', m.help_wait, 'lock', m.locked, 'fix', m.fixname, 'hk', m.hand_k, 'clapN', m.clap_n)), '[]'::json)
       from lhl_members m where m.code = p_code and m.upd >= p_since),
     'demo', (select coalesce(json_agg(grp order by at), '[]'::json) from lhl_demo where code = p_code),
     'pit', (select coalesce(json_object_agg(grp, at), '{}'::json) from lhl_pit where code = p_code),
@@ -406,6 +431,33 @@ begin
     'esc', case when me_role = 'key' then (select coalesce(json_agg(json_build_object('k', k, 'by', by_name, 'at', at) order by at), '[]'::json) from lhl_esc where code = p_code and at >= p_since) end
   ) into res;
   return res;
+end $$;
+
+-- C2: báo cáo buổi cho coach: lượt giơ tay theo phase + tiến độ học viên. Không có tên trong báo cáo theo phase.
+create or replace function lhl_report(p_code text) returns json language plpgsql stable security definer set search_path = public as $$
+begin
+  perform lhl_need(p_code, array['key','lab']);
+  return json_build_object(
+    'now', lhl_now(),
+    'hands', (select coalesce(json_agg(json_build_object('k', h.k, 'hk', h.hk, 'up', h.up,
+        'down', coalesce(h.down, case when coalesce(m.hand, false) then null else m.upd end)) order by h.up), '[]'::json)
+      from lhl_hlog h left join lhl_members m on m.code = h.code and m.uid = h.uid where h.code = p_code),
+    'steps', (select coalesce(json_agg(json_build_object('step', step, 'chk', chk)), '[]'::json) from lhl_members where code = p_code and role = 'hv'));
+end $$;
+
+-- T1: phòng tự học T000 luôn mở, không cần Key Coach, không cần mã. Ai vào cũng tự đi phase của mình.
+-- Người không vào lại quá 12 giờ được xóa khỏi phòng để danh sách không phình ra.
+create or replace function lhl_self_room() returns text language plpgsql security definer set search_path = public, extensions as $$
+declare t bigint := lhl_now();
+begin
+  if auth.uid() is null then raise exception 'chua dang nhap'; end if;
+  insert into lhl_rooms(code, key_uid, open, title, lab, pass, state)
+    values ('T000', '00000000-0000-0000-0000-000000000000', true, 'Phòng tự học', encode(gen_random_bytes(8), 'hex'), '',
+      '{"N":50,"type":"island","mode":"tuhoc","day":"","guide":0,"brk":false,"endAt":0,"re":0,"call":0}'::jsonb)
+    on conflict (code) do update set open = true;
+  delete from lhl_members where code = 'T000' and seen < t - 12 * 3600 * 1000;
+  delete from lhl_hlog where code = 'T000' and up < t - 12 * 3600 * 1000;
+  return 'T000';
 end $$;
 
 -- Chỉ người đã đăng nhập (kể cả ẩn danh) mới gọi được các hàm
