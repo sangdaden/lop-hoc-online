@@ -58,3 +58,10 @@ Gửi hai giá trị này để dán vào `SB_URL` và `SB_KEY` ở đầu đo�
 - Một ghế chỉ một người (chặn ngay trong cơ sở dữ liệu). Ai mất kết nối quá 60 giây được tính là đã rời phòng và nhả ghế. Vào lại bằng cùng trình duyệt thì giữ nguyên tiến độ.
 - Mỗi máy hỏi máy chủ khoảng 2,5 giây một lần và chỉ nhận phần thay đổi, nên không cần kết nối realtime (gói miễn phí giới hạn 200 kết nối realtime). Thử trên máy với 250 người giả lập: khoảng 100 lượt hỏi mỗi giây, mỗi lượt dưới 10 ms.
 - Dữ liệu lưu: tên hiển thị, ngoại hình, ghế, phase/mục đã tick, giơ tay, đã nộp hay chưa, đăng ký demo, lý do điểm cộng. Không lưu link repo, nội dung prompt hay email.
+
+## Chiếu màn hình ở góc demo
+
+- Không cần chạy lại SQL. Người đang được mời và người đang đứng ở chỗ đứng demo đi chung gói trạng thái của Key Coach.
+- Hai máy bắt tay qua kênh **Realtime broadcast** của Supabase (kênh `lhl-stage-<phòng>`). Realtime bật sẵn ở mọi project, không phải làm gì. Chỉ Key Coach, người đang chiếu và người đang xem mở kênh này, nên lớp 250 người cũng chỉ dùng khoảng 10 kết nối realtime.
+- Hình đi thẳng từ máy người chiếu tới từng người xem (WebRTC), không qua Supabase, nên không tốn dung lượng Supabase. Tối đa 8 người xem trực tiếp một lúc (`STAGE_MAX` trong index.html), luôn chừa 1 chỗ cho Key Coach.
+- Mạng trường hoặc công ty chặn UDP thì người xem thấy "Không kết nối được tới máy người trình bày". Khi đó cần máy chủ TURN: tạo tài khoản ở một dịch vụ TURN (ví dụ Metered hoặc Cloudflare), rồi thêm một dòng vào `STAGE_ICE` trong index.html dạng `{urls:"turn:…",username:"…",credential:"…"}`.
