@@ -4008,11 +4008,19 @@ body[data-auth="key"] .game #livePanel{order:-1}
     if(want!==prNow){ prNow=want; renderer.setPixelRatio(prNow); prAt=now; }
   }
   window.__lhlPerf=()=>({fps:Math.round(1000/ftAvg),pr:prNow,calls:renderer.info.render.calls,tris:renderer.info.render.triangles,baked:kids.filter(k=>k.bk).length,kids:kids.length});
+  // Tỉ lệ (0..1) phần nằm ngang của camera còn nằm trong 4 bức tường, chừa 0,45 m để mặt phẳng gần không cắt vào tường
+  function camFit(px,pz,hx,hz){ const m=0.45; let k=1;
+    if(hx>1e-6) k=Math.min(k,(W/2-m-px)/hx); else if(hx<-1e-6) k=Math.min(k,(-W/2+m-px)/hx);
+    if(hz>1e-6) k=Math.min(k,(zBack-m-pz)/hz); else if(hz<-1e-6) k=Math.min(k,(zFront+m-pz)/hz);
+    return Math.max(0,k); }
   function frame(){
     simAdvance();
     const target=me.g.position; let want, at;
     if(view!=="me"){ const cp=Math.cos(vw.pitch); want=tmp.set(vw.fx+Math.sin(vw.yaw)*vw.dist*cp, 0.5+vw.dist*Math.sin(vw.pitch), vw.fz+Math.cos(vw.yaw)*vw.dist*cp); at=look.set(vw.fx,0.5,vw.fz); if(want.y<1.8) want.y=1.8; }
-    else { const cp=Math.cos(camPitch); want=tmp.set(target.x+Math.sin(camYaw)*camDist*cp, 1+camDist*Math.sin(camPitch), target.z+Math.cos(camYaw)*camDist*cp); at=look.set(target.x-Math.sin(camYaw)*1.2,0.9,target.z-Math.cos(camYaw)*1.2); }
+    else { const cp=Math.cos(camPitch); let hx=Math.sin(camYaw)*camDist*cp, hz=Math.cos(camYaw)*camDist*cp, y=1+camDist*Math.sin(camPitch);
+      // không cho camera ra sau tường: kéo camera lại gần nhân vật theo đúng hướng nhìn; gần quá (dưới 3 m) thì nhấc lên cao để khỏi chui vào đầu
+      const k=camFit(target.x,target.z,hx,hz); if(k<1){ hx*=k; hz*=k; const h2=hx*hx+hz*hz; let v=(y-1)*k; if(h2+v*v<9) v=Math.sqrt(9-h2); y=1+v; }
+      want=tmp.set(target.x+hx,y,target.z+hz); at=look.set(target.x-Math.sin(camYaw)*1.2,0.9,target.z-Math.cos(camYaw)*1.2); }
     camPos.lerp(want,0.1); camLook.lerp(at,0.12);
     camera.position.copy(camPos); camera.lookAt(camLook);
     if(HANG.length){ camera.updateMatrixWorld(); hangTick(); }
