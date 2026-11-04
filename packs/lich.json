@@ -1,0 +1,30 @@
+{
+  "ghiChu": "Lịch các ngày lab. Điền ngay dạng YYYY-MM-DD thì game tự biết ngày nào đã qua / hôm nay / sắp tới; để trống thì dùng tt (qua | nay | toi).",
+  "ngay": [
+    {
+      "so": "01",
+      "ngay": "",
+      "tt": "qua"
+    },
+    {
+      "so": "02",
+      "ngay": "",
+      "tt": "nay"
+    },
+    {
+      "so": "03",
+      "ngay": "",
+      "tt": "toi"
+    },
+    {
+      "so": "04",
+      "ngay": "",
+      "tt": "toi"
+    },
+    {
+      "so": "05",
+      "ngay": "",
+      "tt": "toi"
+    }
+  ]
+}

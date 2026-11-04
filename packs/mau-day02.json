@@ -1,0 +1,200 @@
+{
+  "so": "02",
+  "tieuDe": "Tìm đúng bài toán cho AI",
+  "muc": "Problem Statement · Rule / Workflow / Agent · Go / Not Yet / No-Go",
+  "nguon": "https://github.com/sangdaden/K4A-Day02-AI-Product-Labs",
+  "bang": [
+    "Day 02 · Tìm đúng bài toán",
+    "Problem first, not AI first",
+    "Actor → Workflow → Bottleneck → Metric",
+    "Rule không kém Agent"
+  ],
+  "vai": [
+    "Điều phối",
+    "Workflow",
+    "Research",
+    "Viết"
+  ],
+  "nop": [
+    "01-individual-problem-scan",
+    "02-group-problem-statement",
+    "03-individual-reflection"
+  ],
+  "phases": [
+    {
+      "ten": "Xem bài mẫu",
+      "ngan": "Bài mẫu",
+      "phut": 15,
+      "cheDo": "canhan",
+      "ai": "duoc",
+      "tuKiem": [
+        "Hiểu nhóm chỉ chọn candidate problem, chưa chốt Problem Statement",
+        "Hiểu deep-dive gồm validation, research, workflow, metric, PS và AI decision"
+      ]
+    },
+    {
+      "ten": "Scan 5+ problems",
+      "ngan": "Scan",
+      "phut": 25,
+      "cheDo": "canhan",
+      "ai": "truoc",
+      "tuKiem": [
+        "Đủ 5+ dòng, mỗi dòng có actor và số đo cụ thể",
+        "Dùng ít nhất 3/4 lăng kính",
+        "Không có dòng chung chung kiểu “mất nhiều thời gian”"
+      ]
+    },
+    {
+      "ten": "Top 3 Problem Cards",
+      "ngan": "Top 3 Cards",
+      "phut": 35,
+      "cheDo": "canhan",
+      "ai": "phanbien",
+      "tuKiem": [
+        "Có top 3 Cards đủ field",
+        "Mỗi Card có workflow trước/sau, bottleneck, metric, fallback",
+        "Đã chọn 1 card để pitch và có câu hỏi challenge"
+      ]
+    },
+    {
+      "ten": "Nghỉ",
+      "phut": 10,
+      "cheDo": "nghi"
+    },
+    {
+      "ten": "Nhóm hội tụ",
+      "ngan": "Hội tụ",
+      "phut": 30,
+      "cheDo": "nhom",
+      "ai": "khong",
+      "pitch": true,
+      "tuKiem": [
+        "Mỗi người đã pitch top 3",
+        "Đã gom cụm và shortlist",
+        "Đã chấm điểm và chọn 1 candidate problem"
+      ]
+    },
+    {
+      "ten": "Kiểm chứng + research",
+      "ngan": "Kiểm chứng",
+      "phut": 30,
+      "cheDo": "nhom",
+      "ai": "duoc",
+      "tuKiem": [
+        "Có validation: phỏng vấn 2–3 người hoặc survey 5–10 người",
+        "Có 2–3 giải pháp đã có, kèm link kiểm được"
+      ]
+    },
+    {
+      "ten": "Workflow + Problem Statement",
+      "ngan": "Workflow + PS",
+      "phut": 45,
+      "cheDo": "nhom",
+      "ai": "duoc",
+      "tuKiem": [
+        "Có workflow hiện tại: bước, người làm, thời gian, bottleneck",
+        "Có workflow sau tối ưu: Rule / AI ở bước nào, boundary, fallback",
+        "Có Problem Statement v0 đủ 6 field"
+      ]
+    },
+    {
+      "ten": "Nghỉ",
+      "phut": 10,
+      "cheDo": "nghi"
+    },
+    {
+      "ten": "Rule / Workflow / Agent + quyết định",
+      "ngan": "Quyết định",
+      "phut": 25,
+      "cheDo": "nhom",
+      "ai": "phanbien",
+      "moDemo": true,
+      "tuKiem": [
+        "Đã so sánh No AI / Rule / Workflow / Agent trên cùng một bài",
+        "Có Problem Statement v1",
+        "Có quyết định Go / Not Yet / No-Go và lý do"
+      ]
+    },
+    {
+      "ten": "Reflection cá nhân",
+      "ngan": "Reflection",
+      "phut": 15,
+      "cheDo": "canhan",
+      "ai": "khong",
+      "nopBai": true,
+      "tuKiem": [
+        "Ghi rõ vai trò và đóng góp của mình trong nhóm",
+        "Ghi trung thực AI đã giúp gì, sai ở đâu, mình sửa gì",
+        "Tự giải thích được mạch problem → workflow → metric → boundary → AI"
+      ]
+    }
+  ],
+  "the": [
+    [
+      "Actor",
+      "Người thật gặp vấn đề, cụ thể tới vai trò và bối cảnh."
+    ],
+    [
+      "Workflow",
+      "Chuỗi 3–7 bước hiện tại: ai làm, mất bao lâu, bàn giao qua ai."
+    ],
+    [
+      "Bottleneck",
+      "Một bước cụ thể làm cả workflow chậm hoặc hay sai."
+    ],
+    [
+      "Impact",
+      "Tác động đo được nếu gỡ bottleneck: giờ, lỗi, tiền, người."
+    ],
+    [
+      "Success metric",
+      "Con số hiện trạng, mục tiêu sau cải thiện và cách đo."
+    ],
+    [
+      "Boundary",
+      "Phạm vi làm và không làm; chỗ người thật phải kiểm tra."
+    ],
+    [
+      "Candidate problem",
+      "Bài nhóm chọn để đào sâu, chưa phải Problem Statement."
+    ],
+    [
+      "Problem Statement",
+      "Actor, workflow, bottleneck, impact, metric, boundary trong vài câu."
+    ],
+    [
+      "Validation",
+      "Kiểm nhanh pain có thật: phỏng vấn, survey, log."
+    ],
+    [
+      "Rule",
+      "Luật cố định nếu–thì, không cần AI; rẻ và dễ kiểm."
+    ],
+    [
+      "Workflow (AI)",
+      "Chuỗi bước cố định, AI làm một vài bước trong đó."
+    ],
+    [
+      "Agent",
+      "AI tự lên kế hoạch và dùng công cụ qua nhiều bước."
+    ],
+    [
+      "Fallback",
+      "Cách quay về khi AI sai."
+    ],
+    [
+      "Human-in-the-loop",
+      "Người duyệt trước khi kết quả đi tiếp."
+    ],
+    [
+      "Go / Not Yet / No-Go",
+      "Quyết định cuối: làm, cần kiểm thêm, hay không dùng AI."
+    ]
+  ],
+  "mau": [
+    [
+      "Bài mẫu (ví dụ)",
+      "https://github.com/sangdaden/K4A-Day02-AI-Product-Labs"
+    ]
+  ]
+}
