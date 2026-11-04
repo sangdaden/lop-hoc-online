@@ -2034,11 +2034,15 @@ body[data-auth="key"] .game #livePanel{order:-1}
     if(!DX) return;
     let x=DX.tvs.canvas.getContext("2d"), w=512, h=288; x.fillStyle="#0E1726"; x.fillRect(0,0,w,h); x.textAlign="center"; x.textBaseline="middle";
     const lop=MODE==="lop", p=lop?phaseOf(KS.guide):null;
-    x.fillStyle="#9FB3D1"; x.font="500 22px "+DF; x.fillText(lop?"Ngày "+DAY.so+" · "+(KS.brk?"Giờ nghỉ":"Phase "+KS.guide):"Phòng tự học",w/2,60);
-    x.fillStyle="#fff"; x.font="700 64px "+DF; x.fillText(lop?mmss(KS.left):"—",w/2,140);
-    x.fillStyle="#F2C14E"; x.font="600 22px "+DF; x.fillText(lop&&!KS.brk&&p?(MODE_NAME[p.cheDo]+" · "+AI_NAME[p.ai]):"Kẹt thì giơ tay",w/2,214); DX.tvs.tex.needsUpdate=true;
+    // ít chữ, chữ to: nhãn phase ngắn + giờ thật lớn + thanh tiến độ (nhìn được từ xa, cả hai mặt)
+    const tot=lop?(KS.brk?(breakAfter(KS.guide)||{phut:10}).phut:p.phut)*60:1, prog=lop?Math.max(0,Math.min(1,1-KS.left/Math.max(1,tot))):0, acc=lop&&KS.brk?"#F2C14E":"#7FA6E8";
+    const tag=lop?(KS.brk?"Nghỉ":"P"+KS.guide):"Tự học"; x.font="700 40px "+DF; const tw=x.measureText(tag).width+44;
+    x.fillStyle=acc; x.beginPath(); if(x.roundRect) x.roundRect(w/2-tw/2,18,tw,56,28); else x.rect(w/2-tw/2,18,tw,56); x.fill();
+    x.fillStyle="#0E1726"; x.fillText(tag,w/2,47);
+    x.fillStyle="#fff"; fillFit(x,lop?mmss(KS.left):"—",w/2,162,150,700,w-36,90);
+    x.fillStyle="#24324D"; x.fillRect(40,248,w-80,16); if(prog>0){ x.fillStyle=acc; x.fillRect(40,248,(w-80)*prog,16); }
+    DX.tvs.tex.needsUpdate=true;
     x=DX.clock.canvas.getContext("2d"); w=256; x.clearRect(0,0,w,w); x.fillStyle="#22324F"; x.beginPath(); x.arc(128,128,126,0,7); x.fill(); x.fillStyle="#FBFAF6"; x.beginPath(); x.arc(128,128,112,0,7); x.fill();
-    const tot=lop?(KS.brk?(breakAfter(KS.guide)||{phut:10}).phut:p.phut)*60:1, prog=lop?Math.max(0,Math.min(1,1-KS.left/Math.max(1,tot))):0;
     x.strokeStyle="#F6EBCB"; x.lineWidth=14; x.beginPath(); x.arc(128,128,96,0,7); x.stroke();
     if(prog>0){ x.strokeStyle=KS.brk?"#D8A93B":"#23407A"; x.lineCap="round"; x.beginPath(); x.arc(128,128,96,-Math.PI/2,-Math.PI/2+Math.PI*2*prog); x.stroke(); x.lineCap="butt"; }
     x.fillStyle="#22324F"; for(let i=0;i<12;i++){const a=i/12*Math.PI*2;x.save();x.translate(128+Math.sin(a)*72,128-Math.cos(a)*72);x.rotate(a);x.fillRect(-2.5,-7,5,14);x.restore();}
@@ -2118,12 +2122,12 @@ body[data-auth="key"] .game #livePanel{order:-1}
     plane(.72,.72,m.clock,mw>1.2?mx:-W*0.32,3.78,fz+.07,0);
     const aL=tvR+0.3, aR=W/2-1.0, aw=Math.min(3.2,aR-aL), ah=Math.min(1.9,aw/1.47);
     if(aw>1.2){ box(aw+.16,ah+.14,.05,m.wood,(aL+aR)/2,1.95,fz+.05); plane(aw,ah,m.cork,(aL+aR)/2,1.95,fz+.085,0); }
-    // --- màn phụ treo giữa phòng, quay về cuối phòng ---
+    // --- màn phụ treo giữa phòng, hiện giờ cả hai mặt (cuối phòng và bục giảng) ---
     const sz=zFront+D*0.45, sx=Math.max(2.5,W*0.2);
     // Mỗi màn có vật liệu riêng để tự mờ khi che bảng chính / màn hình lớn trong tầm nhìn của mình (xem hangTick)
     HANG.length=0;
     [-sx,sx].forEach(x=>{ const mb=m.dark.clone(), mp=m.tvs.clone(); mb.transparent=mp.transparent=true;
-      box(1.75,1.0,.08,mb,x,3.3,sz); plane(1.65,.92,mp,x,3.3,sz+.05,0); HANG.push({x,y:3.3,z:sz,mats:[mb,mp],op:1}); });
+      box(1.75,1.0,.08,mb,x,3.3,sz); plane(1.65,.92,mp,x,3.3,sz+.05,0); plane(1.65,.92,mp,x,3.3,sz-.05,Math.PI); HANG.push({x,y:3.3,z:sz,mats:[mb,mp],op:1}); });
     const cab=im(new T.CylinderGeometry(.015,.015,1,6),m.dark,4); [-sx,sx].forEach((x,i)=>[-.6,.6].forEach((o,j)=>place(cab,i*2+j,x+o,4.2,sz,0,0,1,.8,1)));
     // --- dải hành trình khóa trên tường phải ---
     const tl=Math.min(11.5,D-4); plane(tl,tl*0.047,m.timeline,W/2-.05,2.25,cz,-Math.PI/2);
