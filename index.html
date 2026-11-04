@@ -534,7 +534,11 @@ body.drawer .rail,body.drawer .kcard{display:none}
 .wz .card{max-width:620px;width:100%;max-height:100%;overflow:auto;gap:16px;padding:22px}
 .wz .dots{display:flex;gap:6px}.wz .dots i{width:28px;height:5px;border-radius:9px;background:var(--line)}.wz .dots i.on{background:var(--violet)}
 .wz .q{font-family:var(--f-display);font-size:clamp(26px,4vw,34px);line-height:1.1;margin:0;font-weight:400}
-.wz [data-step]{display:grid;gap:12px}
+.wz [data-step]{display:grid;gap:12px;grid-template-columns:minmax(0,1fr)}
+/* Điện thoại: ô chọn ngày có chữ dài không được đẩy thẻ rộng quá màn */
+.wz .card{grid-template-columns:minmax(0,1fr)}
+.wz .inp{min-width:0;max-width:100%;box-sizing:border-box}
+.wz select.inp{width:100%;text-overflow:ellipsis}
 .wz [data-step][hidden]{display:none}
 .wz .rolec{all:unset;cursor:pointer;display:flex;gap:14px;align-items:center;padding:12px 14px;border-radius:12px;border:1.5px solid var(--line);background:var(--paper)}
 .wz .rolec.on{border-color:var(--violet);background:var(--violet-soft)}
@@ -669,6 +673,7 @@ body.focus .focuschip{display:flex}
   .kcard{top:calc(max(14px,env(safe-area-inset-top,0px)) + 52px)}
   body.menu-open .kcard{display:none}
   .topr.open~.kcard{display:none}
+  .topr.open~.rail{display:none}
   .game .actions[data-role="key"] .act.xk{display:none}
   .game .actions[data-role="key"] .act.more{display:grid}
   .game .actions[data-role="key"].more .act.xk{display:grid;position:absolute;bottom:calc(100% + 22px)}
