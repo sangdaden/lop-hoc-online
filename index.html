@@ -265,6 +265,7 @@ a:focus-visible,button:focus-visible,select:focus-visible{outline:2px solid var(
 .stview .svb{position:relative;min-height:0;display:grid;place-items:center}
 .stview video{max-width:100%;max-height:100%;width:100%;height:100%;object-fit:contain;background:#000;border-radius:8px}
 @media (max-width:900px){.game .stgbar{top:calc(max(14px,env(safe-area-inset-top,0px)) + 100px)}}
+.game .stgbar[hidden]{display:none} /* không có ai demo: ẩn hẳn, khỏi hiện viên thuốc xám rỗng */
 .stview .svn{position:absolute;margin:0;color:#C9D3E6;font-size:14px;text-align:center;max-width:36ch;padding:0 16px}
 .demo-state{display:inline-block;padding:1px 8px;border-radius:10px;font-size:12px;font-weight:600;background:var(--line);color:var(--muted)}
 .demo-state.open{background:var(--ok);color:var(--paper-2)}
@@ -564,6 +565,7 @@ body.drawer .rail,body.drawer .kcard{display:none}
 .game .status{display:flex;gap:7px;align-items:center;font-weight:600;border-radius:999px;white-space:nowrap}
 .game .status svg{flex:none;width:17px;height:17px;fill:none;stroke:#F2C14E;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
 .game .hint.gest{display:flex;gap:16px;border-radius:16px;padding:8px 14px}
+.game .hint.gest[hidden]{display:none}
 .game .hint .gi{display:grid;justify-items:center;gap:1px;font-size:11px;font-weight:600}
 .game .hint .gi svg{width:30px;height:30px;fill:none;stroke:#fff;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 #bMenu{display:none}
