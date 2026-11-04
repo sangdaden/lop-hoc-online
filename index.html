@@ -3669,7 +3669,8 @@ body[data-auth="key"] .game #livePanel{order:-1}
     let code=normCode(codeIn), lab="", jpass="", fresh=false;
     if(role==="key"){
       if(!ROOM_RE.test(code)) return "Tên phòng gồm 1 chữ cái và 3 số, ví dụ H201.";
-      if(!(await rpc("lhl_key_login",{p_pass:pass?String(pass).trim():null}))) return pass?"Sai mật mã Key Coach.":"Nhập mật mã Key Coach.";
+      let ok; try{ ok=await rpc("lhl_key_login",{p_pass:pass?String(pass).trim():null}); }catch(e){ if(/chua dat mat ma/.test(e&&e.message||"")) return "Máy chủ chưa đặt mật mã Key Coach. Người quản trị Supabase cần chạy câu đặt mật mã (xem HUONG-DAN.md)."; throw e; }
+      if(!ok) return pass?"Sai mật mã Key Coach.":"Nhập mật mã Key Coach.";
       const d=DAYS.find(x=>buoi&&buoi.indexOf("Ngày "+x.so+" ")===0); if(d&&packOf(d)!==DAY){ loadDay(packOf(d)); drawWB(); renderDays(); }
       const r=await rpc("lhl_create_room",{p_code:code,p_title:buoi||"Ngày "+DAY.so}); lab=r.lab; jpass=r.pass; fresh=r.fresh;
     } else {

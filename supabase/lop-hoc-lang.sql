@@ -105,6 +105,8 @@ create or replace function lhl_key_login(p_pass text) returns boolean language p
 begin
   if auth.uid() is null then return false; end if;
   if exists (select 1 from lhl_key_auth where uid = auth.uid()) then return true; end if;
+  -- Mật mã vẫn là chữ mẫu: báo rõ để người quản trị đặt mật mã thật, thay vì báo "sai mật mã".
+  if coalesce((select v from lhl_config where k = 'key_code'), 'doi-mat-ma-nay') = 'doi-mat-ma-nay' then raise exception 'chua dat mat ma key coach'; end if;
   if p_pass is not null and p_pass = (select v from lhl_config where k = 'key_code') then
     insert into lhl_key_auth(uid) values (auth.uid()) on conflict do nothing; return true;
   end if;
@@ -417,5 +419,7 @@ end $$;
 -- Báo API nạp lại danh sách hàm ngay (tránh lỗi "Could not find the function ... in the schema cache").
 notify pgrst, 'reload schema';
 
--- Mật mã Key Coach: đổi 'doi-mat-ma-nay' thành mật mã của bạn rồi chạy lại riêng dòng này khi muốn đổi.
-insert into lhl_config(k, v) values ('key_code', 'doi-mat-ma-nay') on conflict (k) do update set v = excluded.v;
+-- Mật mã Key Coach. Chạy lại cả file KHÔNG đổi mật mã đã đặt.
+-- Lần đầu, hoặc khi muốn đổi mật mã: chạy riêng câu dưới (bỏ dấu -- ở đầu), thay mat-ma-cua-ban bằng mật mã thật.
+--   update lhl_config set v = 'mat-ma-cua-ban' where k = 'key_code';
+insert into lhl_config(k, v) values ('key_code', 'doi-mat-ma-nay') on conflict (k) do nothing;
