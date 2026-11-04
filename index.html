@@ -476,7 +476,8 @@ body:not([data-role="hv"]) .rail{top:calc(50% + 60px)}
 .bub.bowi.ta{background:var(--bub-ta)}
 .bub.bowi svg{width:17px;height:17px;fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 /* Nhãn của mình: chỉ "Bạn"; rê chuột hoặc chạm để xem đủ */
-.bub.me{cursor:default}
+.bub.me{cursor:default;transition:opacity .2s}
+.bub.me.dim:not(:hover):not(.full){opacity:.28}
 .bub.me b{opacity:1;margin:0}
 .bub.me .mfull{display:none;font-weight:500;opacity:.85}
 .bub.me:hover .mfull,.bub.me.full .mfull{display:inline}
@@ -1511,11 +1512,16 @@ body.lite .bub,body.lite #hint,body.lite #views,body.lite #miniMap,body.lite #bC
     const x=wb.canvas.getContext("2d"), w=768, h=512;
     x.fillStyle="#F6F8F7"; x.fillRect(0,0,w,h);
     x.fillStyle="#2A4FB5"; x.textAlign="left"; x.textBaseline="alphabetic";
-    x.font='700 68px "Baloo 2", "Nunito", sans-serif'; x.fillText(DAY.bang?DAY.bang[0]:"AI Thực chiến",40,100);
-    x.font='600 46px "Baloo 2", "Nunito", sans-serif';
+    // Mỗi dòng tự co chữ cho vừa mép bảng (tiêu đề dài như "Day 02 · Tìm đúng bài toán" từng bị cắt), hết cỡ thì thêm "…"
+    const MW=w-80, fit=(t,px,wt,minPx,y)=>{ let s=px; const f=n=>wt+' '+n+'px "Baloo 2", "Nunito", sans-serif';
+      x.font=f(s); while(s>minPx&&x.measureText(t).width>MW){ s-=2; x.font=f(s); }
+      let u=t; if(x.measureText(u).width>MW){ while(u.length>1&&x.measureText(u+"…").width>MW) u=u.slice(0,-1); u=u.trimEnd()+"…"; }
+      x.fillText(u,40,y); };
     const B=DAY.bang||["","Agent = LLM + Tools + Memory","Prompt → Kế hoạch → Làm → Kiểm tra"];
-    x.fillText(B[1]||"",40,190); x.fillText(B[2]||"",40,270); x.fillText(B[3]||"Kẹt? Giơ tay, đừng ngại",40,350);
-    x.fillText("Kẹt? Giơ tay, đừng ngại",40,430);
+    fit(B[0]||"AI Thực chiến",68,700,40,100);
+    const KET="Kẹt? Giơ tay, đừng ngại", L=B.slice(1,4).filter(Boolean);
+    L.forEach((t,i)=>fit(t,46,600,30,190+i*80));
+    x.fillStyle="#C2410C"; fit(KET,40,600,28,L.length>=3?440:190+L.length*80);
     wb.tex.needsUpdate=true;
   }
   drawTV(); drawWB(); lhlFontsReady().then(()=>{drawTV();drawWB();});
@@ -2579,6 +2585,10 @@ body.lite .bub,body.lite #hint,body.lite #views,body.lite #miniMap,body.lite #bC
       const vis=v3.z<1&&v3.x>-1.2&&v3.x<1.2&&v3.y>-1.2&&v3.y<1.2;
       b.el.style.display=vis?"":"none";
       if(vis) b.el.style.transform="translate("+((v3.x+1)/2*w)+"px,"+((1-v3.y)/2*h)+"px) translate(-50%,-100%)";
+      // Nhãn "Bạn" đứng trước bảng trắng / màn hình lớn thì mờ đi để không đè lên chữ trên bảng
+      if(vis&&b===meLabel){ const nx=v3.x, ny=v3.y; let over=false;
+        if(room) for(const r of [ndcRect(-W*0.18,1.95,zFront+0.06,3.1,1.9),ndcRect(W*0.14,2.15,zFront+0.06,4.3,2.42)]){ if(r&&nx>r.x0-.04&&nx<r.x1+.04&&ny>r.y0-.06&&ny<r.y1){ over=true; break; } }
+        if(b.el.classList.contains("dim")!==over) b.el.classList.toggle("dim",over); }
     }
   }
 
