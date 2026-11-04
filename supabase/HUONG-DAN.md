@@ -19,10 +19,14 @@ Học viên không cần tài khoản: mỗi trình duyệt tự nhận một da
 
 1. Mở **SQL Editor → New query**.
 2. Dán toàn bộ nội dung file [`lop-hoc-lang.sql`](lop-hoc-lang.sql).
-3. Ở dòng cuối file, đổi `doi-mat-ma-nay` thành **mật mã Key Coach** bạn muốn (ví dụ giữ `key-2611` như bản mô phỏng).
+3. Bấm **Run**, rồi đặt **mật mã Key Coach** bằng một câu riêng (thay `key-2611` bằng mật mã bạn muốn):
+
+   ```sql
+   update lhl_config set v = 'key-2611' where k = 'key_code';
+   ```
 4. Bấm **Run**. Thấy "Success" là xong. Chạy lại file nhiều lần cũng không mất dữ liệu.
 
-Muốn đổi mật mã Key Coach sau này, chạy riêng dòng cuối với mật mã mới.
+Chạy lại cả file SQL về sau **không** làm mất mật mã đã đặt. Muốn đổi mật mã thì chạy lại câu `update` ở trên với mật mã mới.
 
 ## 4. Lấy 2 giá trị kết nối
 
@@ -45,7 +49,7 @@ Gửi hai giá trị này để dán vào `SB_URL` và `SB_KEY` ở đầu đo�
 
 **Báo lỗi "Could not find the function … in the schema cache"?** Nghĩa là Supabase chưa có hàm mới. Chạy lại toàn bộ file SQL mới nhất (bấm Run, thấy Success), đợi vài giây rồi tải lại trang game.
 
-**Đã chạy file SQL bản cũ?** Chạy lại toàn bộ file mới một lần (dữ liệu không mất), rồi chạy lại dòng mật mã Key Coach nếu bạn đã đổi.
+**Đã chạy file SQL bản cũ?** Chạy lại toàn bộ file mới một lần (dữ liệu không mất), mật mã Key Coach đã đặt vẫn giữ nguyên.
 
 ## Cách hoạt động (tóm tắt)
 
