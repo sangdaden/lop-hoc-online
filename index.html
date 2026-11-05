@@ -2189,7 +2189,7 @@ body.lite .bub,body.lite #hint,body.lite #views,body.lite #miniMap,body.lite #bC
         for(let k=0;k<3&&S.length<n;k++){ const a=k*Math.PI*2/3+t*.65; const sx=cx+Math.sin(a)*.95, sz=cz+Math.cos(a)*.95; tb.seats.push(S.length); add(sx,sz,Math.atan2(cx-sx,cz-sz),t,.5); S[S.length-1].grp=t; } });
     } else if(type==="ring"){ // D Giếng trời: hai vòng bàn một người quay vào giữa
       const C=[0,4.6]; [[3.7,12],[6.2,18]].forEach(([rad,cnt],ring)=>{ for(let k=0;k<cnt&&S.length<n;k++){ const a=k/cnt*Math.PI*2+(ring?.17:0), sx=C[0]+Math.sin(a)*rad, sz=C[1]+Math.cos(a)*rad, yaw=Math.atan2(C[0]-sx,C[1]-sz);
-        const tb={kind:"round",x:sx+Math.sin(yaw)*.62,z:sz+Math.cos(yaw)*.62,r:.4,seats:[S.length]}; TB.push(tb); add(sx,sz,yaw,TB.length-1,.5); S[S.length-1].grp=Math.floor((S.length-1)/3); } });
+        const tb={kind:"round",x:sx+Math.sin(yaw)*.7,z:sz+Math.cos(yaw)*.7,r:.4,seats:[S.length]}; // .7: chừa chỗ cho giày, không chạm trụ bàn TB.push(tb); add(sx,sz,yaw,TB.length-1,.5); S[S.length-1].grp=Math.floor((S.length-1)/3); } });
     } else {
       const count=Math.ceil(n/5), per=n<=50?4:n<=100?5:n<=150?6:7;
       for(let t=0;t<count;t++){ const r=Math.floor(t/per), c=t%per; const cx=(c-(per-1)/2)*3.9, cz=r*3.9; const tb={kind:"round",x:cx,z:cz,r:0.85,seats:[]}; TB.push(tb);
@@ -2291,7 +2291,9 @@ body.lite .bub,body.lite #hint,body.lite #views,body.lite #miniMap,body.lite #bC
     const boxes=tables.filter(t=>t.kind==="box"), rounds=tables.filter(t=>t.kind==="round");
     IM.btop=im(new T.BoxGeometry(1,1,1),M.tabletop,boxes.length);
     IM.bleg=im(new T.BoxGeometry(1,1,1),M.metal,boxes.length*2);
-    boxes.forEach((t,i)=>{ t.inst=i; IM.btop.setColorAt(i,col.setHex(0xffffff)); place(IM.btop,i,t.x,0.74,t.z,0,0,t.w,0.05,t.d); [-1,1].forEach((sd,j)=>place(IM.bleg,i*2+j,t.x+sd*(t.w/2-0.08),0.36,t.z,0,0,0.05,0.72,t.d*0.85)); });
+    boxes.forEach((t,i)=>{ t.inst=i; IM.btop.setColorAt(i,col.setHex(0xffffff)); place(IM.btop,i,t.x,0.74,t.z,0,0,t.w,0.05,t.d); // chân bàn dạng tấm nằm ở hai đầu KHÔNG có người ngồi: quầy và bàn đôi quán cà phê có ghế ở hai bên trục x, nên tấm chân chuyển sang hai đầu trục z (để chân người ngồi không xuyên vào)
+      const sx=t.seats.some(k=>seats[k]&&Math.abs(seats[k].dir.x)>0.7);
+      [-1,1].forEach((sd,j)=>{ if(sx) place(IM.bleg,i*2+j,t.x,0.36,t.z+sd*(t.d/2-0.08),0,0,t.w*0.85,0.72,0.05); else place(IM.bleg,i*2+j,t.x+sd*(t.w/2-0.08),0.36,t.z,0,0,0.05,0.72,t.d*0.85); }); });
     IM.rtop=im(new T.CylinderGeometry(1,1,1,40),M.tabletop,rounds.length);
     IM.btop.setColorAt(0,col.setHex(0xffffff)); IM.rtop.setColorAt(0,col.setHex(0xffffff)); // cùng vật liệu: cả hai đều có màu riêng từng bàn (A1)
     IM.rped=im(new T.CylinderGeometry(0.07,0.07,0.72,10),M.metal,rounds.length);
