@@ -2263,7 +2263,7 @@ body.lite .bub,body.lite #hint,body.lite #views,body.lite #miniMap,body.lite #bC
     seats.forEach(s=>{minX=Math.min(minX,s.pos.x);maxX=Math.max(maxX,s.pos.x);minZ=Math.min(minZ,s.pos.z);maxZ=Math.max(maxZ,s.pos.z);});
     W=Math.max(16,(maxX-minX)+7); zFront=minZ-5.6; zBack=maxZ+4.2; const D=zBack-zFront, H=4.6, cz=(zBack+zFront)/2;
     doorPos.set(W/2-2.2,0,zBack-1.0);
-    floorTex.repeat.set(W/2.4,(D+14)/2.4);
+    floorTex.repeat.set(W/2.4,(D+14)/2.4); if(SELF_TH){ const ft=themeFloor(SELF_TH), k=SELF_TH==="B"?2.2:SELF_TH==="C"?3:2.4; ft.repeat.set(W/k,(D+14)/k); }
     floorMesh=plane(W,D+14,M.floor,0,0,cz+7,0,-Math.PI/2);
     // walls (inward facing; camera outside sees through)
     plane(W,H,M.wall,0,H/2,zFront,0); plane(W,H,M.wall,0,H/2,zBack,Math.PI);
@@ -2271,15 +2271,16 @@ body.lite .bub,body.lite #hint,body.lite #views,body.lite #miniMap,body.lite #bC
     plane(W,D,M.ceil,0,H,cz,0,Math.PI/2);
     // wood slat wainscot
     const wains=(len,x,z,ry)=>{ const t=slatTex.clone(); t.needsUpdate=true; t.repeat.set(len/2.2,1); const m=new T.MeshLambertMaterial({map:t}); m.userData.own=true; plane(len,1.05,m,x,0.525,z,ry); };
-    wains(W,0,zFront+0.02,0); wains(W,0,zBack-0.02,Math.PI); wains(D,-W/2+0.02,cz,Math.PI/2); wains(D,W/2-0.02,cz,-Math.PI/2);
+    if(SELF_TH!=="C"){ wains(W,0,zFront+0.02,0); wains(W,0,zBack-0.02,Math.PI); wains(D,-W/2+0.02,cz,Math.PI/2); wains(D,W/2-0.02,cz,-Math.PI/2); }
     // acoustic panels (instanced)
     const P=[]; const gap=1.6;
     for(let x=-W/2+1;x<=W/2-1;x+=gap){ P.push([x,zBack-0.04,Math.PI]); } // tường đầu phòng để trắng cho bảng nổi
     for(let z=zFront+1;z<=zBack-1;z+=gap){ P.push([-W/2+0.04,z,Math.PI/2]); P.push([W/2-0.04,z,-Math.PI/2]); }
     const PL=[]; P.forEach(([x,z,ry],k)=>[3.05,4.15].forEach((y,row)=>{ if(ry===Math.PI/2&&row===0) return; PL.push([x,y,z,ry,k,row]); })); // tường trái: hàng dưới nhường chỗ cửa sổ
+    if(SELF_TH) PL.length=0; // phòng tự học: tường theo kiểu phòng (kệ sách, gạch, kính) thay tấm tiêu âm
     const pan=im(new T.PlaneGeometry(1.45,1.0),M.white,PL.length);
     PL.forEach(([x,y,z,ry,k,row],pi)=>{ place(pan,pi,x,y,z,ry); pan.setColorAt(pi,col.setHex(((k+row)%3===2)?0xd8cdb4:0x34435f)); }); // tiêu âm hai tông: xanh than + be
-    pan.instanceMatrix.needsUpdate=true; pan.instanceColor.needsUpdate=true;
+    pan.setColorAt(0,col.setHex(0x34435f)); pan.instanceMatrix.needsUpdate=true; pan.instanceColor.needsUpdate=true; // luôn có instanceColor kể cả khi 0 tấm (M.white dùng chung)
     // front: whiteboard + big display + teacher desk; back: door
     const fz=zFront+0.06;
     box(3.2,2.0,0.05,M.metal,-W*0.18,1.95,fz); plane(3.1,1.9,M.wb,-W*0.18,1.95,fz+0.03,0);
@@ -2630,7 +2631,15 @@ body.lite .bub,body.lite #hint,body.lite #views,body.lite #miniMap,body.lite #bC
     B:{wall:0xead9c6,ceil:0xe9dccb,floor:0xe7b48f,top:0xf1e6d4},
     C:{wall:0xdff0ea,ceil:0xf4fbf8,floor:0xd9d2bf,top:0xf3efe6},
     D:{wall:0x24304a,ceil:0x1a2338,floor:0xa98466,top:0x7c5638}};
-  function themeMats(){ const t=TH_MAT[SELF_TH]||TH_MAT[""]; M.wall.color.setHex(t.wall); M.ceil.color.setHex(t.ceil); M.floor.color.setHex(t.floor); M.tabletop.color.setHex(t.top); }
+  // Sàn theo phác thảo: A gỗ tối, B gạch ô cam, C sỏi, D gỗ tối (vân tròn vẽ riêng giữa phòng)
+  const TH_FLOOR={};
+  function themeFloor(th){ if(TH_FLOOR[th]) return TH_FLOOR[th]; let f;
+    if(th==="A"||th==="D") f=(x,w,h)=>{ const r=drng(th==="A"?3:4); for(let i=0;i<8;i++){ x.fillStyle=["#3b2c22","#43322a","#33261d","#3e2e24"][i%4]; x.fillRect(0,i*32,w,32); x.fillStyle="rgba(0,0,0,.35)"; x.fillRect(0,i*32+31,w,1); for(let k=0;k<3;k++){ x.fillRect((r()*w)|0,i*32,1,32); } } };
+    else if(th==="B") f=(x,w,h)=>{ for(let i=0;i<4;i++) for(let j=0;j<4;j++){ x.fillStyle=(i+j)%2?"#C99A7A":"#DDBBA0"; x.fillRect(i*64,j*64,64,64); } x.strokeStyle="#B07656"; x.lineWidth=2; for(let i=0;i<=4;i++){ x.beginPath(); x.moveTo(i*64,0); x.lineTo(i*64,h); x.stroke(); x.beginPath(); x.moveTo(0,i*64); x.lineTo(w,i*64); x.stroke(); } };
+    else f=(x,w,h)=>{ x.fillStyle="#C8C3B2"; x.fillRect(0,0,w,h); const r=drng(9); for(let i=0;i<420;i++){ x.fillStyle=["#B6B09E","#D8D3C3","#A9A28F"][i%3]; x.beginPath(); x.arc(r()*w,r()*h,2+r()*3,0,7); x.fill(); } };
+    const t=canvasTex(256,256,f).tex; t.wrapS=t.wrapT=T.RepeatWrapping; return TH_FLOOR[th]=t; }
+  function themeMats(){ const t=TH_MAT[SELF_TH]||TH_MAT[""]; M.wall.color.setHex(t.wall); M.ceil.color.setHex(t.ceil); M.tabletop.color.setHex(t.top);
+    const ft=SELF_TH?themeFloor(SELF_TH):floorTex; if(M.floor.map!==ft){ M.floor.map=ft; M.floor.needsUpdate=true; } M.floor.color.setHex(SELF_TH?0xffffff:t.floor); }
   // X2: ánh sáng theo giờ thật (máy người xem), hoặc chủ phòng chọn sáng / chiều / đêm
   function selfLight(){ const L=(SELF.decor&&SELF.decor.light)||"auto"; if(L!=="auto") return L;
     const h=new Date().getHours()+new Date().getMinutes()/60; return h>=6&&h<16?"sang":h>=16&&h<18.5?"chieu":"dem"; }
@@ -2700,6 +2709,28 @@ body.lite .bub,body.lite #hint,body.lite #views,body.lite #miniMap,body.lite #bC
       const sb=new T.Mesh(new T.ConeGeometry(.42,.6,24),m.gold); sb.position.y=.36; g.add(sb); const st=new T.Mesh(new T.ConeGeometry(.36,.6,24),m.gold); st.rotation.x=Math.PI; st.position.y=1.25; g.add(st);
       DX.th.sand={bot:sb,top:st,v:-1};
       const pl=canvasTex(512,128,()=>{}); DX.th.plaque=pl; plane(1.3,.33,new T.MeshBasicMaterial({map:pl.tex}),cx,.2,cz+.97,0); }
+    // Vỏ phòng theo phác thảo (Sang duyệt 05/11): A, D kệ sách cao dọc hai tường bên; B tường gạch; C khung kính
+    if(th==="A"||th==="D"){ const wl=(x,ry,sd)=>{ for(let z=zFront+1.2;z<zBack-1.6;z+=2.3){ const w=2.1, y0=3.2;
+        box(.3,.04,w,m.wood,x-sd*.15,y0,z); box(.3,.04,w,m.wood,x-sd*.15,y0+.45,z); box(.3,.04,w,m.wood,x-sd*.15,y0+.9,z); box(.04,1.0,w,m.wood,x-sd*.02,y0+.48,z);
+        const r=drng(((z*7)|0)+(sd>0?3:9)); for(let k=0;k<3;k++){ let u=-w/2+.06; while(u<w/2-.08){ const bw=.05+r()*.05, bh=.2+r()*.14; books.push([x-sd*.14,y0+.02+k*.45+bh/2,z+u+bw/2,Math.PI/2,bw,bh,r()]); u+=bw+.012; } } } };
+      wl(-W/2+.02,Math.PI/2,-1); wl(W/2-.02,-Math.PI/2,1); }
+    if(th==="B"){ const bt=canvasTex(512,256,(x,w,h)=>{ x.fillStyle="#B9654A"; x.fillRect(0,0,w,h); const r=drng(5); for(let rr=0;rr<16;rr++) for(let c=0;c<9;c++){ x.fillStyle=["#B9654A","#A95A40","#C2704F"][(r()*3)|0]; x.fillRect(c*64+(rr%2?32:0)-64,rr*16,62,14); } x.fillStyle="#E7D5C4"; for(let rr=0;rr<16;rr++){ x.fillRect(0,rr*16+14,w,2); for(let c=0;c<10;c++) x.fillRect(c*64+(rr%2?32:0)-2,rr*16,2,16); } });
+      bt.tex.wrapS=bt.tex.wrapT=T.RepeatWrapping; const D2=zBack-zFront, bm=(len)=>{ const t=bt.tex.clone(); t.needsUpdate=true; t.repeat.set(len/3,1.2); const mm=new T.MeshLambertMaterial({map:t}); mm.userData.own=true; return mm; };
+      plane(D2,3.55,bm(D2),W/2-.03,1.05+3.55/2,(zBack+zFront)/2,-Math.PI/2); plane(W,3.55,bm(W),0,1.05+3.55/2,zBack-.03,Math.PI); }
+    if(th==="C"){ const gm=new T.MeshLambertMaterial({color:0xCFEFF0,transparent:true,opacity:.55}), D2=zBack-zFront, cz2=(zBack+zFront)/2;
+      plane(D2,4.6,gm,W/2-.04,2.3,cz2,-Math.PI/2); plane(W,4.6,gm,0,2.3,zBack-.04,Math.PI);
+      const mu=[]; for(let z=zFront+1;z<zBack;z+=2){ mu.push([-W/2+.06,2.3,z,.08,4.6,.08]); mu.push([W/2-.06,2.3,z,.08,4.6,.08]); } for(let x=-W/2+1;x<W/2;x+=2) mu.push([x,2.3,zBack-.06,.08,4.6,.08]);
+      [1.0,4.0].forEach(y=>{ mu.push([-W/2+.06,y,cz2,.06,.06,D2]); mu.push([W/2-.06,y,cz2,.06,.06,D2]); mu.push([0,y,zBack-.06,W,.06,.06]); });
+      const mb=im(new T.BoxGeometry(1,1,1),new T.MeshLambertMaterial({color:0xF4F4EF}),mu.length); mu.forEach(([x,y,z,a,b2,c],i)=>place(mb,i,x,y,z,0,0,a,b2,c));
+      // luống cây gỗ dọc tường kính bên phải
+      const bz=[]; for(let z=zFront+2.2;z<zBack-4;z+=3.2) bz.push(z); const bed=im(new T.BoxGeometry(1,1,1),m.wood,bz.length), bp=im(new T.IcosahedronGeometry(1,1),M.white,bz.length*3);
+      bz.forEach((z,i)=>{ const x=W/2-.55; place(bed,i,x,.2,z,0,0,.7,.4,2.2); obsBox(x,z,.7,2.2); [-.7,0,.7].forEach((o,j)=>{ place(bp,i*3+j,x,.6,z+o,i+j,0,.32,.36,.32); bp.setColorAt(i*3+j,col.setHex([0x4F8C5C,0x6FAE78,0x5E9B6A][(i+j)%3])); }); }); }
+    if(th==="D"){ // phòng tròn: vân tròn trên sàn + vòng kệ sách cong quanh hai vòng bàn (chừa lối lên bảng và lối ra cửa)
+      const cx=0, cz=4.6, R=8.1, rt=canvasTex(512,512,(x,w,h)=>{ x.clearRect(0,0,w,h); x.strokeStyle="rgba(242,193,78,.22)"; x.lineWidth=3; for(let r=40;r<256;r+=36){ x.beginPath(); x.arc(w/2,h/2,r,0,7); x.stroke(); } });
+      const rd=new T.Mesh(new T.CircleGeometry(R,64),new T.MeshBasicMaterial({map:rt.tex,transparent:true,depthWrite:false})); rd.rotation.x=-Math.PI/2; rd.position.set(cx,.011,cz); room.add(rd);
+      const segs=[]; for(let i=0;i<28;i++){ const a=i/28*Math.PI*2, px=cx+Math.sin(a)*R, pz=cz+Math.cos(a)*R, da=Math.abs(Math.atan2(Math.sin(a-Math.PI),Math.cos(a-Math.PI)));
+        if(da<.55) continue; const ad=Math.atan2(doorPos.x-cx,doorPos.z-cz), dd=Math.abs(Math.atan2(Math.sin(a-ad),Math.cos(a-ad))); if(dd<.4) continue; if(Math.abs(px)>W/2-.8||pz<zFront+.8||pz>zBack-.8) continue; segs.push([px,pz,a]); }
+      segs.forEach(([px,pz,a])=>{ bookShelf(books,px,pz,1.75,2.1,a+Math.PI,((a*100)|0)+5); }); }
     if(th==="C"){ // H2: chậu cây treo dọc hai tường bên
       const HZ=[]; for(let z=zFront+2.4;z<zBack-2.5;z+=2.6){ HZ.push([-W/2+1.0,z]); HZ.push([W/2-1.0,z]); }
       const hc=im(new T.CylinderGeometry(.006,.006,1,4),M.black,HZ.length), hpot=im(new T.CylinderGeometry(.2,.13,.24,12),m.pot,HZ.length), hf=im(new T.IcosahedronGeometry(1,1),M.white,HZ.length*2);
