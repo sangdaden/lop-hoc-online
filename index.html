@@ -2855,10 +2855,13 @@ body.lite .bub,body.lite #hint,body.lite #views,body.lite #miniMap,body.lite #bC
     const TBL=TYPE==="rows"?[]:tables;
     if(TBL.length){
       const sp=im(new T.CylinderGeometry(.08,.065,.12,12),m.potS,TBL.length), sf=im(new T.IcosahedronGeometry(1,1),M.white,TBL.length);
-      TBL.forEach((t,i)=>{ place(sp,i,t.x,.825,t.z); place(sf,i,t.x,.96,t.z,i,0,.14,.13,.14); sf.setColorAt(i,col.setHex(greens[i%4])); });
+      // bàn nhỏ (quán cà phê, vòng giếng trời): thẻ số dịch vào trong mép bàn, chậu cây lùi sang bên kia cho khỏi chạm
+      const small=t=>t.kind==="round"?t.r<.7:t.w<1.2, tDz=t=>Math.min(.2,(t.kind==="round"?t.r:t.d/2)-.14),
+        tOff=t=>small(t)?0:t.kind==="round"?.34:.62, pAt=t=>small(t)?[t.x,t.z-tDz(t)]:[t.x,t.z];
+      TBL.forEach((t,i)=>{ const [px,pz]=pAt(t); place(sp,i,px,.825,pz); place(sf,i,px,.96,pz,i,0,.14,.13,.14); sf.setColorAt(i,col.setHex(greens[i%4])); });
       // biển số bàn: thẻ gập chữ A, gộp thành một khối hình
       const bp=[],bu=[],w=.3,h=.3,lean=.32;
-      TBL.forEach((t,i)=>{ const c=i%8, r=(i/8|0)%8, u0=c/8+.003,u1=(c+1)/8-.003,v1=1-r/8-.003,v0=1-(r+1)/8+.003; const cx=t.x+(t.kind==="round"?.34:.62), zc=t.z;
+      TBL.forEach((t,i)=>{ const c=i%8, r=(i/8|0)%8, u0=c/8+.003,u1=(c+1)/8-.003,v1=1-r/8-.003,v0=1-(r+1)/8+.003; const cx=t.x+tOff(t), zc=t.z+(small(t)?tDz(t):0);
         [1,-1].forEach(sd=>{ const zb=zc+sd*Math.sin(lean)*h/2, yb=.765, yt=.765+Math.cos(lean)*h; const L=sd>0?[cx-w/2,cx+w/2]:[cx+w/2,cx-w/2];
           bp.push(L[0],yb,zb, L[1],yb,zb, L[1],yt,zc, L[0],yb,zb, L[1],yt,zc, L[0],yt,zc); bu.push(u0,v0,u1,v0,u1,v1, u0,v0,u1,v1,u0,v1); }); });
       const bg=new T.BufferGeometry(); bg.setAttribute("position",new T.Float32BufferAttribute(bp,3)); bg.setAttribute("uv",new T.Float32BufferAttribute(bu,2)); bg.computeVertexNormals(); room.add(new T.Mesh(bg,m.numbers));
