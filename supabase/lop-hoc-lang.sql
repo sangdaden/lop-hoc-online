@@ -75,6 +75,9 @@ alter table lhl_members add column if not exists hand_k text not null default ''
 alter table lhl_members add column if not exists clap_n int not null default 0;
 -- Phòng tự học (C1): giờ kết thúc phiên tập trung (ms), > now thì đèn bàn sáng vàng
 alter table lhl_members add column if not exists focus bigint not null default 0;
+-- Phòng tự học có chủ (05/11): T001 Thư viện đêm, T002 Quán cà phê, T003 Nhà kính, T004 Giếng trời. Mỗi kiểu chỉ một phòng đang mở.
+alter table lhl_rooms add column if not exists owner uuid;
+alter table lhl_rooms add column if not exists empty_at bigint;
 create table if not exists lhl_hlog (id bigint generated always as identity primary key, code text not null references lhl_rooms(code) on delete cascade, uid uuid not null, k int not null default 0, hk text not null default '', up bigint not null, down bigint);
 create index if not exists lhl_hlog_code on lhl_hlog(code, uid);
 
@@ -140,6 +143,7 @@ begin
     v_lab := lpad(((get_byte(gen_random_bytes(1),0)*256 + get_byte(gen_random_bytes(1),0)) % 9000 + 1000)::text, 4, '0');
     exit when v_lab <> v_pass and not exists (select 1 from lhl_rooms where open and code <> p_code and v_lab in (pass, lab));
   end loop;
+  if p_code in ('T001','T002','T003','T004') then raise exception 'T001-T004 la phong tu hoc'; end if;
   select * into r from lhl_rooms where code = p_code;
   if not found then
     insert into lhl_rooms(code, key_uid, title, lab, pass) values (p_code, auth.uid(), left(p_title, 60), v_lab, v_pass);
@@ -197,7 +201,7 @@ begin
      and not exists (select 1 from lhl_members where code = p_code and uid = auth.uid() and role = 'lab') then
     perform pg_sleep(0.5); return json_build_object('err', 'labpass');
   end if;
-  if p_role = 'hv' and p_code <> 'T000' and coalesce(p_pass, '') <> r.pass
+  if p_role = 'hv' and p_code <> 'T000' and r.owner is null and coalesce(p_pass, '') <> r.pass
      and not exists (select 1 from lhl_members where code = p_code and uid = auth.uid()) then
     perform pg_sleep(0.5); return json_build_object('err', 'pass');
   end if;
@@ -253,6 +257,14 @@ begin
     elsif not coalesce((p_patch->>'hand')::boolean, true) and o.hand then
       update lhl_hlog set down = t where code = p_code and uid = auth.uid() and down is null;
     end if;
+  end if;
+  -- Phòng tự học: mỗi phiên tập trung mới thêm 1 lá (Nhà kính) và cộng phút (đồng hồ cát Giếng trời). Đếm theo ngày giờ Việt Nam.
+  if found and p_patch ? 'focus' and coalesce((p_patch->>'focus')::bigint, 0) > t and coalesce(o.focus, 0) <= t then
+    update lhl_rooms set state = state || jsonb_build_object('fday', to_char(now() at time zone 'Asia/Ho_Chi_Minh', 'YYYY-MM-DD'),
+      'leaf', case when state->>'fday' = to_char(now() at time zone 'Asia/Ho_Chi_Minh', 'YYYY-MM-DD') then coalesce((state->>'leaf')::int, 0) else 0 end + 1,
+      'fmin', case when state->>'fday' = to_char(now() at time zone 'Asia/Ho_Chi_Minh', 'YYYY-MM-DD') then coalesce((state->>'fmin')::int, 0) else 0 end
+        + greatest(1, least(120, (((p_patch->>'focus')::bigint - t + 30000) / 60000)::int)))
+    where code = p_code and state->>'mode' = 'tuhoc';
   end if;
   if found and p_patch ? 'handK' and not (p_patch ? 'hand') then
     update lhl_hlog set hk = left(coalesce(p_patch->>'handK', ''), 8) where code = p_code and uid = auth.uid() and down is null;
@@ -406,6 +418,7 @@ begin
   me_role := lhl_role(p_code);
   if me_role is null and exists (select 1 from lhl_ban where code = p_code and uid = auth.uid()) then raise exception 'bi moi ra'; end if;
   if me_role is null then raise exception 'chua vao phong'; end if;
+  if p_beat and p_code in ('T001','T002','T003','T004') then perform lhl_self_tidy(p_code); end if;
   select * into r from lhl_rooms where code = p_code;
   if p_beat and r.open then
     update lhl_members set seen = t, online = true, upd = case when online then upd else t end where code = p_code and uid = auth.uid();
@@ -417,6 +430,8 @@ begin
     'now', t,
     'open', r.open,
     'state', r.state,
+    'owner', r.owner,
+    'title', r.title,
     'members', (select coalesce(json_agg(json_build_object(
         'uid', m.uid, 'name', m.name, 'role', m.role, 'look', m.look, 'seat', m.seat, 'step', m.step, 'chk', m.chk,
         'hand', m.hand, 'handAt', m.hand_at, 'nop', m.nop, 'grpRole', m.grp_role, 'zone', m.zone, 'bowN', m.bow_n,
@@ -458,9 +473,98 @@ begin
     values ('T000', '00000000-0000-0000-0000-000000000000', true, 'Phòng tự học', encode(gen_random_bytes(8), 'hex'), '',
       '{"N":50,"type":"island","mode":"tuhoc","day":"","guide":0,"brk":false,"endAt":0,"re":0,"call":0}'::jsonb)
     on conflict (code) do update set open = true;
+  update lhl_rooms set state = state || '{"decor":{"theme":"A","light":"auto","sound":"auto","sign":true,"floor":true}}'::jsonb where code = 'T000' and not (state ? 'decor');
   delete from lhl_members where code = 'T000' and seen < t - 12 * 3600 * 1000;
   delete from lhl_hlog where code = 'T000' and up < t - 12 * 3600 * 1000;
   return 'T000';
+end $$;
+
+
+-- ---------- Phòng tự học có chủ (05/11) ----------
+-- Mỗi kiểu một phòng: T001 A Thư viện đêm, T002 B Quán cà phê, T003 C Nhà kính, T004 D Giếng trời. Ai cũng vào tự do, không mã.
+-- Người mở phòng là chủ: chỉ chủ đổi decor (ánh sáng, âm nền, biển cửa, đèn sàn). Chủ không đuổi ai, không khóa ghế.
+create or replace function lhl_self_code(p_theme text) returns text language sql immutable as $$
+  select case p_theme when 'A' then 'T001' when 'B' then 'T002' when 'C' then 'T003' when 'D' then 'T004' end $$;
+create or replace function lhl_self_type(p_theme text) returns text language sql immutable as $$
+  select case p_theme when 'B' then 'cafe' when 'C' then 'garden' when 'D' then 'ring' else 'island' end $$;
+
+-- Dọn phòng: không ai trong phòng quá 30 phút thì đóng. Chủ mất kết nối quá 60 giây thì chuyển cho người vào sớm nhất đang ở phòng.
+create or replace function lhl_self_tidy(p_code text) returns void language plpgsql security definer set search_path = public as $$
+declare t bigint := lhl_now(); r lhl_rooms; nxt uuid; n int;
+begin
+  select * into r from lhl_rooms where code = p_code for update;
+  if not found or r.owner is null or not r.open then return; end if;
+  select count(*) into n from lhl_members where code = p_code and online and seen >= t - 60000;
+  if n = 0 then
+    if r.empty_at is null then update lhl_rooms set empty_at = t where code = p_code;
+    elsif r.empty_at < t - 30 * 60000 then update lhl_rooms set open = false where code = p_code; delete from lhl_members where code = p_code; delete from lhl_hlog where code = p_code;
+    end if;
+    return;
+  end if;
+  if r.empty_at is not null then update lhl_rooms set empty_at = null where code = p_code; end if;
+  if not exists (select 1 from lhl_members where code = p_code and uid = r.owner and seen >= t - 60000) then
+    select uid into nxt from lhl_members where code = p_code and online and seen >= t - 60000 order by joined limit 1;
+    if nxt is not null then update lhl_rooms set owner = nxt where code = p_code; end if;
+  end if;
+end $$;
+
+-- Danh sách phòng tự học đang mở (phòng chung T000 đứng đầu, rồi theo số người).
+create or replace function lhl_self_list() returns json language plpgsql security definer set search_path = public, extensions as $$
+declare t bigint := lhl_now(); c text;
+begin
+  if auth.uid() is null then raise exception 'chua dang nhap'; end if;
+  perform lhl_self_room();
+  for c in select code from lhl_rooms where code in ('T001','T002','T003','T004') and open loop perform lhl_self_tidy(c); end loop;
+  return (select coalesce(json_agg(x order by x.pub desc, x.n desc, x.code), '[]'::json) from (
+    select r.code, r.title, coalesce(r.state->'decor'->>'theme', 'A') as theme, (r.code = 'T000') as pub,
+      (select m.name from lhl_members m where m.code = r.code and m.uid = r.owner) as oname,
+      coalesce(r.owner = auth.uid(), false) as mine,
+      (select count(*) from lhl_members m where m.code = r.code and m.online and m.seen >= t - 60000) as n
+    from lhl_rooms r where r.open and r.code in ('T000','T001','T002','T003','T004')) x);
+end $$;
+
+-- Mở phòng một kiểu. Kiểu đó đang có phòng mở thì trả mã phòng đó (vào chung), không mở thêm.
+create or replace function lhl_self_create(p_title text, p_theme text) returns json language plpgsql security definer set search_path = public, extensions as $$
+declare v_code text := lhl_self_code(p_theme); r lhl_rooms;
+begin
+  if auth.uid() is null then raise exception 'chua dang nhap'; end if;
+  if v_code is null then raise exception 'kieu phong khong dung'; end if;
+  perform lhl_self_tidy(v_code);
+  select * into r from lhl_rooms where code = v_code for update;
+  if found and r.open then return json_build_object('code', v_code, 'fresh', false); end if;
+  delete from lhl_rooms where code = v_code;
+  insert into lhl_rooms(code, key_uid, open, title, lab, pass, owner, state)
+    values (v_code, '00000000-0000-0000-0000-000000000000', true, left(coalesce(nullif(trim(p_title), ''), 'Phòng tự học'), 40), encode(gen_random_bytes(8), 'hex'), '', auth.uid(),
+      jsonb_build_object('N', 30, 'type', lhl_self_type(p_theme), 'mode', 'tuhoc', 'day', '', 'guide', 0, 'brk', false, 'endAt', 0, 're', 0, 'call', 0,
+        'decor', jsonb_build_object('theme', p_theme, 'light', 'auto', 'sound', 'auto', 'sign', true, 'floor', true)));
+  return json_build_object('code', v_code, 'fresh', true);
+end $$;
+
+-- Chủ phòng đổi decor. Chỉ nhận các giá trị có sẵn.
+create or replace function lhl_self_decor(p_code text, p_decor jsonb) returns void language plpgsql security definer set search_path = public as $$
+declare r lhl_rooms; d jsonb;
+begin
+  select * into r from lhl_rooms where code = p_code;
+  if not found or r.owner is distinct from auth.uid() then raise exception 'khong phai chu phong'; end if;
+  d := coalesce(r.state->'decor', '{}'::jsonb);
+  if p_decor->>'light' in ('auto','sang','chieu','dem') then d := d || jsonb_build_object('light', p_decor->>'light'); end if;
+  if p_decor->>'sound' in ('auto','mua','nang','thu') then d := d || jsonb_build_object('sound', p_decor->>'sound'); end if;
+  if p_decor ? 'sign' then d := d || jsonb_build_object('sign', coalesce((p_decor->>'sign')::boolean, true)); end if;
+  if p_decor ? 'floor' then d := d || jsonb_build_object('floor', coalesce((p_decor->>'floor')::boolean, true)); end if;
+  if p_decor ? 'title' and coalesce(trim(p_decor->>'title'), '') <> '' then update lhl_rooms set title = left(trim(p_decor->>'title'), 40) where code = p_code; end if;
+  update lhl_rooms set state = state || jsonb_build_object('decor', d) where code = p_code;
+end $$;
+
+-- Chủ nhường phòng cho một người đang ở trong phòng (p_uid null: người vào sớm nhất).
+create or replace function lhl_self_give(p_code text, p_uid uuid) returns boolean language plpgsql security definer set search_path = public as $$
+declare t bigint := lhl_now(); r lhl_rooms; nxt uuid;
+begin
+  select * into r from lhl_rooms where code = p_code for update;
+  if not found or r.owner is distinct from auth.uid() then return false; end if;
+  select uid into nxt from lhl_members where code = p_code and uid <> auth.uid() and online and seen >= t - 60000 and (p_uid is null or uid = p_uid) order by joined limit 1;
+  if nxt is null then return false; end if;
+  update lhl_rooms set owner = nxt where code = p_code;
+  return true;
 end $$;
 
 -- Chỉ người đã đăng nhập (kể cả ẩn danh) mới gọi được các hàm
