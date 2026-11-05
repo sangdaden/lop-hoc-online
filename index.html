@@ -918,7 +918,9 @@ body:not([data-mode="tuhoc"]) .for-self{display:none!important}
 .spl button,.spt button{all:unset;cursor:pointer;display:grid;grid-template-columns:52px 1fr auto;gap:10px;align-items:center;padding:8px;border:1px solid var(--line);border-radius:12px}
 .spt button{grid-template-columns:1fr;gap:6px;padding:8px}
 .spl button.pub{border-color:var(--hud-acc)}
-.thsw{height:40px;border-radius:9px}.spt .thsw{height:56px}
+.thsw{height:40px;border-radius:9px;overflow:hidden;display:block}.spt .thsw{height:auto;aspect-ratio:4/3}
+.thsw img{display:block;width:100%;height:100%;object-fit:cover}.spl .thsw{width:64px;height:48px}.spl button{grid-template-columns:64px 1fr auto}
+.spick .spc{width:min(560px,100%)}
 .thsw.A{background:radial-gradient(circle at 30% 60%,#F2C14E 0 6%,transparent 7%),radial-gradient(circle at 70% 40%,#F2C14E 0 6%,transparent 7%),linear-gradient(#1b2336,#3b2c22)}
 .thsw.B{background:radial-gradient(circle at 50% 30%,#F2C14E 0 9%,transparent 10%),repeating-conic-gradient(#C99A7A 0 25%,#DDBBA0 0 50%) 0 0/16px 16px}
 .thsw.C{background:radial-gradient(circle at 50% 45%,#5E9B6A 0 22%,transparent 23%),linear-gradient(#dff0ea,#c8c3b2)}
@@ -2527,6 +2529,7 @@ body.lite .bub,body.lite #hint,body.lite #views,body.lite #miniMap,body.lite #bC
     location.href=location.pathname+"?p="+code+(SB_LOCAL?"&sbu="+encodeURIComponent(SB_LOCAL)+"&sbk="+encodeURIComponent(SBK):""); }
   $("rpSwitch").onclick=()=>{ closeDrawer(); if(isOwner()&&Object.values(LIVE.mem).some(m=>m.on&&m.uid!==NET.uid)){ openGive(); toast(LHLt("Bạn đang giữ phòng: chọn người nhận rồi bấm “Nhường và rời phòng”.")); return; } switchRoom(); };
   // màn chọn phòng tự học: danh sách phòng đang mở + mở phòng mới (mỗi kiểu một phòng)
+  function thImg(k){k=/^[ABCD]$/.test(k)?k:"A";return '<img src="img/tuhoc-'+k+'.jpg" alt="" loading="lazy" decoding="async" onerror="this.remove()">'}
   function pickSelfRoom(cur){ return new Promise(async res=>{
     const ov=document.createElement("div"); ov.className="spick";
     ov.innerHTML='<div class="spc" role="dialog" aria-modal="true" aria-label="'+esc(LHLt("Chọn phòng tự học"))+'"><div class="sph"><b>'+esc(LHLt("Phòng tự học"))+'</b><button type="button" class="ocx" data-x aria-label="Đóng" style="all:unset;cursor:pointer;width:32px;height:32px;display:grid;place-items:center;font-size:18px">✕</button></div>'+
@@ -2540,8 +2543,8 @@ body.lite .bub,body.lite #hint,body.lite #views,body.lite #miniMap,body.lite #bC
     let list=[]; try{ await netInit(); list=await rpc("lhl_self_list",{})||[]; ov.querySelector("#spN").textContent=list.length+" "+LHLt("phòng đang mở")+" · "+list.reduce((a,r)=>a+(+r.n||0),0)+" "+LHLt("người"); }
     catch(e){ ov.querySelector("#spN").textContent=LHLt("Chưa tải được danh sách phòng. Bạn vẫn vào được phòng chung T000."); list=[{code:"T000",title:"Phòng tự học",theme:"A",pub:true,n:0}]; }
     const open={}; list.forEach(r=>{ if(r.code!=="T000") open[r.theme]=r; });
-    ov.querySelector("#spL").innerHTML=list.map(r=>'<button type="button" data-c="'+esc(r.code)+'"'+(r.pub?' class="pub"':'')+'><i class="thsw '+esc(r.theme||"A")+'"></i><span><span class="n">'+esc(r.pub?LHLt("T000 · Phòng chung"):(r.title||TH_NAME[r.theme]))+(r.code===cur?" · "+esc(LHLt("bạn đang ở đây")):"")+'</span><br><span class="m">'+esc(LHLt(TH_NAME[r.theme]||""))+" · "+esc(r.pub?LHLt("luôn mở"):r.mine?LHLt("bạn là chủ"):LHLt("chủ")+": "+(r.oname||"…"))+'</span></span><span class="c">'+(+r.n||0)+'</span></button>').join("");
-    ov.querySelector("#spT").innerHTML=Object.keys(TH_CODE).map(k=>'<button type="button" data-t="'+k+'" data-open="'+(open[k]?1:0)+'"><i class="thsw '+k+'"></i><span class="n">'+esc(LHLt(TH_NAME[k]))+'</span><span class="m">'+esc(open[k]?LHLt("Bấm để vào"):LHLt("Bấm để mở, bạn là chủ"))+'</span></button>').join("");
+    ov.querySelector("#spL").innerHTML=list.map(r=>'<button type="button" data-c="'+esc(r.code)+'"'+(r.pub?' class="pub"':'')+'><i class="thsw '+esc(r.theme||"A")+'">'+thImg(r.theme||"A")+'</i><span><span class="n">'+esc(r.pub?LHLt("T000 · Phòng chung"):(r.title||TH_NAME[r.theme]))+(r.code===cur?" · "+esc(LHLt("bạn đang ở đây")):"")+'</span><br><span class="m">'+esc(LHLt(TH_NAME[r.theme]||""))+" · "+esc(r.pub?LHLt("luôn mở"):r.mine?LHLt("bạn là chủ"):LHLt("chủ")+": "+(r.oname||"…"))+'</span></span><span class="c">'+(+r.n||0)+'</span></button>').join("");
+    ov.querySelector("#spT").innerHTML=Object.keys(TH_CODE).map(k=>'<button type="button" data-t="'+k+'" data-open="'+(open[k]?1:0)+'"><i class="thsw '+k+'">'+thImg(k)+'</i><span class="n">'+esc(LHLt(TH_NAME[k]))+'</span><span class="m">'+esc(open[k]?LHLt("Bấm để vào"):LHLt("Bấm để mở, bạn là chủ"))+'</span></button>').join("");
     ov.querySelectorAll("#spL button").forEach(b=>b.onclick=()=>done(b.dataset.c));
     ov.querySelectorAll("#spT button").forEach(b=>b.onclick=async()=>{ const k=b.dataset.t; if(open[k]) return done(open[k].code);
       const e=ov.querySelector("#spE"); e.textContent=LHLt("Đang mở phòng…"); b.disabled=true;
