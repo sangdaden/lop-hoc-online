@@ -2708,6 +2708,17 @@ body.lite .bub,body.lite #hint,body.lite #views,body.lite #miniMap,body.lite #bC
   const TH_SOUND={A:"thu",B:"mua",C:"nang",D:"thu"};
   function selfSound(){ const s=(SELF.decor&&SELF.decor.sound)||"auto"; return s==="auto"?TH_SOUND[SELF_TH]||"thu":s; }
   function today(){ const d=new Date(Date.now()+7*3600e3); return d.toISOString().slice(0,10); } // ngày giờ Việt Nam, khớp máy chủ
+  // Đồ trang trí sát tường bên (luống cây Nhà kính, thang Thư viện) không được đè lên hốc nghỉ, quầy cửa sổ, ghế dọc tường.
+  // buildDecor ghi các vùng [z giữa, nửa dài] của từng tường vào WALL_BUSY trước khi themeDecor dựng đồ (L: tường trái, R: tường phải)
+  let WALL_BUSY={L:[],R:[]};
+  const wallFree=(sd,z,half)=>!WALL_BUSY[sd<0?"L":"R"].some(([zc,r])=>Math.abs(z-zc)<half+r);
+  // D Giếng trời: các đoạn kệ cong quanh hai vòng bàn. Chừa lối lên bảng, lối ra cửa, và chừa trống cả dải cuối phòng
+  // (zBack-3.4 trở ra) vì ở đó đã có góc đọc, bục cây, bốt yên tĩnh: trước đây kệ cắt ngang qua góc đọc, ghế lười kẹt trong kệ.
+  function ringShelfSegs(){ const cx=0, cz=4.6, R=8.1, out=[], ad=Math.atan2(doorPos.x-cx,doorPos.z-cz);
+    for(let i=0;i<28;i++){ const a=i/28*Math.PI*2, px=cx+Math.sin(a)*R, pz=cz+Math.cos(a)*R, da=Math.abs(Math.atan2(Math.sin(a-Math.PI),Math.cos(a-Math.PI)));
+      if(da<.55) continue; const dd=Math.abs(Math.atan2(Math.sin(a-ad),Math.cos(a-ad))); if(dd<.4) continue;
+      if(Math.abs(px)>W/2-.8||pz<zFront+.8||pz>zBack-3.4) continue; out.push([px,pz,a]); }
+    return out; }
   function bookShelf(list,x,z,w,h,ry,seed){ // gom sách vào list, khung dựng ngay
     const fr=box(w,h,.36,DX.m.wood,x,h/2,z,ry); const r=drng(seed), cs=Math.cos(ry||0), sn=Math.sin(ry||0), rows=Math.floor(h/.42);
     for(let k=0;k<rows;k++){ let u=-w/2+.08; while(u<w/2-.1){ const bw=.05+r()*.05, bh=.22+r()*.12; const lx=u+bw/2, lz=.12; list.push([x+lx*cs+lz*sn,.08+k*.42+bh/2,z-lx*sn+lz*cs,ry||0,bw,bh,r()]); u+=bw+.012; } }
@@ -2782,14 +2793,12 @@ body.lite .bub,body.lite #hint,body.lite #views,body.lite #miniMap,body.lite #bC
       [1.0,4.0].forEach(y=>{ mu.push([-W/2+.06,y,cz2,.06,.06,D2]); mu.push([W/2-.06,y,cz2,.06,.06,D2]); mu.push([0,y,zBack-.06,W,.06,.06]); });
       const mb=im(new T.BoxGeometry(1,1,1),new T.MeshLambertMaterial({color:0xF4F4EF}),mu.length); mu.forEach(([x,y,z,a,b2,c],i)=>place(mb,i,x,y,z,0,0,a,b2,c));
       // luống cây gỗ dọc tường kính bên phải
-      const bz=[]; for(let z=zFront+2.2;z<zBack-4;z+=3.2) bz.push(z); const bed=im(new T.BoxGeometry(1,1,1),m.wood,bz.length), bp=im(new T.IcosahedronGeometry(1,1),M.white,bz.length*3);
+      const bz=[]; for(let z=zFront+2.2;z<zBack-4;z+=3.2) if(wallFree(1,z,1.1)) bz.push(z); const bed=im(new T.BoxGeometry(1,1,1),m.wood,bz.length), bp=im(new T.IcosahedronGeometry(1,1),M.white,bz.length*3);
       bz.forEach((z,i)=>{ const x=W/2-.55; place(bed,i,x,.2,z,0,0,.7,.4,2.2); obsBox(x,z,.7,2.2); [-.7,0,.7].forEach((o,j)=>{ place(bp,i*3+j,x,.6,z+o,i+j,0,.32,.36,.32); bp.setColorAt(i*3+j,col.setHex([0x4F8C5C,0x6FAE78,0x5E9B6A][(i+j)%3])); }); }); }
     if(th==="D"){ // phòng tròn: vân tròn trên sàn + vòng kệ sách cong quanh hai vòng bàn (chừa lối lên bảng và lối ra cửa)
       const cx=0, cz=4.6, R=8.1, rt=canvasTex(512,512,(x,w,h)=>{ x.clearRect(0,0,w,h); x.strokeStyle="rgba(242,193,78,.22)"; x.lineWidth=3; for(let r=40;r<256;r+=36){ x.beginPath(); x.arc(w/2,h/2,r,0,7); x.stroke(); } });
       const rd=new T.Mesh(new T.CircleGeometry(R,64),new T.MeshBasicMaterial({map:rt.tex,transparent:true,depthWrite:false})); rd.rotation.x=-Math.PI/2; rd.position.set(cx,.011,cz); room.add(rd);
-      const segs=[]; for(let i=0;i<28;i++){ const a=i/28*Math.PI*2, px=cx+Math.sin(a)*R, pz=cz+Math.cos(a)*R, da=Math.abs(Math.atan2(Math.sin(a-Math.PI),Math.cos(a-Math.PI)));
-        if(da<.55) continue; const ad=Math.atan2(doorPos.x-cx,doorPos.z-cz), dd=Math.abs(Math.atan2(Math.sin(a-ad),Math.cos(a-ad))); if(dd<.4) continue; if(Math.abs(px)>W/2-.8||pz<zFront+.8||pz>zBack-.8) continue; segs.push([px,pz,a]); }
-      segs.forEach(([px,pz,a])=>{ bookShelf(books,px,pz,1.75,2.1,a+Math.PI,((a*100)|0)+5); }); }
+      ringShelfSegs().forEach(([px,pz,a])=>{ bookShelf(books,px,pz,1.75,2.1,a+Math.PI,((a*100)|0)+5); }); }
     if(th==="C"){ // H2: chậu cây treo dọc hai tường bên
       const HZ=[]; for(let z=zFront+2.4;z<zBack-2.5;z+=2.6){ HZ.push([-W/2+1.0,z]); HZ.push([W/2-1.0,z]); }
       const hc=im(new T.CylinderGeometry(.006,.006,1,4),M.black,HZ.length), hpot=im(new T.CylinderGeometry(.2,.13,.24,12),m.pot,HZ.length), hf=im(new T.IcosahedronGeometry(1,1),M.white,HZ.length*2);
@@ -2836,7 +2845,7 @@ body.lite .bub,body.lite #hint,body.lite #views,body.lite #miniMap,body.lite #bC
         mesh(new T.TorusGeometry(.53,.025,6,40),m.gold,tx,top+1.1,tz,0,Math.PI/2,.41);
         const bc=[0x7A2630,0x2F5E8C,0x3E6B4A,0xD9A441]; for(let i=0;i<4;i++) mesh(new T.BoxGeometry(.42,.07,.3),L(bc[i]),tx+.55,top+.04+i*.07,tz-.35,0,i*.25); }
       if(sty("A3")){ // thang tựa kệ sách cao hai tường bên
-        const LZ=[zFront+1.7,zFront+D*.5], parts=[]; [-1,1].forEach(sd=>LZ.forEach(z=>parts.push([sd,z])));
+        const LZ=[zFront+1.7,zFront+D*.5], parts=[]; [-1,1].forEach(sd=>LZ.forEach(z0=>{ for(let k=0;k<=12;k++){ const z=z0+(k%2?1:-1)*Math.ceil(k/2)*.4; if(z>zFront+1&&z<zBack-4&&wallFree(sd,z,.45)){ parts.push([sd,z]); break; } } })); // né hốc nghỉ, quầy, ghế dọc tường
         const rail=im(new T.BoxGeometry(.05,1,.05),m.wood,parts.length*2), rung=im(new T.BoxGeometry(.04,.04,.4),m.wood,parts.length*9), put=(mm,i,x,y,z,rz,sy)=>{ dummy.position.set(x,y,z); dummy.rotation.set(0,0,rz); dummy.scale.set(1,sy,1); dummy.updateMatrix(); mm.setMatrixAt(i,dummy.matrix); };
         parts.forEach(([sd,z],i)=>{ const bx=sd*(W/2-.75), tX=sd*(W/2-.22), ty=4.3, len=Math.hypot(tX-bx,ty), rz=-sd*Math.atan2(Math.abs(tX-bx),ty);
           [-.2,.2].forEach((o,j)=>put(rail,i*2+j,(bx+tX)/2,ty/2,z+o,rz,len)); for(let k=0;k<9;k++){ const u=(k+1)/10; put(rung,i*9+k,bx+(tX-bx)*u,ty*u,z,0,1); } obsBox(bx,z,.3,.5); }); }
@@ -2899,9 +2908,8 @@ body.lite .bub,body.lite #hint,body.lite #views,body.lite #miniMap,body.lite #bC
         for(let i=0;i<N;i++){ const a=i/N*Math.PI*2+.1, x=cx+Math.sin(a)*R, z=cz+Math.cos(a)*R; if(Math.abs(x)>W/2-.6||z<zFront+.6||z>zBack-.6){ [ln,gw].forEach(mm=>mm.setMatrixAt(i,ZERO_M)); cp.setMatrixAt(i*2,ZERO_M); cp.setMatrixAt(i*2+1,ZERO_M); continue; }
           place(ln,i,x,3.3,z,0,0,1,1.25,1); place(cp,i*2,x,3.6,z); place(cp,i*2+1,x,3.0,z); cord(x,z,3.6,4.6); place(gw,i,x,.012,z,0,-Math.PI/2); } }
       if(sty("D3")){ // quả cầu thiên văn trên mặt kệ cong
-        const R=8.1; let k=0; for(let i=0;i<28;i++){ const a=i/28*Math.PI*2, px=cx+Math.sin(a)*R, pz=cz+Math.cos(a)*R, da=Math.abs(Math.atan2(Math.sin(a-Math.PI),Math.cos(a-Math.PI)));
-          if(da<.55) continue; const ad=Math.atan2(doorPos.x-cx,doorPos.z-cz), dd=Math.abs(Math.atan2(Math.sin(a-ad),Math.cos(a-ad))); if(dd<.4) continue; if(Math.abs(px)>W/2-.8||pz<zFront+.8||pz>zBack-.8) continue; if((k++)%3) continue;
-          const y=2.1+.35; mesh(new T.CylinderGeometry(.08,.12,.1,12),m.gold,px,2.15,pz); mesh(new T.SphereGeometry(.07,10,8),L(0x9DB7F0),px,y,pz); [[0,0],[Math.PI/2,0],[.5,.9]].forEach(([r1,r2])=>mesh(new T.TorusGeometry(.26,.015,6,28),m.gold,px,y,pz,r1,r2,0)); } }
+        ringShelfSegs().forEach(([px,pz],k)=>{ if(k%3) return;
+          const y=2.1+.35; mesh(new T.CylinderGeometry(.08,.12,.1,12),m.gold,px,2.15,pz); mesh(new T.SphereGeometry(.07,10,8),L(0x9DB7F0),px,y,pz); [[0,0],[Math.PI/2,0],[.5,.9]].forEach(([r1,r2])=>mesh(new T.TorusGeometry(.26,.015,6,28),m.gold,px,y,pz,r1,r2,0)); }); }
       if(sty("D5")){ // chòm sao vàng trên sàn ở bốn góc ngoài vòng kệ
         const ct=canvasTex(256,256,(x,w,h)=>{ x.clearRect(0,0,w,h); const r=drng(77); const P=[]; for(let i=0;i<7;i++) P.push([30+r()*196,30+r()*196]); P.sort((a,b)=>a[0]-b[0]); x.strokeStyle="rgba(242,193,78,.55)"; x.lineWidth=3; x.beginPath(); P.forEach(([a,b],i)=>i?x.lineTo(a,b):x.moveTo(a,b)); x.stroke(); x.fillStyle="#F2C14E"; P.forEach(([a,b])=>{ x.beginPath(); x.arc(a,b,7,0,7); x.fill(); }); });
         const cm=Bm(0xffffff,{map:ct.tex,transparent:true,depthWrite:false}); [[-W/2+2,zFront+2.2,0],[W/2-2,zFront+2.2,1.3],[W/2-2.2,zBack-2.4,2.4]].forEach(([x,z,r])=>{ const p=flat(new T.PlaneGeometry(2.6,2.6),cm,x,z,.013); p.rotation.z=r; }); }
@@ -3103,6 +3111,7 @@ body.lite .bub,body.lite #hint,body.lite #views,body.lite #miniMap,body.lite #bC
       const pick=[]; for(let t=0;t<=60;t++){ const z=lo+(hi-lo)*t/60; if(busy.every(b=>Math.abs(z-b)>2.3)) pick.push(z); }
       const choose=extra=>{ const out=[]; if(!pick.length||hi<=lo) return out; for(let i=0;i<per;i++){ const tg=lo+(hi-lo)*(i+.5)/per; let b=null; pick.forEach(z=>{ if(extra.every(e=>Math.abs(z-e)>1.7)&&(b==null||Math.abs(z-tg)<Math.abs(b-tg))) b=z; }); if(b!=null&&out.every(o=>Math.abs(o-b)>2.9)) out.push(b); } return out; };
       const ZL=choose([cz+.3]), ZR=choose([]);
+      WALL_BUSY={L:[...ZL.map(z=>[z,1.35]),...busy.map(b=>[b,.7])],R:[...ZR.map(z=>[z,1.2]),...busy.map(b=>[b,.7])]};
       // tường trái: quầy gỗ cao dưới cửa sổ + 4 ghế đẩu quay ra cửa sổ
       const stS=im(new T.CylinderGeometry(.2,.2,.06,18),M.white,ZL.length*4), stP=im(new T.CylinderGeometry(.03,.03,.72,8),M.black,ZL.length*4), stF=im(new T.CylinderGeometry(.18,.18,.02,18),M.black,ZL.length*4);
       stS.setColorAt(0,col.setHex(0x23407A)); // có màu sẵn kể cả khi 0 hốc (vật liệu dùng chung màu theo instance)
