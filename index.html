@@ -2189,7 +2189,7 @@ body.lite .bub,body.lite #hint,body.lite #views,body.lite #miniMap,body.lite #bC
         for(let k=0;k<3&&S.length<n;k++){ const a=k*Math.PI*2/3+t*.65; const sx=cx+Math.sin(a)*.95, sz=cz+Math.cos(a)*.95; tb.seats.push(S.length); add(sx,sz,Math.atan2(cx-sx,cz-sz),t,.5); S[S.length-1].grp=t; } });
     } else if(type==="ring"){ // D Giếng trời: hai vòng bàn một người quay vào giữa
       const C=[0,4.6]; [[3.7,12],[6.2,18]].forEach(([rad,cnt],ring)=>{ for(let k=0;k<cnt&&S.length<n;k++){ const a=k/cnt*Math.PI*2+(ring?.17:0), sx=C[0]+Math.sin(a)*rad, sz=C[1]+Math.cos(a)*rad, yaw=Math.atan2(C[0]-sx,C[1]-sz);
-        const tb={kind:"round",x:sx+Math.sin(yaw)*.7,z:sz+Math.cos(yaw)*.7,r:.4,seats:[S.length]}; // .7: chừa chỗ cho giày, không chạm trụ bàn TB.push(tb); add(sx,sz,yaw,TB.length-1,.5); S[S.length-1].grp=Math.floor((S.length-1)/3); } });
+        const tb={kind:"round",x:sx+Math.sin(yaw)*.7,z:sz+Math.cos(yaw)*.7,r:.4,seats:[S.length]}; /* .7: chừa chỗ cho giày, không chạm trụ bàn */ TB.push(tb); add(sx,sz,yaw,TB.length-1,.5); S[S.length-1].grp=Math.floor((S.length-1)/3); } });
     } else {
       const count=Math.ceil(n/5), per=n<=50?4:n<=100?5:n<=150?6:7;
       for(let t=0;t<count;t++){ const r=Math.floor(t/per), c=t%per; const cx=(c-(per-1)/2)*3.9, cz=r*3.9; const tb={kind:"round",x:cx,z:cz,r:0.85,seats:[]}; TB.push(tb);
