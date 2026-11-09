@@ -3401,6 +3401,7 @@ body.lite .bub,body.lite #hint,body.lite #views,body.lite #miniMap,body.lite #bC
     // Key Coach: gõ tên phòng và chọn buổi. Học viên / Lab Coach: chỉ nhập một mã là vào thẳng lớp.
     const CA=["Sáng","Chiều","Tối"];
     const fillBuoi=()=>{ const h=new Date().getHours(), ca=h<12?0:h<17?1:2;
+      pNgay.dataset.touched=""; pNgay.onchange=()=>{ pNgay.dataset.touched="1"; };
       pNgay.innerHTML=DAYS.map(d=>'<option value="Ngày '+d.so+'"'+(packOf(d)===DAY?' selected':'')+'>Ngày '+d.so+' · '+esc(d.pack?d.pack.tieuDe:"Khung lab chung (chưa có gói riêng)")+'</option>').join("");
       pBuoi.innerHTML=CA.map((c,k)=>'<option value="'+c+'"'+(k===ca?' selected':'')+'>Buổi '+c+'</option>').join(""); };
     const fillRoom=()=>{ if(!pCode) return; ov.querySelector("#pErr").textContent="";
@@ -3439,6 +3440,7 @@ body.lite .bub,body.lite #hint,body.lite #views,body.lite #miniMap,body.lite #bC
         pending=null; }
       if(ORDER[at]===5){ const go=ov.querySelector("#eGo"), err=ov.querySelector("#pErr"); go.disabled=true; err.textContent="Đang kết nối…";
         let r; try{ r=await netPrepare(role,pCode.value,pPass.value,pNgay.value+" · "+pBuoi.value); }catch(x){ r="Không vào được phòng: "+(x.message||x); }
+        if(r&&typeof r==="object") r.dayPicked=pNgay.dataset.touched==="1";
         go.disabled=false; if(typeof r==="string"){ err.textContent=r; if(/mật mã|mã Lab|mã vào/.test(r)){ pPass.hidden=false; pPass.select(); } else pCode.select(); return; }
         err.textContent=""; pending=r; at++; show(); return; }
       if(!HAS_NET&&ORDER[at]===1&&!unlocked[role]&&!(await checkCode(role,codeInp.value))){ ov.querySelector("#eErr").textContent=codeInp.value?"Sai mật mã. Học viên thì chọn “Học viên”, không cần mật mã.":"Nhập mật mã cho vai này."; codeInp.select(); return; }
@@ -4968,12 +4970,13 @@ body.lite .bub,body.lite #hint,body.lite #views,body.lite #miniMap,body.lite #bC
   // Bước "Vào phòng" của màn vào: kiểm mã và vào phòng ở máy chủ. Trả về {code,role,...} nếu được, hoặc câu báo lỗi.
   async function netPrepare(role,codeIn,pass,buoi,self){
     try{ await netInit(); }catch(e){ return "Không kết nối được máy chủ phòng. Kiểm tra mạng rồi thử lại."; }
-    let code=normCode(codeIn), lab="", jpass="", fresh=false;
+    let code=normCode(codeIn), lab="", jpass="", fresh=false, day="";
     if(role==="key"){
       if(!ROOM_RE.test(code)) return "Tên phòng gồm 1 chữ cái và 3 số, ví dụ H201.";
       let ok; try{ ok=await rpc("lhl_key_login",{p_pass:pass?String(pass).trim():null}); }catch(e){ if(/chua dat mat ma/.test(e&&e.message||"")) return "Máy chủ chưa đặt mật mã Key Coach. Người quản trị Supabase cần chạy câu đặt mật mã (xem HUONG-DAN.md)."; throw e; }
       if(!ok) return pass?"Sai mật mã Key Coach.":"Nhập mật mã Key Coach.";
       const d=DAYS.find(x=>buoi&&buoi.indexOf("Ngày "+x.so+" ")===0); if(d&&packOf(d)!==DAY){ loadDay(packOf(d)); drawWB(); renderDays(); }
+      if(d) day=packOf(d).id;
       const r=await rpc("lhl_create_room",{p_code:code,p_title:buoi||"Ngày "+DAY.so}); lab=r.lab; jpass=r.pass; fresh=r.fresh;
     } else if(self){ code=/^T00[1-4]$/.test(code)?code:await rpc("lhl_self_room",{}); pass="";
     } else {
@@ -4987,7 +4990,7 @@ body.lite .bub,body.lite #hint,body.lite #views,body.lite #miniMap,body.lite #bC
     try{ if(role==="key") localStorage.setItem("lhl-keyroom",code); }catch(e){}
     const jp=j.pass||jpass||(role==="hv"?String(pass||"").trim():"");
     try{ if(jp) localStorage.setItem("lhl-pass-"+code,jp); }catch(e){}
-    return {code,role,lab:j.lab||lab,pass:jp,fresh,old:j.old};
+    return {code,role,lab:j.lab||lab,pass:jp,fresh,old:j.old,day};
   }
   // Ghi bản ghi của mình: gộp các thay đổi trong 150 ms rồi gửi một lần
   let mePatch=null, meT=0, meAt=0;
@@ -5007,7 +5010,12 @@ body.lite .bub,body.lite #hint,body.lite #views,body.lite #miniMap,body.lite #bC
     if(old){ LIVE.me.step=old.step||0; LIVE.me.chk=old.chk||0; LIVE.me.grpRole=old.grp_role||""; LIVE.me.nop=!!old.nop; LIVE.lastBow=old.bow_n||0; }
     netMe({name:myName,look:myLook});
     const first=await rpc("lhl_poll",{p_code:LIVE.code,p_since:0,p_beat:true}).catch(()=>null);
-    if(first&&first.state&&first.state.N) applyState(first.state,true);
+    if(first&&first.state&&first.state.N){ applyState(first.state,true);
+      // Key Coach mở lại phòng cũ và tự chọn ngày khác (hoặc phòng chưa bắt đầu): dùng ngày vừa chọn, phase về đầu (sảnh chờ), đẩy cho cả phòng
+      const pk=P.role==="key"&&P.day&&P.day!==DAY.id&&(P.dayPicked||KS.lobby)?DAYS.map(packOf).find(p=>p.id===P.day):null;
+      if(pk){ loadDay(pk); drawWB(); buildRoom(N,TYPE); renderDays();
+        if(MODE==="lop"){ KS.lobby=true; KS.guide=0; KS.brk=false; KS.left=phaseOf(0).phut*60; KS.endAt=0; DEMO.open=false; }
+        keyPush(true); toast("Phòng chuyển sang Ngày "+DAY.so+": "+DAY.tieuDe+"."); } }
     else if(P.role==="key"){ restoreMe(); if(P.fresh&&MODE==="lop"){ KS.lobby=true; KS.guide=0; KS.brk=false; KS.left=phaseOf(0).phut*60; } KS.endAt=NET.now()+KS.left*1000; keyPush(true); }
     restoreMe();
     if(first) onPoll(first,true);
