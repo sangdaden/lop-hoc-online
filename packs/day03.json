@@ -1,0 +1,396 @@
+{
+  "so": "03",
+  "tieuDe": "Prompt Engineering & Tool Calling",
+  "muc": "Research agent gọi tool thật · v0 → v3 theo log · 10 eval case · UI dùng thử",
+  "nguon": "https://github.com/VinUni-AI20k/Day03-Prompt-Engineering-Tool-Calling-Labs-student",
+  "mau": [
+    [
+      "Đề bài và các bước (README)",
+      "https://github.com/VinUni-AI20k/Day03-Prompt-Engineering-Tool-Calling-Labs-student/blob/main/README.md"
+    ],
+    [
+      "Cài API key cho từng tool",
+      "https://github.com/VinUni-AI20k/Day03-Prompt-Engineering-Tool-Calling-Labs-student/blob/main/TOOL-SETUP.md"
+    ],
+    [
+      "Mẫu REPORT.md (Phần A + Phần B)",
+      "https://github.com/VinUni-AI20k/Day03-Prompt-Engineering-Tool-Calling-Labs-student/blob/main/starter_v0/artifacts/REPORT.md"
+    ],
+    [
+      "Mẫu transcript, run-analysis, version_log",
+      "https://github.com/VinUni-AI20k/Day03-Prompt-Engineering-Tool-Calling-Labs-student/blob/main/starter_v0/samples/README.md"
+    ],
+    [
+      "Quy ước thư mục tool (TOOL.md)",
+      "https://github.com/VinUni-AI20k/Day03-Prompt-Engineering-Tool-Calling-Labs-student/blob/main/starter_v0/tools/README.md"
+    ],
+    [
+      "Checklist TODO đầy đủ",
+      "https://github.com/VinUni-AI20k/Day03-Prompt-Engineering-Tool-Calling-Labs-student/blob/main/README.md#todo-checklist"
+    ]
+  ],
+  "bang": [
+    "Day 03 · Prompt Engineering & Tool Calling",
+    "Đọc log, không đoán",
+    "Mỗi version một giả thuyết",
+    "Thiếu thì hỏi, gửi thì xác nhận"
+  ],
+  "vai": [
+    "Điều phối + Report",
+    "Prompt + tools.yaml",
+    "Tool mới + test",
+    "Eval + version log",
+    "UI + demo"
+  ],
+  "repo": "Link repo nhóm (fork Day03-Prompt-Engineering-Tool-Calling-Labs-student, nộp thư mục starter_v0)",
+  "nop": [
+    "artifacts/system_prompt.md",
+    "artifacts/tools.yaml",
+    "artifacts/version_log.csv",
+    "artifacts/REPORT.md",
+    "data/eval_group.json",
+    "tests",
+    "runs",
+    "transcripts"
+  ],
+  "phases": [
+    {
+      "ten": "CP0 · Đọc đề + setup + preflight",
+      "ngan": "Setup",
+      "phut": 25,
+      "cheDo": "nhom",
+      "ai": "duoc",
+      "tuKiem": [
+        "Đã tạo .venv, cài requirements, chép .env.example thành .env",
+        "Có provider key + TAVILY_API_KEY, FIRECRAWL_API_KEY, RAPIDAPI_KEY (không commit .env)",
+        "preflight_provider.py chạy pass",
+        "pytest chạy được: contract + example xanh, TODO đang skipped",
+        "Nhóm đã chia 5 vai"
+      ],
+      "link": "https://github.com/VinUni-AI20k/Day03-Prompt-Engineering-Tool-Calling-Labs-student/blob/main/README.md#setup"
+    },
+    {
+      "ten": "CP1 · Baseline v0 + đọc run JSON",
+      "ngan": "Baseline v0",
+      "phut": 30,
+      "cheDo": "nhom",
+      "ai": "duoc",
+      "tuKiem": [
+        "Đã chạy run_eval.py --version v0 trên eval_base.json bằng API thật",
+        "Ghi case_accuracy, tool_routing, argument, multiturn của v0",
+        "Mỗi case FAIL đã gán một loại lỗi (wrong_tool, wrong_arg_value, missing_info…)",
+        "Đã ghi dòng v0 vào version_log.csv"
+      ],
+      "link": "https://github.com/VinUni-AI20k/Day03-Prompt-Engineering-Tool-Calling-Labs-student/blob/main/README.md#step-1--run-baseline"
+    },
+    {
+      "ten": "CP2 · Sửa prompt xấu + dựng khung UI",
+      "ngan": "Prompt + UI",
+      "phut": 25,
+      "cheDo": "nhom",
+      "ai": "duoc",
+      "tuKiem": [
+        "Đã tìm ra 3 chỉ dẫn xấu cố ý trong system_prompt.md: đoán thay vì hỏi, gửi không xác nhận, ép một bước",
+        "Có rule routing: khi nào timeline / social_search / lookup / fetch / clarify",
+        "UI Streamlit hoặc Vercel mở được trên máy, gọi được agent"
+      ],
+      "link": "https://github.com/VinUni-AI20k/Day03-Prompt-Engineering-Tool-Calling-Labs-student/blob/main/README.md#step-2--fix-one-thing"
+    },
+    {
+      "ten": "Nghỉ",
+      "phut": 10,
+      "cheDo": "nghi"
+    },
+    {
+      "ten": "CP3 · v1 + viết tool mới + unit test",
+      "ngan": "v1 + tool mới",
+      "phut": 30,
+      "cheDo": "nhom",
+      "ai": "duoc",
+      "tuKiem": [
+        "v1 chỉ thử một giả thuyết, có metric trước/sau trong version_log.csv",
+        "Tool mới có tool.py + TOOL.md, đăng ký trong tools/__init__.py và tools.yaml",
+        "Có ≥ 3 test cho tool mới: happy path, input xấu, nhánh lỗi trả error dict",
+        "test_tool_contract.py vẫn xanh"
+      ],
+      "link": "https://github.com/VinUni-AI20k/Day03-Prompt-Engineering-Tool-Calling-Labs-student/blob/main/README.md#step-4b--challenge-viết-test-cho-tool"
+    },
+    {
+      "ten": "CP4 · 10 eval case của nhóm + v2",
+      "ngan": "Eval + v2",
+      "phut": 30,
+      "cheDo": "nhom",
+      "ai": "duoc",
+      "tuKiem": [
+        "eval_group.json có 10 case: 5 single turn, 5 multi turn",
+        "Mỗi case có phase B, failure_type, expect, metadata.what_it_tests",
+        "Có ít nhất 1 case kiểm tra model gọi đúng tool mới",
+        "description trong tools.yaml nói rõ khi nào dùng / khi nào không dùng",
+        "v2 đã chạy và ghi vào version_log.csv"
+      ],
+      "link": "https://github.com/VinUni-AI20k/Day03-Prompt-Engineering-Tool-Calling-Labs-student/blob/main/README.md#step-4--add-team-eval"
+    },
+    {
+      "ten": "CP5 · REPORT Phần A + link dùng thử",
+      "ngan": "Phần A",
+      "phut": 20,
+      "cheDo": "nhom",
+      "ai": "duoc",
+      "tuKiem": [
+        "Phần A có: agent làm gì, bảng tool, 3–5 câu hỏi mẫu",
+        "Đã mở Cloudflare Tunnel (hoặc deploy) và dán link vào Phần A",
+        "Người ngoài nhóm mở link và hỏi thử được"
+      ],
+      "link": "https://github.com/VinUni-AI20k/Day03-Prompt-Engineering-Tool-Calling-Labs-student/blob/main/README.md#deploy-nhanh-để-team-khác-dùng-thử-khuyến-nghị-cloudflare-tunnel"
+    },
+    {
+      "ten": "Nghỉ",
+      "phut": 10,
+      "cheDo": "nghi"
+    },
+    {
+      "ten": "CP6 · Team showdown",
+      "ngan": "Showdown",
+      "phut": 30,
+      "cheDo": "calop",
+      "ai": "duoc",
+      "tuKiem": [
+        "Nhóm đã demo agent bằng UI, có ít nhất 1 lượt gọi tool thật",
+        "Đã thử agent của ít nhất 1 nhóm khác bằng link của họ",
+        "Ghi lại 1 lỗi agent mình gặp khi nhóm khác thử, để sửa ở v3"
+      ],
+      "link": "https://github.com/VinUni-AI20k/Day03-Prompt-Engineering-Tool-Calling-Labs-student/blob/main/README.md#step-6--report--debate-poster",
+      "moDemo": true,
+      "demo": "nhom",
+      "pitch": true
+    },
+    {
+      "ten": "CP7 · v3 + chat live + Phần B + nộp",
+      "ngan": "v3 + nộp",
+      "phut": 30,
+      "cheDo": "nhom",
+      "ai": "duoc",
+      "tuKiem": [
+        "v3 đã chạy, version_log.csv đủ v0, v1, v2, v3",
+        "chat.py ≥ 3 lượt live có transcript, trong đó 1 lượt thiếu thông tin và 1 lượt gửi Telegram",
+        "pytest: 0 failed",
+        "REPORT Phần B dựa trên run JSON thật, không theo cảm giác",
+        "Không có .env hay API key trong repo, đã dán link repo nhóm"
+      ],
+      "link": "https://github.com/VinUni-AI20k/Day03-Prompt-Engineering-Tool-Calling-Labs-student/blob/main/README.md#submit",
+      "nopBai": true
+    }
+  ],
+  "the": [
+    [
+      "Tool calling",
+      "Model không tự làm mà chọn tool, điền arguments; code chạy tool rồi trả kết quả cho model."
+    ],
+    [
+      "Tool declaration",
+      "Mô tả tool trong tools.yaml: tên, việc nó làm, khi nào dùng, các tham số."
+    ],
+    [
+      "System prompt",
+      "Luật chung cho agent. Starter cố ý viết xấu: đoán thay vì hỏi, gửi không xác nhận."
+    ],
+    [
+      "Routing",
+      "Chọn đúng tool cho đúng yêu cầu: tin tức thì lookup, tài khoản cụ thể thì timeline."
+    ],
+    [
+      "clarify",
+      "Tool hỏi lại người dùng khi thiếu thông tin, thay vì đoán."
+    ],
+    [
+      "Baseline v0",
+      "Lần chạy đầu với prompt và tools gốc, làm mốc để so."
+    ],
+    [
+      "Eval case",
+      "Một câu hỏi kèm tool và args mong đợi, để đo agent tự động."
+    ],
+    [
+      "failure_type",
+      "wrong_tool, wrong_arg_value, wrong_boundary, unnecessary_tool, out_of_scope, missing_info."
+    ],
+    [
+      "Version log",
+      "Mỗi dòng một version: đổi gì, giả thuyết, metric trước/sau, file run."
+    ],
+    [
+      "Unit test vs eval",
+      "Eval đo model chọn tool đúng không; unit test đo code tool chạy đúng không."
+    ],
+    [
+      "confirmed=true",
+      "send chỉ được gửi Telegram khi người dùng đã xác nhận."
+    ],
+    [
+      "Model local nhỏ",
+      "Bonus: chạy agent bằng model ≤ 8B qua Ollama, đo khác biệt với model cloud."
+    ]
+  ],
+  "onTap": [
+    [
+      "Vì sao mỗi version chỉ đổi một thứ?",
+      "Để biết chắc thay đổi nào làm metric lên hay xuống."
+    ],
+    [
+      "3 chỉ dẫn xấu cố ý trong system prompt gốc?",
+      "Đoán thay vì hỏi lại, gửi/đăng mà không xác nhận, ép xong trong một bước."
+    ],
+    [
+      "User hỏi “bài viết này nói gì?” mà không có URL. Agent nên làm gì?",
+      "Gọi clarify để hỏi URL, không tự đoán một link."
+    ],
+    [
+      "Handle truyền cho timeline có kèm @ không?",
+      "Không. Ví dụ screenname=\"sama\"."
+    ],
+    [
+      "Tìm tin tức mới trên web thì lookup đặt tham số gì?",
+      "topic=\"news\", kèm timeframe nếu cần."
+    ],
+    [
+      "Eval PASS nhưng user vẫn nhận kết quả sai. Vì sao có thể?",
+      "Model gọi đúng tool và args, nhưng code tool có bug. Phải có unit test."
+    ],
+    [
+      "Đổi tên tool thì phải sửa mấy chỗ?",
+      "3: tools.yaml, TOOL_FUNCTIONS trong tools/__init__.py, tên tool trong file eval."
+    ],
+    [
+      "eval_group.json cần bao nhiêu case?",
+      "10: 5 single turn, 5 multi turn."
+    ],
+    [
+      "Phần A của REPORT xong lúc nào?",
+      "Trước giờ showdown (16:30), làm tài liệu phụ trợ khi demo."
+    ],
+    [
+      "Điều kiện điểm thưởng?",
+      "Làm cả hai: có UI và tự viết thêm hơn 3 tool mới."
+    ]
+  ],
+  "truocBuoi": [
+    "Sạc đầy máy, cài Python 3 và Git",
+    "Lấy sẵn API key: OpenRouter, Tavily, Firecrawl, RapidAPI (twitter-api45)",
+    "Mỗi nhóm có ít nhất 1 người chạy preflight pass trước buổi",
+    "Tuỳ chọn: tạo bot Telegram cho tool send, cài Ollama cho bonus model local",
+    "Cài cloudflared để mở link dùng thử lúc showdown"
+  ],
+  "en": {
+    "Research agent gọi tool thật · v0 → v3 theo log · 10 eval case · UI dùng thử": "Research agent calling real tools · v0 → v3 from logs · 10 eval cases · demo UI",
+    "Đề bài và các bước (README)": "Brief and steps (README)",
+    "Cài API key cho từng tool": "API key setup per tool",
+    "Mẫu REPORT.md (Phần A + Phần B)": "REPORT.md template (Part A + Part B)",
+    "Mẫu transcript, run-analysis, version_log": "Sample transcript, run-analysis, version_log",
+    "Quy ước thư mục tool (TOOL.md)": "Tool folder contract (TOOL.md)",
+    "Checklist TODO đầy đủ": "Full TODO checklist",
+    "Đọc log, không đoán": "Read the logs, don't guess",
+    "Mỗi version một giả thuyết": "One hypothesis per version",
+    "Điều phối + Report": "Lead + Report",
+    "Prompt + tools.yaml": "Prompt + tools.yaml",
+    "Tool mới + test": "New tool + tests",
+    "Eval + version log": "Eval + version log",
+    "UI + demo": "UI + demo",
+    "Link repo nhóm (fork Day03-Prompt-Engineering-Tool-Calling-Labs-student, nộp thư mục starter_v0)": "Team repo link (fork of Day03-Prompt-Engineering-Tool-Calling-Labs-student, submit the starter_v0 folder)",
+    "CP0 · Đọc đề + setup + preflight": "CP0 · Read the brief + setup + preflight",
+    "Setup": "Setup",
+    "Đã tạo .venv, cài requirements, chép .env.example thành .env": "Created .venv, installed requirements, copied .env.example to .env",
+    "Có provider key + TAVILY_API_KEY, FIRECRAWL_API_KEY, RAPIDAPI_KEY (không commit .env)": "Have the provider key + TAVILY_API_KEY, FIRECRAWL_API_KEY, RAPIDAPI_KEY (.env not committed)",
+    "preflight_provider.py chạy pass": "preflight_provider.py passes",
+    "pytest chạy được: contract + example xanh, TODO đang skipped": "pytest runs: contract + example tests green, TODO tests skipped",
+    "Nhóm đã chia 5 vai": "The team has split the 5 roles",
+    "CP1 · Baseline v0 + đọc run JSON": "CP1 · Baseline v0 + read the run JSON",
+    "Đã chạy run_eval.py --version v0 trên eval_base.json bằng API thật": "Ran run_eval.py --version v0 on eval_base.json with a real API",
+    "Ghi case_accuracy, tool_routing, argument, multiturn của v0": "Recorded v0 case_accuracy, tool_routing, argument, multiturn",
+    "Mỗi case FAIL đã gán một loại lỗi (wrong_tool, wrong_arg_value, missing_info…)": "Each FAIL case tagged with one error type (wrong_tool, wrong_arg_value, missing_info…)",
+    "Đã ghi dòng v0 vào version_log.csv": "Added the v0 row to version_log.csv",
+    "CP2 · Sửa prompt xấu + dựng khung UI": "CP2 · Fix the bad prompt + build the UI skeleton",
+    "Prompt + UI": "Prompt + UI",
+    "Đã tìm ra 3 chỉ dẫn xấu cố ý trong system_prompt.md: đoán thay vì hỏi, gửi không xác nhận, ép một bước": "Found the 3 deliberately bad instructions in system_prompt.md: guess instead of ask, send without confirming, force one step",
+    "Có rule routing: khi nào timeline / social_search / lookup / fetch / clarify": "Have routing rules: when to use timeline / social_search / lookup / fetch / clarify",
+    "UI Streamlit hoặc Vercel mở được trên máy, gọi được agent": "Streamlit or Vercel UI opens locally and calls the agent",
+    "CP3 · v1 + viết tool mới + unit test": "CP3 · v1 + write a new tool + unit tests",
+    "v1 + tool mới": "v1 + new tool",
+    "v1 chỉ thử một giả thuyết, có metric trước/sau trong version_log.csv": "v1 tests one hypothesis, with before/after metrics in version_log.csv",
+    "Tool mới có tool.py + TOOL.md, đăng ký trong tools/__init__.py và tools.yaml": "New tool has tool.py + TOOL.md, registered in tools/__init__.py and tools.yaml",
+    "Có ≥ 3 test cho tool mới: happy path, input xấu, nhánh lỗi trả error dict": "At least 3 tests for the new tool: happy path, bad input, error branch returns an error dict",
+    "test_tool_contract.py vẫn xanh": "test_tool_contract.py is still green",
+    "CP4 · 10 eval case của nhóm + v2": "CP4 · 10 team eval cases + v2",
+    "Eval + v2": "Eval + v2",
+    "eval_group.json có 10 case: 5 single turn, 5 multi turn": "eval_group.json has 10 cases: 5 single-turn, 5 multi-turn",
+    "Mỗi case có phase B, failure_type, expect, metadata.what_it_tests": "Each case has phase B, failure_type, expect, metadata.what_it_tests",
+    "Có ít nhất 1 case kiểm tra model gọi đúng tool mới": "At least 1 case checks the model routes to the new tool",
+    "description trong tools.yaml nói rõ khi nào dùng / khi nào không dùng": "tools.yaml descriptions say when to use / when not to use",
+    "v2 đã chạy và ghi vào version_log.csv": "v2 has been run and logged in version_log.csv",
+    "CP5 · REPORT Phần A + link dùng thử": "CP5 · REPORT Part A + try-it link",
+    "Phần A": "Part A",
+    "Phần A có: agent làm gì, bảng tool, 3–5 câu hỏi mẫu": "Part A has: what the agent does, tool table, 3–5 sample questions",
+    "Đã mở Cloudflare Tunnel (hoặc deploy) và dán link vào Phần A": "Opened a Cloudflare Tunnel (or deployed) and pasted the link into Part A",
+    "Người ngoài nhóm mở link và hỏi thử được": "Someone outside the team can open the link and ask a question",
+    "CP6 · Team showdown": "CP6 · Team showdown",
+    "Nhóm đã demo agent bằng UI, có ít nhất 1 lượt gọi tool thật": "The team demoed the agent in the UI with at least 1 real tool call",
+    "Đã thử agent của ít nhất 1 nhóm khác bằng link của họ": "Tried at least 1 other team's agent via their link",
+    "Ghi lại 1 lỗi agent mình gặp khi nhóm khác thử, để sửa ở v3": "Noted 1 bug other teams hit in our agent, to fix in v3",
+    "CP7 · v3 + chat live + Phần B + nộp": "CP7 · v3 + live chat + Part B + submit",
+    "v3 + nộp": "v3 + submit",
+    "v3 đã chạy, version_log.csv đủ v0, v1, v2, v3": "v3 has been run; version_log.csv has v0, v1, v2, v3",
+    "chat.py ≥ 3 lượt live có transcript, trong đó 1 lượt thiếu thông tin và 1 lượt gửi Telegram": "chat.py ≥ 3 live turns with a transcript, including 1 missing-info turn and 1 Telegram-send turn",
+    "pytest: 0 failed": "pytest: 0 failed",
+    "REPORT Phần B dựa trên run JSON thật, không theo cảm giác": "REPORT Part B is based on real run JSON, not gut feeling",
+    "Không có .env hay API key trong repo, đã dán link repo nhóm": "No .env or API key in the repo; team repo link submitted",
+    "Tool calling": "Tool calling",
+    "Model không tự làm mà chọn tool, điền arguments; code chạy tool rồi trả kết quả cho model.": "The model doesn't act itself: it picks a tool and fills arguments; code runs the tool and returns the result.",
+    "Tool declaration": "Tool declaration",
+    "Mô tả tool trong tools.yaml: tên, việc nó làm, khi nào dùng, các tham số.": "A tool's description in tools.yaml: name, what it does, when to use it, its parameters.",
+    "System prompt": "System prompt",
+    "Luật chung cho agent. Starter cố ý viết xấu: đoán thay vì hỏi, gửi không xác nhận.": "The agent's standing rules. The starter is deliberately bad: guess instead of ask, send without confirming.",
+    "Routing": "Routing",
+    "Chọn đúng tool cho đúng yêu cầu: tin tức thì lookup, tài khoản cụ thể thì timeline.": "Picking the right tool for the request: news → lookup, a specific account → timeline.",
+    "clarify": "clarify",
+    "Tool hỏi lại người dùng khi thiếu thông tin, thay vì đoán.": "A tool that asks the user back when info is missing, instead of guessing.",
+    "Baseline v0": "Baseline v0",
+    "Lần chạy đầu với prompt và tools gốc, làm mốc để so.": "The first run with the original prompt and tools, used as the reference point.",
+    "Eval case": "Eval case",
+    "Một câu hỏi kèm tool và args mong đợi, để đo agent tự động.": "A question with the expected tool and args, to measure the agent automatically.",
+    "failure_type": "failure_type",
+    "wrong_tool, wrong_arg_value, wrong_boundary, unnecessary_tool, out_of_scope, missing_info.": "wrong_tool, wrong_arg_value, wrong_boundary, unnecessary_tool, out_of_scope, missing_info.",
+    "Version log": "Version log",
+    "Mỗi dòng một version: đổi gì, giả thuyết, metric trước/sau, file run.": "One row per version: what changed, hypothesis, before/after metric, run file.",
+    "Unit test vs eval": "Unit test vs eval",
+    "Eval đo model chọn tool đúng không; unit test đo code tool chạy đúng không.": "Eval measures whether the model picks the right tool; unit tests measure whether the tool code works.",
+    "confirmed=true": "confirmed=true",
+    "send chỉ được gửi Telegram khi người dùng đã xác nhận.": "send may only post to Telegram after the user has confirmed.",
+    "Model local nhỏ": "Small local model",
+    "Bonus: chạy agent bằng model ≤ 8B qua Ollama, đo khác biệt với model cloud.": "Bonus: run the agent on a ≤ 8B model via Ollama and measure the gap with the cloud model.",
+    "Vì sao mỗi version chỉ đổi một thứ?": "Why change only one thing per version?",
+    "Để biết chắc thay đổi nào làm metric lên hay xuống.": "So you know exactly which change moved the metric.",
+    "3 chỉ dẫn xấu cố ý trong system prompt gốc?": "The 3 deliberately bad instructions in the original prompt?",
+    "Đoán thay vì hỏi lại, gửi/đăng mà không xác nhận, ép xong trong một bước.": "Guess instead of asking, send/post without confirming, force everything into one step.",
+    "User hỏi “bài viết này nói gì?” mà không có URL. Agent nên làm gì?": "User asks “what does this article say?” with no URL. What should the agent do?",
+    "Gọi clarify để hỏi URL, không tự đoán một link.": "Call clarify to ask for the URL, don't guess a link.",
+    "Handle truyền cho timeline có kèm @ không?": "Does the timeline handle include @?",
+    "Không. Ví dụ screenname=\"sama\".": "No. For example screenname=\"sama\".",
+    "Tìm tin tức mới trên web thì lookup đặt tham số gì?": "Which lookup argument for fresh web news?",
+    "topic=\"news\", kèm timeframe nếu cần.": "topic=\"news\", plus timeframe if needed.",
+    "Eval PASS nhưng user vẫn nhận kết quả sai. Vì sao có thể?": "Eval PASS but the user still gets wrong results. How?",
+    "Model gọi đúng tool và args, nhưng code tool có bug. Phải có unit test.": "The model called the right tool and args, but the tool code has a bug. You need unit tests.",
+    "Đổi tên tool thì phải sửa mấy chỗ?": "Renaming a tool means editing how many places?",
+    "3: tools.yaml, TOOL_FUNCTIONS trong tools/__init__.py, tên tool trong file eval.": "3: tools.yaml, TOOL_FUNCTIONS in tools/__init__.py, the tool name in the eval files.",
+    "eval_group.json cần bao nhiêu case?": "How many cases in eval_group.json?",
+    "10: 5 single turn, 5 multi turn.": "10: 5 single-turn, 5 multi-turn.",
+    "Phần A của REPORT xong lúc nào?": "When is REPORT Part A due?",
+    "Trước giờ showdown (16:30), làm tài liệu phụ trợ khi demo.": "Before the showdown (16:30), as the demo handout.",
+    "Điều kiện điểm thưởng?": "How do you get the bonus point?",
+    "Làm cả hai: có UI và tự viết thêm hơn 3 tool mới.": "Do both: have a UI and write more than 3 new tools.",
+    "Sạc đầy máy, cài Python 3 và Git": "Charge your laptop, install Python 3 and Git",
+    "Lấy sẵn API key: OpenRouter, Tavily, Firecrawl, RapidAPI (twitter-api45)": "Get API keys ready: OpenRouter, Tavily, Firecrawl, RapidAPI (twitter-api45)",
+    "Mỗi nhóm có ít nhất 1 người chạy preflight pass trước buổi": "At least 1 person per team has preflight passing before class",
+    "Tuỳ chọn: tạo bot Telegram cho tool send, cài Ollama cho bonus model local": "Optional: create a Telegram bot for send, install Ollama for the local-model bonus",
+    "Cài cloudflared để mở link dùng thử lúc showdown": "Install cloudflared to share a try-it link at the showdown",
+    "Thiếu thì hỏi, gửi thì xác nhận": "Missing info? Ask. Sending? Confirm."
+  }
+}

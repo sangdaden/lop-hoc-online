@@ -2,7 +2,7 @@
 
 Mỗi ngày lab là một file `packs/dayNN.json` (ví dụ `packs/day03.json`). Khi trang mở, game đọc file này. Ngày nào chưa có file thì game dùng **khung lab chung**: vẫn đủ 8 phase, 2 giờ nghỉ, chữ chung chung, để Key Coach mở lớp được.
 
-Ví dụ đầy đủ: [day02.json](day02.json) (bài Ngày 02 Khóa 5, có cả bản dịch `en`). [mau-day02.json](mau-day02.json) là bản cũ, giữ để tham khảo.
+Ví dụ đầy đủ: [day02.json](day02.json) (bài Ngày 02 Khóa 5, có cả bản dịch `en`), [day03.json](day03.json) (Ngày 03: Prompt Engineering & Tool Calling). [mau-day02.json](mau-day02.json) là bản cũ, giữ để tham khảo.
 
 ## Thêm một ngày mới
 
