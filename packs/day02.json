@@ -1,0 +1,408 @@
+{
+  "so": "02",
+  "tieuDe": "Discovery & Problem Framing",
+  "muc": "Problem Statement đã kiểm chứng · No AI / Rule / Workflow / Agent · Go / Not Yet / No-Go",
+  "nguon": "https://github.com/VinUni-AI20k/K5-L3-Day02-DiscoveryProblemFraming",
+  "mau": [
+    [
+      "Bài làm mẫu: báo cáo tuần của PM",
+      "https://github.com/VinUni-AI20k/K5-L3-Day02-DiscoveryProblemFraming/blob/main/docs/02-deliverable-example.md"
+    ],
+    [
+      "Worksheet từng checkpoint",
+      "https://github.com/VinUni-AI20k/K5-L3-Day02-DiscoveryProblemFraming/blob/main/docs/01-worksheet.md"
+    ],
+    [
+      "Rubric chấm điểm",
+      "https://github.com/VinUni-AI20k/K5-L3-Day02-DiscoveryProblemFraming/blob/main/RUBRIC.md"
+    ],
+    [
+      "Cách nộp bài",
+      "https://github.com/VinUni-AI20k/K5-L3-Day02-DiscoveryProblemFraming/blob/main/SUBMISSION.md"
+    ]
+  ],
+  "bang": [
+    "Day 02 · Discovery & Problem Framing",
+    "Problem first, not AI first",
+    "Actor → Quy trình → Bottleneck → Metric",
+    "Không cần AI vẫn là kết luận tốt"
+  ],
+  "vai": [
+    "Điều phối",
+    "Phản biện",
+    "Kiểm chứng",
+    "Research",
+    "Vẽ quy trình",
+    "Viết PS"
+  ],
+  "repo": "Link repo nhóm do nhóm trưởng fork (K5-L3A/L3B-DAY02-TenNhom-DiscoveryProblemFraming)",
+  "nop": [
+    "TEAM.md",
+    "report/team/group_report.md",
+    "report/individual/MSSV_HoTen.md"
+  ],
+  "phases": [
+    {
+      "ten": "CP0 · Đọc bài mẫu",
+      "ngan": "Bài mẫu",
+      "phut": 15,
+      "cheDo": "canhan",
+      "ai": "duoc",
+      "tuKiem": [
+        "Nói được 1 câu vì sao nhóm mẫu chọn “Go, phạm vi nhỏ” mà không tự xây agent",
+        "Hiểu CP3 chỉ chọn candidate problem; Problem Statement viết sau khi kiểm chứng"
+      ],
+      "link": "https://github.com/VinUni-AI20k/K5-L3-Day02-DiscoveryProblemFraming/blob/main/docs/02-deliverable-example.md"
+    },
+    {
+      "ten": "CP1 · Scan 5+ problems",
+      "ngan": "Scan",
+      "phut": 25,
+      "cheDo": "canhan",
+      "ai": "truoc",
+      "tuKiem": [
+        "Có ít nhất 5 problem, mỗi dòng viết dạng Job Story",
+        "Không dòng nào có chữ “AI”, “chatbot”, “agent” trong Job Story",
+        "Mỗi dòng có ít nhất 1 dấu hiệu thật đo được: thời gian, tần suất, số người"
+      ],
+      "link": "https://github.com/VinUni-AI20k/K5-L3-Day02-DiscoveryProblemFraming/blob/main/docs/01-worksheet.md#cp1--scan-5-problems-25--discover"
+    },
+    {
+      "ten": "CP2 · Top 3 Problem Cards + quy trình nháp",
+      "ngan": "Top 3 Cards",
+      "phut": 35,
+      "cheDo": "canhan",
+      "ai": "phanbien",
+      "tuKiem": [
+        "Mỗi card đủ: Job Story, actor, quy trình, bottleneck, impact, metric, phương án không dùng AI",
+        "Mỗi quy trình có số phút từng bước và đánh dấu bước nghẽn",
+        "Đã nhờ AI đóng vai “PM hoài nghi” phản biện và sửa ít nhất 1 điểm"
+      ],
+      "link": "https://github.com/VinUni-AI20k/K5-L3-Day02-DiscoveryProblemFraming/blob/main/docs/01-worksheet.md#cp2--top-3-problem-cards--quy-trình-nháp-35--discover"
+    },
+    {
+      "ten": "Nghỉ",
+      "phut": 10,
+      "cheDo": "nghi"
+    },
+    {
+      "ten": "CP3 · Hội tụ nhóm",
+      "ngan": "Hội tụ",
+      "phut": 30,
+      "cheDo": "nhom",
+      "ai": "khong",
+      "tuKiem": [
+        "Mỗi người đã pitch top 3 và có ít nhất 1 câu hỏi phản biện được ghi",
+        "Cây OST có đúng 1 outcome ở gốc, các nhánh là pain, không có tên công cụ",
+        "Đã chấm 7 tiêu chí, chọn 1 candidate và ghi lý do loại ít nhất 2 candidate khác"
+      ],
+      "link": "https://github.com/VinUni-AI20k/K5-L3-Day02-DiscoveryProblemFraming/blob/main/docs/01-worksheet.md#cp3--hội-tụ-nhóm-30--define",
+      "pitch": true
+    },
+    {
+      "ten": "CP4 · Kiểm chứng + research giải pháp đã có",
+      "ngan": "Kiểm chứng",
+      "phut": 30,
+      "cheDo": "nhom",
+      "ai": "phanbien",
+      "tuKiem": [
+        "Có Assumption Map 4–6 giả định, kiểm ô “quan trọng nhưng ít bằng chứng” trước",
+        "Phỏng vấn 2–3 người thật theo Mom Test hoặc survey 5–10 người, không hỏi “Bạn có muốn…”",
+        "Có ít nhất 1 tín hiệu phản bác được ghi lại",
+        "Có 2–3 giải pháp đã có, link đã tự mở và kiểm"
+      ],
+      "link": "https://github.com/VinUni-AI20k/K5-L3-Day02-DiscoveryProblemFraming/blob/main/docs/01-worksheet.md#cp4--kiểm-chứng--research-30--define"
+    },
+    {
+      "ten": "CP5 · Quy trình trước/sau + Problem Statement v0",
+      "ngan": "Quy trình + PS v0",
+      "phut": 45,
+      "cheDo": "nhom",
+      "ai": "phanbien",
+      "tuKiem": [
+        "Quy trình hiện tại có actor, input, output, thời gian từng bước và bottleneck",
+        "Quy trình tương lai có ít nhất 1 bước con người kiểm tra và 1 phương án quay về",
+        "Có bảng before/after",
+        "Problem Statement v0 đủ 6 trường; metric có baseline, target, cách đo"
+      ],
+      "link": "https://github.com/VinUni-AI20k/K5-L3-Day02-DiscoveryProblemFraming/blob/main/docs/01-worksheet.md#cp5--quy-trình-trướcsau--problem-statement-v0-45--define"
+    },
+    {
+      "ten": "Nghỉ",
+      "phut": 10,
+      "cheDo": "nghi"
+    },
+    {
+      "ten": "CP6 · Mức can thiệp AI + Problem Statement v1 + quyết định",
+      "ngan": "Quyết định",
+      "phut": 25,
+      "cheDo": "nhom",
+      "ai": "phanbien",
+      "tuKiem": [
+        "Đã so No AI / Rule / Workflow / Agent và trả lời “vì sao không chọn mức đơn giản hơn”",
+        "Có 3–5 tiêu chí đánh giá (eval) đạt / không đạt",
+        "Problem Statement v1 khác v0 ít nhất 1 trường, có ghi vì sao đổi",
+        "Chấm 4 rủi ro, ra Go / Not Yet / No-Go kèm ngưỡng dừng đo được"
+      ],
+      "link": "https://github.com/VinUni-AI20k/K5-L3-Day02-DiscoveryProblemFraming/blob/main/docs/01-worksheet.md#cp6--mức-can-thiệp-ai--problem-statement-v1--quyết-định-25--define",
+      "moDemo": true,
+      "demo": "nhom"
+    },
+    {
+      "ten": "CP7 · Reflection cá nhân",
+      "ngan": "Reflection",
+      "phut": 15,
+      "cheDo": "canhan",
+      "ai": "khong",
+      "tuKiem": [
+        "Điền bảng “Tôi đã tham gia phần nào” và bảng “Dùng AI”",
+        "Có 1 ví dụ cụ thể mình đổi ý hoặc làm nhóm đổi ý",
+        "Reflection tối thiểu 200 từ, tự viết, không nhờ AI viết thay",
+        "Đã điền phần của mình trong TEAM.md"
+      ],
+      "link": "https://github.com/VinUni-AI20k/K5-L3-Day02-DiscoveryProblemFraming/blob/main/docs/01-worksheet.md#cp7--reflection-15",
+      "nopBai": true
+    }
+  ],
+  "the": [
+    [
+      "Double Diamond",
+      "Mở rộng (Discover) rồi thu hẹp (Define). Hôm nay làm nửa đầu."
+    ],
+    [
+      "Job Story",
+      "Khi [tình huống], tôi muốn [động cơ], để [kết quả]."
+    ],
+    [
+      "Dấu hiệu thật",
+      "Số đo đã xảy ra: mất bao lâu, mấy lần/tuần, bao nhiêu người."
+    ],
+    [
+      "Solution trá hình",
+      "Viết giải pháp thay cho vấn đề, ví dụ “thiếu một chatbot”."
+    ],
+    [
+      "Problem Card",
+      "Một problem đủ field: actor, quy trình, bottleneck, impact, metric, phương án không AI."
+    ],
+    [
+      "Bottleneck",
+      "Một bước cụ thể làm chậm hoặc làm hỏng cả quy trình."
+    ],
+    [
+      "Candidate problem",
+      "Vấn đề được đề cử để nhóm cân nhắc, chưa phải Problem Statement."
+    ],
+    [
+      "Opportunity Solution Tree",
+      "1 outcome ở gốc, các nhánh là pain. Gạch mọi solution đội lốt."
+    ],
+    [
+      "Assumption Map",
+      "Xếp giả định theo quan trọng × đã có bằng chứng. Kiểm ô nguy nhất trước."
+    ],
+    [
+      "The Mom Test",
+      "Hỏi về cuộc sống của họ, về việc đã xảy ra, và nói ít hơn họ."
+    ],
+    [
+      "Interview Snapshot",
+      "Mỗi buổi phỏng vấn ghi lại thành 1 trang ngắn."
+    ],
+    [
+      "Success Metric",
+      "Có baseline, target và cách đo. “Nhanh hơn” không phải metric."
+    ],
+    [
+      "Boundary",
+      "Những gì AI không được làm hoặc không được tự quyết."
+    ],
+    [
+      "Human-in-the-loop",
+      "Người kiểm tra trước khi kết quả đi tiếp."
+    ],
+    [
+      "Phương án quay về",
+      "Cách làm tiếp khi AI sai."
+    ],
+    [
+      "No AI / Rule / Workflow / Agent",
+      "4 mức can thiệp. Chọn mức đơn giản nhất đủ dùng."
+    ],
+    [
+      "Agent",
+      "AI tự quyết bước tiếp theo. Đa số bài hôm nay chỉ cần Rule hoặc Workflow."
+    ],
+    [
+      "AI Canvas",
+      "Dự đoán, cân nhắc, hành động, kết quả, dữ liệu vào, phản hồi."
+    ],
+    [
+      "Eval",
+      "Tiêu chí để chấm đầu ra của AI là đạt hay không đạt."
+    ],
+    [
+      "4 rủi ro",
+      "Value, Usability, Feasibility, Viability (Marty Cagan)."
+    ],
+    [
+      "Go / Not Yet / No-Go",
+      "Làm · cần kiểm thêm · không làm. Kèm ngưỡng dừng đo được."
+    ]
+  ],
+  "onTap": [
+    [
+      "Hôm nay đi theo nửa nào của Double Diamond?",
+      "Nửa đầu: Discover (cá nhân scan rộng) rồi Define (nhóm hội tụ về 1 Problem Statement)."
+    ],
+    [
+      "Viết Job Story theo mẫu nào?",
+      "Khi [tình huống], tôi muốn [động cơ], để [kết quả]."
+    ],
+    [
+      "“Thiếu chatbot viết báo cáo” có phải problem không?",
+      "Không. Đó là solution trá hình. Problem là “mất 90 phút mỗi tuần viết báo cáo”."
+    ],
+    [
+      "3 luật của The Mom Test?",
+      "Hỏi về cuộc sống của họ, hỏi hành vi đã xảy ra, nói ít hơn người được hỏi."
+    ],
+    [
+      "Lời khen “ý hay đấy!” có phải bằng chứng?",
+      "Không. Bằng chứng là hành vi đã xảy ra và cam kết: thời gian, tiền, hành động tiếp."
+    ],
+    [
+      "Problem Statement v0 có mấy trường?",
+      "6: Actor, Quy trình, Bottleneck, Impact, Success Metric, Boundary."
+    ],
+    [
+      "Success Metric cần 3 thứ gì?",
+      "Baseline, target và cách đo."
+    ],
+    [
+      "Workflow khác Agent ở đâu?",
+      "Workflow: các bước định sẵn, AI làm một phần. Agent: AI tự quyết bước tiếp theo."
+    ],
+    [
+      "Hai câu hỏi của Google PAIR?",
+      "Augment hay automate? AI sai kiểu nào tệ hơn: báo nhầm hay bỏ sót?"
+    ],
+    [
+      "4 rủi ro khi ra quyết định?",
+      "Value, Usability, Feasibility, Viability."
+    ],
+    [
+      "Kết luận “không cần AI” có tốt không?",
+      "Có, nếu lập luận chặt. Điểm nằm ở lập luận, không ở độ ngầu."
+    ]
+  ],
+  "truocBuoi": [
+    "Sạc đầy máy, mang theo sạc",
+    "Đăng nhập sẵn GitHub và một trợ lý AI (ChatGPT, Gemini…)",
+    "Chuẩn bị công cụ vẽ quy trình: giấy, Mermaid, Excalidraw hoặc FigJam",
+    "Ghi sẵn vài việc lặp lại, tốn thời gian ở chỗ làm, kèm số phút",
+    "Hẹn trước 2–3 người để phỏng vấn nhanh ở CP4"
+  ],
+  "en": {
+    "CP0 · Đọc bài mẫu": "CP0 · Read the example",
+    "Bài mẫu": "Example",
+    "Nói được 1 câu vì sao nhóm mẫu chọn “Go, phạm vi nhỏ” mà không tự xây agent": "Can say in one sentence why the example team chose “Go, small scope” instead of building an agent",
+    "Hiểu CP3 chỉ chọn candidate problem; Problem Statement viết sau khi kiểm chứng": "Understand CP3 only picks a candidate problem; the Problem Statement comes after validation",
+    "Có ít nhất 5 problem, mỗi dòng viết dạng Job Story": "At least 5 problems, each written as a Job Story",
+    "Không dòng nào có chữ “AI”, “chatbot”, “agent” trong Job Story": "No Job Story mentions “AI”, “chatbot” or “agent”",
+    "Mỗi dòng có ít nhất 1 dấu hiệu thật đo được: thời gian, tần suất, số người": "Each row has at least one measurable real signal: time, frequency, people",
+    "CP2 · Top 3 Problem Cards + quy trình nháp": "CP2 · Top 3 Problem Cards + draft process",
+    "Mỗi card đủ: Job Story, actor, quy trình, bottleneck, impact, metric, phương án không dùng AI": "Each card has: Job Story, actor, process, bottleneck, impact, metric, a no-AI option",
+    "Mỗi quy trình có số phút từng bước và đánh dấu bước nghẽn": "Each process has minutes per step and the bottleneck marked",
+    "Đã nhờ AI đóng vai “PM hoài nghi” phản biện và sửa ít nhất 1 điểm": "Had AI play a “skeptical PM”, and fixed at least one point",
+    "CP3 · Hội tụ nhóm": "CP3 · Team convergence",
+    "Hội tụ": "Converge",
+    "Mỗi người đã pitch top 3 và có ít nhất 1 câu hỏi phản biện được ghi": "Everyone pitched their top 3 and logged at least one challenge question",
+    "Cây OST có đúng 1 outcome ở gốc, các nhánh là pain, không có tên công cụ": "The OST has exactly one outcome at the root, branches are pains, no tool names",
+    "Đã chấm 7 tiêu chí, chọn 1 candidate và ghi lý do loại ít nhất 2 candidate khác": "Scored the 7 criteria, picked one candidate and wrote why at least 2 others were dropped",
+    "CP4 · Kiểm chứng + research giải pháp đã có": "CP4 · Validate + research existing solutions",
+    "Kiểm chứng": "Validation",
+    "Có Assumption Map 4–6 giả định, kiểm ô “quan trọng nhưng ít bằng chứng” trước": "Assumption Map with 4–6 assumptions; tested “important but little evidence” first",
+    "Phỏng vấn 2–3 người thật theo Mom Test hoặc survey 5–10 người, không hỏi “Bạn có muốn…”": "Interviewed 2–3 real people (Mom Test) or surveyed 5–10, no “Would you like…” questions",
+    "Có ít nhất 1 tín hiệu phản bác được ghi lại": "Logged at least one disconfirming signal",
+    "Có 2–3 giải pháp đã có, link đã tự mở và kiểm": "2–3 existing solutions with links you opened and checked",
+    "CP5 · Quy trình trước/sau + Problem Statement v0": "CP5 · Before/after process + Problem Statement v0",
+    "Quy trình + PS v0": "Process + PS v0",
+    "Quy trình hiện tại có actor, input, output, thời gian từng bước và bottleneck": "Current process has actor, input, output, time per step and the bottleneck",
+    "Quy trình tương lai có ít nhất 1 bước con người kiểm tra và 1 phương án quay về": "Future process has at least one human check and one fallback",
+    "Có bảng before/after": "Before/after table done",
+    "Problem Statement v0 đủ 6 trường; metric có baseline, target, cách đo": "Problem Statement v0 has all 6 fields; metric has baseline, target, how to measure",
+    "CP6 · Mức can thiệp AI + Problem Statement v1 + quyết định": "CP6 · AI intervention level + Problem Statement v1 + decision",
+    "Quyết định": "Decide",
+    "Đã so No AI / Rule / Workflow / Agent và trả lời “vì sao không chọn mức đơn giản hơn”": "Compared No AI / Rule / Workflow / Agent and answered “why not a simpler level”",
+    "Có 3–5 tiêu chí đánh giá (eval) đạt / không đạt": "3–5 pass/fail eval criteria written",
+    "Problem Statement v1 khác v0 ít nhất 1 trường, có ghi vì sao đổi": "Problem Statement v1 differs from v0 in at least one field, with the reason",
+    "Chấm 4 rủi ro, ra Go / Not Yet / No-Go kèm ngưỡng dừng đo được": "Rated the 4 risks and decided Go / Not Yet / No-Go with a measurable stop threshold",
+    "CP7 · Reflection cá nhân": "CP7 · Personal reflection",
+    "Điền bảng “Tôi đã tham gia phần nào” và bảng “Dùng AI”": "Filled in the “What I took part in” and “AI use” tables",
+    "Có 1 ví dụ cụ thể mình đổi ý hoặc làm nhóm đổi ý": "One concrete example where I changed my mind or changed the team's",
+    "Reflection tối thiểu 200 từ, tự viết, không nhờ AI viết thay": "Reflection is at least 200 words, written myself, not by AI",
+    "Đã điền phần của mình trong TEAM.md": "Filled in my part of TEAM.md",
+    "Mở rộng (Discover) rồi thu hẹp (Define). Hôm nay làm nửa đầu.": "Diverge (Discover) then converge (Define). Today covers the first half.",
+    "Khi [tình huống], tôi muốn [động cơ], để [kết quả].": "When [situation], I want to [motivation], so I can [outcome].",
+    "Số đo đã xảy ra: mất bao lâu, mấy lần/tuần, bao nhiêu người.": "Something that already happened, measured: how long, how often, how many people.",
+    "Dấu hiệu thật": "Real signal",
+    "Viết giải pháp thay cho vấn đề, ví dụ “thiếu một chatbot”.": "A solution posing as a problem, e.g. “we lack a chatbot”.",
+    "Solution trá hình": "Disguised solution",
+    "Một problem đủ field: actor, quy trình, bottleneck, impact, metric, phương án không AI.": "One problem with all fields: actor, process, bottleneck, impact, metric, no-AI option.",
+    "Một bước cụ thể làm chậm hoặc làm hỏng cả quy trình.": "One specific step that slows down or breaks the whole process.",
+    "Vấn đề được đề cử để nhóm cân nhắc, chưa phải Problem Statement.": "A problem nominated for the team to consider; not yet a Problem Statement.",
+    "1 outcome ở gốc, các nhánh là pain. Gạch mọi solution đội lốt.": "One outcome at the root, pains as branches. Cross out disguised solutions.",
+    "Xếp giả định theo quan trọng × đã có bằng chứng. Kiểm ô nguy nhất trước.": "Plot assumptions by importance × evidence. Test the riskiest first.",
+    "Hỏi về cuộc sống của họ, về việc đã xảy ra, và nói ít hơn họ.": "Ask about their life and what already happened, and talk less than them.",
+    "Mỗi buổi phỏng vấn ghi lại thành 1 trang ngắn.": "Each interview captured as a one-page summary.",
+    "Có baseline, target và cách đo. “Nhanh hơn” không phải metric.": "Has a baseline, a target and a way to measure. “Faster” is not a metric.",
+    "Những gì AI không được làm hoặc không được tự quyết.": "What AI must not do or decide on its own.",
+    "Người kiểm tra trước khi kết quả đi tiếp.": "A person checks before the result moves on.",
+    "Cách làm tiếp khi AI sai.": "How work carries on when AI gets it wrong.",
+    "Phương án quay về": "Fallback",
+    "4 mức can thiệp. Chọn mức đơn giản nhất đủ dùng.": "4 intervention levels. Pick the simplest that is enough.",
+    "AI tự quyết bước tiếp theo. Đa số bài hôm nay chỉ cần Rule hoặc Workflow.": "AI decides the next step itself. Most problems today only need Rule or Workflow.",
+    "Dự đoán, cân nhắc, hành động, kết quả, dữ liệu vào, phản hồi.": "Prediction, judgment, action, outcome, input, feedback.",
+    "Tiêu chí để chấm đầu ra của AI là đạt hay không đạt.": "Criteria to grade AI output as pass or fail.",
+    "4 rủi ro": "4 risks",
+    "Làm · cần kiểm thêm · không làm. Kèm ngưỡng dừng đo được.": "Do it · test more · don't. With a measurable stop threshold.",
+    "Hôm nay đi theo nửa nào của Double Diamond?": "Which half of the Double Diamond is today?",
+    "Nửa đầu: Discover (cá nhân scan rộng) rồi Define (nhóm hội tụ về 1 Problem Statement).": "The first half: Discover (individual wide scan), then Define (team converges on one Problem Statement).",
+    "Viết Job Story theo mẫu nào?": "What is the Job Story template?",
+    "“Thiếu chatbot viết báo cáo” có phải problem không?": "Is “we lack a report-writing chatbot” a problem?",
+    "Không. Đó là solution trá hình. Problem là “mất 90 phút mỗi tuần viết báo cáo”.": "No, it's a disguised solution. The problem is “90 minutes a week writing the report”.",
+    "3 luật của The Mom Test?": "The 3 rules of The Mom Test?",
+    "Hỏi về cuộc sống của họ, hỏi hành vi đã xảy ra, nói ít hơn người được hỏi.": "Ask about their life, ask about past behaviour, talk less than they do.",
+    "Lời khen “ý hay đấy!” có phải bằng chứng?": "Is “nice idea!” evidence?",
+    "Không. Bằng chứng là hành vi đã xảy ra và cam kết: thời gian, tiền, hành động tiếp.": "No. Evidence is past behaviour and commitment: time, money, next action.",
+    "Problem Statement v0 có mấy trường?": "How many fields in Problem Statement v0?",
+    "6: Actor, Quy trình, Bottleneck, Impact, Success Metric, Boundary.": "6: Actor, Process, Bottleneck, Impact, Success Metric, Boundary.",
+    "Success Metric cần 3 thứ gì?": "What 3 things does a Success Metric need?",
+    "Baseline, target và cách đo.": "Baseline, target and how to measure it.",
+    "Workflow khác Agent ở đâu?": "Workflow vs Agent?",
+    "Workflow: các bước định sẵn, AI làm một phần. Agent: AI tự quyết bước tiếp theo.": "Workflow: fixed steps, AI does part. Agent: AI decides the next step itself.",
+    "Hai câu hỏi của Google PAIR?": "Google PAIR's two questions?",
+    "Augment hay automate? AI sai kiểu nào tệ hơn: báo nhầm hay bỏ sót?": "Augment or automate? Which AI error is worse: false alarm or miss?",
+    "4 rủi ro khi ra quyết định?": "The 4 risks for the decision?",
+    "Kết luận “không cần AI” có tốt không?": "Is “no AI needed” a good conclusion?",
+    "Có, nếu lập luận chặt. Điểm nằm ở lập luận, không ở độ ngầu.": "Yes, if well argued. The score is for reasoning, not how cool it is.",
+    "Problem Statement đã kiểm chứng · No AI / Rule / Workflow / Agent · Go / Not Yet / No-Go": "Validated Problem Statement · No AI / Rule / Workflow / Agent · Go / Not Yet / No-Go",
+    "Bài làm mẫu: báo cáo tuần của PM": "Example: a PM's weekly report",
+    "Worksheet từng checkpoint": "Worksheet for each checkpoint",
+    "Rubric chấm điểm": "Grading rubric",
+    "Cách nộp bài": "How to submit",
+    "Actor → Quy trình → Bottleneck → Metric": "Actor → Process → Bottleneck → Metric",
+    "Không cần AI vẫn là kết luận tốt": "“No AI” is still a good answer",
+    "Điều phối": "Coordinator",
+    "Phản biện": "Challenger",
+    "Vẽ quy trình": "Process map",
+    "Viết PS": "PS writer",
+    "Link repo nhóm do nhóm trưởng fork (K5-L3A/L3B-DAY02-TenNhom-DiscoveryProblemFraming)": "Team repo link forked by the team lead (K5-L3A/L3B-DAY02-TeamName-DiscoveryProblemFraming)",
+    "Sạc đầy máy, mang theo sạc": "Charge your laptop, bring the charger",
+    "Đăng nhập sẵn GitHub và một trợ lý AI (ChatGPT, Gemini…)": "Sign in to GitHub and an AI assistant (ChatGPT, Gemini…)",
+    "Chuẩn bị công cụ vẽ quy trình: giấy, Mermaid, Excalidraw hoặc FigJam": "Have a process-drawing tool ready: paper, Mermaid, Excalidraw or FigJam",
+    "Ghi sẵn vài việc lặp lại, tốn thời gian ở chỗ làm, kèm số phút": "Note a few repetitive, time-consuming tasks from work, with minutes",
+    "Hẹn trước 2–3 người để phỏng vấn nhanh ở CP4": "Line up 2–3 people for quick interviews in CP4"
+  }
+}
