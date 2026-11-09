@@ -2,7 +2,7 @@
 
 Mỗi ngày lab là một file `packs/dayNN.json` (ví dụ `packs/day03.json`). Khi trang mở, game đọc file này. Ngày nào chưa có file thì game dùng **khung lab chung**: vẫn đủ 8 phase, 2 giờ nghỉ, chữ chung chung, để Key Coach mở lớp được.
 
-Ví dụ đầy đủ: [mau-day02.json](mau-day02.json) (bài Ngày 02 đang dùng).
+Ví dụ đầy đủ: [day02.json](day02.json) (bài Ngày 02 Khóa 5, có cả bản dịch `en`). [mau-day02.json](mau-day02.json) là bản cũ, giữ để tham khảo.
 
 ## Thêm một ngày mới
 
@@ -22,11 +22,13 @@ Ví dụ đầy đủ: [mau-day02.json](mau-day02.json) (bài Ngày 02 đang dù
 | `mau` | không | Link bài mẫu: `[["Tên", "https://..."], ...]` |
 | `bang` | không | 4 dòng viết trên bảng trắng (dòng đầu là tiêu đề) |
 | `vai` | không | Vai trong nhóm. Mặc định: Điều phối, Workflow, Research, Viết |
-| `nop` | không | Tên 3 thư mục phải có trong repo nộp bài |
+| `nop` | không | Thư mục hoặc file phải có trong repo nộp bài. Tên không có `.` hay `/` thì hiện thêm `/` ở cuối (thư mục) |
+| `repo` | không | Chữ trên ô dán link khi nộp bài. Mặc định: "Link repo cá nhân (DayNN-MãHV-HọTên)" |
 | `the` | không | Thẻ thuật ngữ: `[["Từ", "Giải thích ngắn"], ...]` |
 | `onTap` | không | Thẻ "Ôn nhanh" ở phòng tự học: `[["Câu hỏi", "Đáp án"], ...]`. Mỗi lượt lấy ngẫu nhiên 5 thẻ. Không có thì dùng `the` |
 | `truocBuoi` | không | Việc cần làm trước buổi này (cài công cụ, đọc trước...). Hiện ở phòng tự học dưới mục "Chuẩn bị Ngày NN" khi ngày này là buổi kế tiếp. Không có thì dùng danh sách chung |
 | `phases` | có | Danh sách phase theo thứ tự, kể cả giờ nghỉ |
+| `en` | không | Bản dịch tiếng Anh cho chữ của ngày này: `{"chữ tiếng Việt": "English"}`. Khớp nguyên câu trước, rồi khớp từng cụm. Thiếu thì chữ hiện tiếng Việt |
 
 Mỗi phase:
 
